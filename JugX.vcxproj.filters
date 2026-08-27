@@ -1,0 +1,395 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Source\AABB.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\AffineTransform.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Callable.h">
+      <Filter>Callable</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Collision.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Corner.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Float16.h">
+      <Filter>Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Frustum.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Handle.h">
+      <Filter>Handle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HandleAllocator.h">
+      <Filter>Handle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HandleMap.h">
+      <Filter>Handle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Interval.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Matrix.h">
+      <Filter>Math\LinearAlgebra\Matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\AxisAngle.h">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector4I.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector2.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector2I.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector3.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector3I.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vector4.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\HashUtils.h">
+      <Filter>Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Triangle.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Sphere.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MemoryHasher.h">
+      <Filter>Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\OBB.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Octree.h">
+      <Filter>Math\AccelatorStructure</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Plane.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ray.h">
+      <Filter>Math\Geomtry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\RefCount.h">
+      <Filter>Memroy\SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Scoped.h">
+      <Filter>Memroy\SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Math.h">
+      <Filter>Math\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\RGBA.h">
+      <Filter>Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Result.h">
+      <Filter>Result</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Quaternion.h">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ResourcePool.h">
+      <Filter>Handle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Config.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\PlatformDetector.h">
+      <Filter>PlatformDetector</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Macros.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MathMacros.h">
+      <Filter>Math\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Ref.h">
+      <Filter>Memroy\SmartPointer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SIMD.h">
+      <Filter>Math\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjectPool.h">
+      <Filter>Memroy\MemoryPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MemoryArena.h">
+      <Filter>Memroy\MemoryPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Align.h">
+      <Filter>Memroy\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vendor\yyjson\src\yyjson.h">
+      <Filter>Vendor\yyjson</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Vendor\xxHash\xxhash.h">
+      <Filter>Vendor\xxhash</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\TypeTraits.h">
+      <Filter>Type</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\TypeRefl.h">
+      <Filter>Type</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EnumRefl.h">
+      <Filter>Enum</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EnumArray.h">
+      <Filter>Enum</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\EnumFlags.h">
+      <Filter>Enum</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StringConverter.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StringHasher.h">
+      <Filter>Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StringFormatter.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Alloc.h">
+      <Filter>Memroy\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileIO.h">
+      <Filter>File\FileIO</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileIOError.h">
+      <Filter>File\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileUtils.h">
+      <Filter>File\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FixedBlockPool.h">
+      <Filter>Memroy\MemoryPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\JsonReader.h">
+      <Filter>Serializer\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MemoryView.h">
+      <Filter>Memroy\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Memory.h">
+      <Filter>Memroy\Memory</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\JsonWriter.h">
+      <Filter>Serializer\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SerializerError.h">
+      <Filter>Serializer\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ConsoleLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Logger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Timer.h">
+      <Filter>Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\TimeStamp.h">
+      <Filter>Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\MemoryLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FixedRingBuffer.h">
+      <Filter>Container\RingBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\GroupLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\RingBuffer.h">
+      <Filter>Container\RingBuffer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\MemoryHasher.cpp">
+      <Filter>Hasher</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Vendor\yyjson\src\yyjson.c">
+      <Filter>Vendor\yyjson</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Vendor\xxHash\xxhash.c">
+      <Filter>Vendor\xxhash</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\StringConverter.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileIO.cpp">
+      <Filter>File\FileIO</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileIOError.cpp">
+      <Filter>File\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Alloc.cpp">
+      <Filter>Memroy\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\JsonReader.cpp">
+      <Filter>Serializer\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Memory.cpp">
+      <Filter>Memroy\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\JsonWriter.cpp">
+      <Filter>Serializer\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ConsoleLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Logger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Timer.cpp">
+      <Filter>Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\TimeStamp.cpp">
+      <Filter>Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\MemoryLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GroupLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\Matrix.inl">
+      <Filter>Math\LinearAlgebra\Matrix</Filter>
+    </None>
+    <None Include="Source\Math.inl">
+      <Filter>Math\Base</Filter>
+    </None>
+    <None Include="Source\Quaternion.inl">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Math">
+      <UniqueIdentifier>{fff22974-57e6-43ef-80ab-aeb3ce064dbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\Geomtry">
+      <UniqueIdentifier>{2a06a665-f727-4629-8a85-b5c99565950b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy">
+      <UniqueIdentifier>{eca122ae-f59d-4d96-8bfc-db445c0eab09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\LinearAlgebra">
+      <UniqueIdentifier>{41291b13-7754-4d97-8115-45a2967499ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Callable">
+      <UniqueIdentifier>{7912628b-6359-4892-a5cc-3373b5a0976e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\Misc">
+      <UniqueIdentifier>{df0b2208-8d20-4bcd-af74-3315ff12354e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Handle">
+      <UniqueIdentifier>{70d121a6-3724-4d5d-9aa5-46cc00327b29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Serializer">
+      <UniqueIdentifier>{e9769a57-6500-4f50-85d1-90bdb4f69177}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\Base">
+      <UniqueIdentifier>{b00eab76-0eec-42ef-ab98-b63c60b842a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\LinearAlgebra\Quaternion">
+      <UniqueIdentifier>{fc3929e5-8ed3-4550-99cb-1ee6665c94f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\LinearAlgebra\Matrix">
+      <UniqueIdentifier>{47c71b1c-aa7c-42cc-8d91-b7bb7b673f85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\LinearAlgebra\Vector">
+      <UniqueIdentifier>{4683edf6-90d7-41d0-9a49-c5476473c5e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hasher">
+      <UniqueIdentifier>{82e296ce-906c-43ac-9117-e4937c0c7f55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\AccelatorStructure">
+      <UniqueIdentifier>{9c9ab120-eb54-4a8b-b8f0-addb134b50ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\SmartPointer">
+      <UniqueIdentifier>{e7bdb48c-2a32-4a33-a5e4-b2af16077232}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Result">
+      <UniqueIdentifier>{4744061f-1da3-4ad2-982d-aa08d21a71c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base">
+      <UniqueIdentifier>{033548be-33b4-464d-a8e1-2ed92ddb3c2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\MemoryPool">
+      <UniqueIdentifier>{da9d66ec-3e16-4056-9cfc-2467fe9523c2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\Utils">
+      <UniqueIdentifier>{b06543a9-5805-4f72-9929-eb026fd63fb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PlatformDetector">
+      <UniqueIdentifier>{5334e8dc-fd3c-4269-8fec-c05fcd6647f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vendor">
+      <UniqueIdentifier>{383d26d3-3c9f-4119-b5a2-9d925e0e220a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vendor\yyjson">
+      <UniqueIdentifier>{cb5122c1-4967-402a-974c-25d1662ce844}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vendor\xxhash">
+      <UniqueIdentifier>{59ea9943-d373-4025-9ad1-bfab02826679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Enum">
+      <UniqueIdentifier>{d700385b-22bf-4fe2-9c97-4c257729b4e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Type">
+      <UniqueIdentifier>{1303bc83-8dce-491a-a53d-863476cd5bc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File">
+      <UniqueIdentifier>{e0bef7f1-3f92-491f-81a8-cb03ce95cd06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="String">
+      <UniqueIdentifier>{27827b7f-5600-4238-8b8e-671cb89fb07d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File\FileIO">
+      <UniqueIdentifier>{e3bee013-f079-40de-aee0-4b86d14b4430}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File\Base">
+      <UniqueIdentifier>{f7e03542-4200-45d6-a8d9-d80a4a4c4858}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Serializer\Json">
+      <UniqueIdentifier>{123e75fc-a018-44f5-976b-f84c64259643}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\Memory">
+      <UniqueIdentifier>{bb87f8af-d865-49dc-92d5-41b465e97e52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Log">
+      <UniqueIdentifier>{046371e7-dfc7-4b21-b7b6-d545cbfd4b2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Timer">
+      <UniqueIdentifier>{82bfa850-1d93-4eb9-b030-c3d4f2dcca71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Container">
+      <UniqueIdentifier>{97ca42be-b5f7-4cc4-9526-9b613e42ccce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Container\RingBuffer">
+      <UniqueIdentifier>{b0809a31-d670-42e3-87b4-f6d617c827d0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,58 @@
+# ===========================================
+#  Visual Studio / MSVC build output
+# ===========================================
+.vs/
+Debug/
+Release/
+x64/
+x86/
+Win32/
+JugX/Debug/
+JugX/Release/
+JugX/x64/
+JugX/x86/
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.tlog/
+*.log
+*.iobj
+*.ipdb
+ipch/
+
+# ===========================================
+#  Visual Studio user/cache files
+# ===========================================
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+.vshistory/
+
+# ===========================================
+#  ReSharper / Rider
+# ===========================================
+_ReSharper*/
+*.DotSettings.user
+
+# ===========================================
+#  CMake (vendor libs)
+# ===========================================
+build/
+CMakeFiles/
+CMakeCache.txt
+
+# ===========================================
+#  Misc
+# ===========================================
+nul
+*.tmp
+*.bak

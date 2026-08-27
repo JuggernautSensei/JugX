@@ -1,0 +1,6 @@
+[submodule "Source/Vendor/xxHash"]
+	path = Source/Vendor/xxHash
+	url = https://github.com/Cyan4973/xxHash.git
+[submodule "Source/Vendor/yyjson"]
+	path = Source/Vendor/yyjson
+	url = https://github.com/ibireme/yyjson.git

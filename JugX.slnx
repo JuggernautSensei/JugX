@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="JugX.vcxproj" Id="71c0cb85-1218-4140-95ff-caca4f615774" />
+  <Project Path="Test\JugXTest.vcxproj" Id="a031c3ec-467d-479b-995f-aabff1fd2065" />
+  <Project Path="Bench\JugXBench.vcxproj" Id="770a382c-ca9f-4528-b490-2cc680d5d501" />
+</Solution>

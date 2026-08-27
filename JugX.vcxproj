@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\AABB.h" />
+    <ClInclude Include="Source\AffineTransform.h" />
+    <ClInclude Include="Source\Align.h" />
+    <ClInclude Include="Source\AxisAngle.h" />
+    <ClInclude Include="Source\ConsoleLogger.h" />
+    <ClInclude Include="Source\FileLogger.h" />
+    <ClInclude Include="Source\FixedBlockPool.h" />
+    <ClInclude Include="Source\Callable.h" />
+    <ClInclude Include="Source\Collision.h" />
+    <ClInclude Include="Source\Config.h" />
+    <ClInclude Include="Source\Corner.h" />
+    <ClInclude Include="Source\EnumArray.h" />
+    <ClInclude Include="Source\EnumFlags.h" />
+    <ClInclude Include="Source\EnumRefl.h" />
+    <ClInclude Include="Source\Alloc.h" />
+    <ClInclude Include="Source\FixedRingBuffer.h" />
+    <ClInclude Include="Source\GroupLogger.h" />
+    <ClInclude Include="Source\Logger.h" />
+    <ClInclude Include="Source\JsonWriter.h" />
+    <ClInclude Include="Source\Memory.h" />
+    <ClInclude Include="Source\MemoryLogger.h" />
+    <ClInclude Include="Source\RingBuffer.h" />
+    <ClInclude Include="Source\StringConverter.h" />
+    <ClInclude Include="Source\StringFormatter.h" />
+    <ClInclude Include="Source\Timer.h" />
+    <ClInclude Include="Source\TimeStamp.h" />
+    <ClInclude Include="Source\TypeRefl.h" />
+    <ClInclude Include="Source\SerializerError.h" />
+    <ClInclude Include="Source\FileIO.h" />
+    <ClInclude Include="Source\FileIOError.h" />
+    <ClInclude Include="Source\Float16.h" />
+    <ClInclude Include="Source\Frustum.h" />
+    <ClInclude Include="Source\Handle.h" />
+    <ClInclude Include="Source\HandleAllocator.h" />
+    <ClInclude Include="Source\HandleMap.h" />
+    <ClInclude Include="Source\Interval.h" />
+    <ClInclude Include="Source\JsonReader.h" />
+    <ClInclude Include="Source\MathMacros.h" />
+    <ClInclude Include="Source\Macros.h" />
+    <ClInclude Include="Source\Matrix.h" />
+    <ClInclude Include="Source\MemoryArena.h" />
+    <ClInclude Include="Source\MemoryHasher.h" />
+    <ClInclude Include="Source\MemoryView.h" />
+    <ClInclude Include="Source\OBB.h" />
+    <ClInclude Include="Source\ObjectPool.h" />
+    <ClInclude Include="Source\Octree.h" />
+    <ClInclude Include="Source\Plane.h" />
+    <ClInclude Include="Source\PlatformDetector.h" />
+    <ClInclude Include="Source\Quaternion.h" />
+    <ClInclude Include="Source\Ray.h" />
+    <ClInclude Include="Source\Ref.h" />
+    <ClInclude Include="Source\RefCount.h" />
+    <ClInclude Include="Source\ResourcePool.h" />
+    <ClInclude Include="Source\Result.h" />
+    <ClInclude Include="Source\RGBA.h" />
+    <ClInclude Include="Source\Math.h" />
+    <ClInclude Include="Source\Scoped.h" />
+    <ClInclude Include="Source\SIMD.h" />
+    <ClInclude Include="Source\Sphere.h" />
+    <ClInclude Include="Source\StringHasher.h" />
+    <ClInclude Include="Source\Triangle.h" />
+    <ClInclude Include="Source\HashUtils.h" />
+    <ClInclude Include="Source\TypeTraits.h" />
+    <ClInclude Include="Source\Vector.h" />
+    <ClInclude Include="Source\Vector2.h" />
+    <ClInclude Include="Source\Vector2I.h" />
+    <ClInclude Include="Source\Vector3.h" />
+    <ClInclude Include="Source\Vector3I.h" />
+    <ClInclude Include="Source\Vector4.h" />
+    <ClInclude Include="Source\Vector4I.h" />
+    <ClInclude Include="Source\Vendor\xxHash\xxhash.h" />
+    <ClInclude Include="Source\Vendor\yyjson\src\yyjson.h" />
+    <ClInclude Include="Source\FileUtils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Alloc.cpp" />
+    <ClCompile Include="Source\ConsoleLogger.cpp" />
+    <ClCompile Include="Source\FileIO.cpp" />
+    <ClCompile Include="Source\FileIOError.cpp" />
+    <ClCompile Include="Source\FileLogger.cpp" />
+    <ClCompile Include="Source\GroupLogger.cpp" />
+    <ClCompile Include="Source\JsonReader.cpp" />
+    <ClCompile Include="Source\JsonWriter.cpp" />
+    <ClCompile Include="Source\Logger.cpp" />
+    <ClCompile Include="Source\Memory.cpp" />
+    <ClCompile Include="Source\MemoryHasher.cpp" />
+    <ClCompile Include="Source\MemoryLogger.cpp" />
+    <ClCompile Include="Source\StringConverter.cpp" />
+    <ClCompile Include="Source\Timer.cpp" />
+    <ClCompile Include="Source\TimeStamp.cpp" />
+    <ClCompile Include="Source\Vendor\xxHash\xxhash.c" />
+    <ClCompile Include="Source\Vendor\yyjson\src\yyjson.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\Matrix.inl" />
+    <None Include="Source\Quaternion.inl" />
+    <None Include="Source\Math.inl" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{71c0cb85-1218-4140-95ff-caca4f615774}</ProjectGuid>
+    <RootNamespace>JugX</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="JsonSerializer">
+      <UniqueIdentifier>{0cb878e0-cfa6-44c7-9be4-373d149859d4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="JsonSerializerBenchmark.h">
+      <Filter>JsonSerializer</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
