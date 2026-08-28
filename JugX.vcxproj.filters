@@ -172,9 +172,6 @@
     <ClInclude Include="Source\FileIOError.h">
       <Filter>File\Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\FileUtils.h">
-      <Filter>File\Base</Filter>
-    </ClInclude>
     <ClInclude Include="Source\FixedBlockPool.h">
       <Filter>Memroy\MemoryPool</Filter>
     </ClInclude>
@@ -188,9 +185,6 @@
       <Filter>Memroy\Memory</Filter>
     </ClInclude>
     <ClInclude Include="Source\JsonWriter.h">
-      <Filter>Serializer\Json</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SerializerError.h">
       <Filter>Serializer\Json</Filter>
     </ClInclude>
     <ClInclude Include="Source\ConsoleLogger.h">
@@ -211,14 +205,14 @@
     <ClInclude Include="Source\MemoryLogger.h">
       <Filter>Log</Filter>
     </ClInclude>
-    <ClInclude Include="Source\FixedRingBuffer.h">
-      <Filter>Container\RingBuffer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\GroupLogger.h">
       <Filter>Log</Filter>
     </ClInclude>
-    <ClInclude Include="Source\RingBuffer.h">
-      <Filter>Container\RingBuffer</Filter>
+    <ClInclude Include="Source\FileFormatter.h">
+      <Filter>File\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SerializerError.h">
+      <Filter>Serializer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -272,6 +266,9 @@
     </ClCompile>
     <ClCompile Include="Source\GroupLogger.cpp">
       <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileFormatter.cpp">
+      <Filter>File\Base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

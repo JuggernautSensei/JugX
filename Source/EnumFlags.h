@@ -70,7 +70,7 @@ public:
     {
     }
 
-    /* implicit */ constexpr BaseFlags(
+    constexpr BaseFlags(
         const std::initializer_list<TEnum> _values) noexcept
     {
         for (const TEnum& value: _values)
@@ -200,4 +200,3 @@ template<EnumT TEnum>
 using IndexedFlags = BaseFlags<TEnum, false>;
 
 }   // namespace jug
-

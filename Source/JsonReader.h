@@ -132,7 +132,6 @@ public:
             _outValue = std::forward<U>(_default);
             return false;
         }
-
         return true;
     }
 
@@ -146,7 +145,6 @@ public:
         {
             return false;
         }
-
         return ReadTo_(pValue, _outValue, true);
     }
 
@@ -181,7 +179,7 @@ public:
     [[nodiscard]] T Read(
         U&& _default)
     {
-        return Read_<T>(GetValue_(true), std::forward<U>(_default));
+        return ReadOr_<T>(GetValue_(true), std::forward<U>(_default));
     }
 
     template<typename T>
@@ -194,7 +192,6 @@ public:
         {
             return T {};
         }
-
         return Read_<T>(pValue, true);
     }
 
@@ -209,8 +206,7 @@ public:
         {
             return std::forward<U>(_default);
         }
-
-        return Read_<T>(pValue, std::forward<U>(_default));
+        return ReadOr_<T>(pValue, std::forward<U>(_default));
     }
 
     // ======================================
@@ -237,7 +233,7 @@ public:
     // ======================================
 
     void                 Next();
-    bool                 HasNext();
+    bool                 HasNext() const;
     [[nodiscard]] size_t GetSize() const;
 
     // ======================================
@@ -255,7 +251,7 @@ public:
     // ======================================
 
     [[nodiscard]] bool             HasError() const;
-    [[nodiscard]] eSerializerError GetError() const;
+    [[nodiscard]] eSerializerError GetLastError() const;
 
 private:
     JsonReader() = default;
@@ -278,22 +274,16 @@ private:
     bool ReadTo_(const yyjson_val* _pValue, std::string& _outValue, bool _bCheckError);
     bool ReadTo_(const yyjson_val* _pValue, const char*& _outValue, bool _bCheckError);
 
-    template<typename T>
-        requires std::is_enum_v<T>
+    template<EnumT TEnum>
     bool ReadTo_(
         const yyjson_val* _pValue,
-        T&                _outValue,
+        TEnum&            _outValue,
         bool              _bCheckError)
     {
-        using U = std::underlying_type_t<T>;
-
-        U value;
-        if (!ReadTo_(_pValue, value, _bCheckError))
-        {
-            return false;
-        }
-        _outValue = static_cast<T>(value);
-        return true;
+        UnderlyingT<TEnum> value;
+        const bool         bSucceeded = ReadTo_(_pValue, value, _bCheckError);
+        _outValue                     = static_cast<TEnum>(value);
+        return bSucceeded;
     }
 
     template<std::signed_integral T>
@@ -302,13 +292,10 @@ private:
         T&                _outValue,
         const bool        _bCheckError)
     {
-        int64_t value;
-        if (!ReadTo_(_pValue, value, _bCheckError))
-        {
-            return false;
-        }
-        _outValue = static_cast<T>(value);
-        return true;
+        int64_t    value;
+        const bool bSucceeded = ReadTo_(_pValue, value, _bCheckError);
+        _outValue             = static_cast<T>(value);
+        return bSucceeded;
     }
 
     template<std::unsigned_integral T>
@@ -317,13 +304,10 @@ private:
         T&                _outValue,
         const bool        _bCheckError)
     {
-        uint64_t value;
-        if (!ReadTo_(_pValue, value, _bCheckError))
-        {
-            return false;
-        }
-        _outValue = static_cast<T>(value);
-        return true;
+        uint64_t   value;
+        const bool bSucceeded = ReadTo_(_pValue, value, _bCheckError);
+        _outValue             = static_cast<T>(value);
+        return bSucceeded;
     }
 
     template<std::floating_point T>
@@ -332,13 +316,10 @@ private:
         T&                _outValue,
         const bool        _bCheckError)
     {
-        double value;
-        if (!ReadTo_(_pValue, value, _bCheckError))
-        {
-            return false;
-        }
-        _outValue = static_cast<T>(value);
-        return true;
+        double     value;
+        const bool bSucceeded = ReadTo_(_pValue, value, _bCheckError);
+        _outValue             = static_cast<T>(value);
+        return bSucceeded;
     }
 
     // ===========================================
@@ -353,8 +334,10 @@ private:
     {
         JUG_ASSERT(_pValue, "ReadTo_: value must not be null - caller assumed a wrong JSON layout");
 
+        // store last error for check custom deserialization.
         const eSerializerError lastError = std::exchange(m_lastError, eSerializerError::None);
 
+        // custom deserialize
         m_pPendingValue = _pValue;
         if constexpr (JsonReaderableByFactoryT<T>)
         {
@@ -370,6 +353,7 @@ private:
         }
         m_pPendingValue = nullptr;
 
+        // check deserialization succeeded and update error code.
         const bool bSucceeded = !HasError();
         if (bSucceeded || !_bCheckError)
         {
@@ -406,7 +390,7 @@ private:
 
     template<typename T, typename U>
         requires std::is_constructible_v<T, U>
-    [[nodiscard]] T Read_(
+    [[nodiscard]] T ReadOr_(
         yyjson_val* _pValue,
         U&&         _default)
     {
@@ -423,12 +407,15 @@ private:
         }
         else
         {
+            // store last error for check custom deserialization.
             const eSerializerError lastError = std::exchange(m_lastError, eSerializerError::None);
 
+            // custom deserialize
             m_pPendingValue = _pValue;
             T value         = CallFactory_<T>();
             m_pPendingValue = nullptr;
 
+            // check deserialization succeeded and update error code.
             const bool bSucceeded = !HasError();
             m_lastError           = lastError;
             return bSucceeded ? value : std::forward<U>(_default);

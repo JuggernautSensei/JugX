@@ -208,10 +208,10 @@ void JsonReader::Next()
     }
 }
 
-bool JsonReader::HasNext()
+bool JsonReader::HasNext() const
 {
     JUG_ASSERT(!m_frameStack.empty(), "HasNext: no frame to check - call BeginObject/BeginArray first");
-    Frame& frame = m_frameStack.back();
+    const Frame& frame = m_frameStack.back();
     return frame.index < frame.size;
 }
 
@@ -252,7 +252,7 @@ bool JsonReader::HasError() const
     return m_lastError != eSerializerError::None;
 }
 
-eSerializerError JsonReader::GetError() const
+eSerializerError JsonReader::GetLastError() const
 {
     return m_lastError;
 }
@@ -433,7 +433,7 @@ bool JsonReader::ReadTo_(
     uint64_t&         _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadIntegral_: value must not be null");
+    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
 
     if (!unsafe_yyjson_is_int(_pValue))
     {

@@ -16,8 +16,8 @@ public:
 
 private:
     explicit FileLogger(FileWriter&& _writer);
-    void LogImpl(eLogLevel _level, std::string_view _message, bool _bNewLine) override;
-    void FormatImpl(eLogLevel _level, std::string_view _message, std::format_args _args, bool _bNewLine) override;
+    void LogImpl(eLogLevel _level, std::string_view _msg, bool _bEndLog) override;
+    void VFormatImpl(eLogLevel _level, std::string_view _msg, std::format_args _args, bool _bEndLog) override;
 
     FileWriter m_writer;
 };

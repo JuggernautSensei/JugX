@@ -170,12 +170,6 @@ void JsonWriter::Write_(
     AttachValue_(yyjson_mut_strncpy(m_pDoc, _value.data(), _value.size()));
 }
 
-void JsonWriter::Write_(
-    const char* _value)
-{
-    AttachValue_(yyjson_mut_strcpy(m_pDoc, _value));
-}
-
 SerializerResult<std::string> JsonWriter::SaveToString(
     const Flags<eJsonWriteOption> _options) const
 {

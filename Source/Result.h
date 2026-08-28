@@ -549,6 +549,26 @@ private:
     bool m_bHasError = false;
 };
 
+// ===========================================
+//  Shortcut
+// ===========================================
+
+#define JUG_DISPATCH_FAILED(_result)            \
+    JUG_BEGIN_MACRO_BLOCK                       \
+    if (!(_result))                             \
+    {                                           \
+        return Failed { (_result).GetError() }; \
+    }                                           \
+    JUG_END_MACRO_BLOCK
+
+#define JUG_DISPATCH_FAILED_AS(_result, _error) \
+    JUG_BEGIN_MACRO_BLOCK                       \
+    if (!(_result))                             \
+    {                                           \
+        return Failed { (_error) };             \
+    }                                           \
+    JUG_END_MACRO_BLOCK
+
 }   // namespace jug
 
 #undef DT

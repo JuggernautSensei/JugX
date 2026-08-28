@@ -18,14 +18,9 @@ template<EnumReflT TEnum, typename TValue>
     requires std::is_object_v<TValue>
 struct ENUM_ARRAY
 {
-    using Iterator      = TValue*;
-    using ConstIterator = const TValue*;
-
+    using Iterator                = TValue*;
+    using ConstIterator           = const TValue*;
     constexpr static size_t kSize = CountOf<TEnum>();
-
-    // =========================================================
-    //  Access & Utils
-    // =========================================================
 
     [[nodiscard]] constexpr TValue& operator[](
         const TEnum _i)
@@ -106,8 +101,6 @@ struct ENUM_ARRAY
     {
         return elems[kSize - 1];
     }
-
-    
 
     [[nodiscard]] constexpr Iterator Begin()
     {

@@ -10,9 +10,9 @@ namespace jug
 
 enum class eLogLevel
 {
-    Info,
     Trace,
     Debug,
+    Info,
     Warn,
     Error,
     Fatal
@@ -42,11 +42,11 @@ public:
 
     virtual ~Logger() = default;
 
-    void Log(eLogLevel _level, std::string_view _message);
-    void Format(eLogLevel _level, std::string_view _message, std::format_args _args);
+    void Log(eLogLevel _level, std::string_view _msg);
+    void Log(eLogLevel _level, std::string_view _msg, std::format_args _args);
 
     template<typename... TArgs>
-    void Format(
+    void Log(
         const eLogLevel              _level,
         std::format_string<TArgs...> _format,
         TArgs&&... _args)
@@ -57,24 +57,24 @@ public:
         }
 
         LogPattern(_level);
-        FormatImpl(_level, _format.get(), std::make_format_args(_args...), true);
+        VFormatImpl(_level, _format.get(), std::make_format_args(_args...), true);
     }
 
     virtual void Flush() = 0;
 
-    void SetLoggerName(std::string_view _name);
+    void SetName(std::string_view _name);
     void SetLogPattern(Flags<eLogPattern> _pattern);
     void SetFilter(IndexedFlags<eLogLevel> _filter);
 
 protected:
-    virtual void LogImpl(eLogLevel _level, std::string_view _message, bool _bNewLine)                            = 0;
-    virtual void FormatImpl(eLogLevel _level, std::string_view _message, std::format_args _args, bool _bNewLine) = 0;
+    virtual void LogImpl(eLogLevel _level, std::string_view _msg, bool _bEndLog)                             = 0;
+    virtual void VFormatImpl(eLogLevel _level, std::string_view _msg, std::format_args _args, bool _bEndLog) = 0;
 
 private:
     void LogPattern(eLogLevel _level);
 
     std::string             m_name    = "Logger";
-    Flags<eLogPattern>      m_pattern = eLogPattern::None;
+    Flags<eLogPattern>      m_pattern = kAllFlag;
     IndexedFlags<eLogLevel> m_filter  = kAllFlag;
 };
 

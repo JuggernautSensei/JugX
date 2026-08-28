@@ -1,4 +1,4 @@
-#include "GroupLogger.h"
+﻿#include "GroupLogger.h"
 
 #include <algorithm>
 
@@ -35,24 +35,24 @@ void GroupLogger::RemoveLogger(
 
 void GroupLogger::LogImpl(
     const eLogLevel        _level,
-    const std::string_view _message,
-    const bool             _bNewLine)
+    const std::string_view _msg,
+    const bool             _bEndLog)
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->LogImpl(_level, _message, _bNewLine);
+        pLogger->LogImpl(_level, _msg, _bEndLog);
     }
 }
 
-void GroupLogger::FormatImpl(
+void GroupLogger::VFormatImpl(
     const eLogLevel        _level,
-    const std::string_view _message,
+    const std::string_view _msg,
     const std::format_args _args,
-    const bool              _bNewLine)
+    const bool              _bEndLog)
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->FormatImpl(_level, _message, _args, _bNewLine);
+        pLogger->VFormatImpl(_level, _msg, _args, _bEndLog);
     }
 }
 

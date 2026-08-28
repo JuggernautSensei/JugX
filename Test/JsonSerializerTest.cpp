@@ -3,9 +3,9 @@
 // 에러 모델: ReadTo/ReadFieldTo/Read/ReadField 등은 실패해도 예외를 던지지 않고,
 // 각 호출이 독립적으로 성공/실패를 자기 리턴값(bool 또는 default값)으로 알려준다.
 // 한 호출이 실패해도 이후의 다른 호출들은 전혀 영향받지 않고 정상적으로 계속 읽힌다.
-// HasError()/GetError()는 "지금 상태가 깨끗한가"가 아니라 "여태 뭐라도 실패한 적 있나(가장 최근에 뭐가 문제였나)"를
+// HasError()/GetLastError()는 "지금 상태가 깨끗한가"가 아니라 "여태 뭐라도 실패한 적 있나(가장 최근에 뭐가 문제였나)"를
 // 보고하는 전역 진단값이다 - 성공한 호출이 이전 에러를 지워주지 않으므로, 특정 호출 하나의 성공/실패를
-// 확인하려면 그 호출 직후에 GetError()를 보거나 리턴값을 써야 한다.
+// 확인하려면 그 호출 직후에 GetLastError()를 보거나 리턴값을 써야 한다.
 // 단, default를 받는 오버로드(ReadTo/ReadFieldTo/Read/ReadField의 default 버전)는 예외 -
 // 필드가 없거나 타입이 안 맞아서 default로 대체됐어도 그 실패를 m_lastError에 안 남긴다
 // (호출부가 default를 줬다는 건 "이 경우는 내가 감당한다"는 의사표시로 취급 - 실패를 리턴값/bool로만 알리고
@@ -453,10 +453,10 @@ TEST(JsonReader, ReadOrKeepsExistingError)
     reader.BeginObject();
     int value = 0;
     reader.ReadFieldTo("s", value);
-    ASSERT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    ASSERT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 
     EXPECT_EQ(reader.ReadField<int>("s", 5), 5);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, ParseErrors)
@@ -472,7 +472,7 @@ TEST(JsonReader, TypeMismatchStringAsInt)
     reader.BeginObject();
     int value = 0;
     reader.ReadFieldTo("str", value);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchNumberAsBool)
@@ -481,7 +481,7 @@ TEST(JsonReader, TypeMismatchNumberAsBool)
     reader.BeginObject();
     bool value = false;
     reader.ReadFieldTo("big", value);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchNumberAsString)
@@ -490,7 +490,7 @@ TEST(JsonReader, TypeMismatchNumberAsString)
     reader.BeginObject();
     std::string value;
     reader.ReadFieldTo("big", value);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchRealAsInt)
@@ -500,7 +500,7 @@ TEST(JsonReader, TypeMismatchRealAsInt)
     reader.BeginObject();
     int value = 0;
     reader.ReadFieldTo("real", value);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, IntAsRealAccepted)
@@ -519,7 +519,7 @@ TEST(JsonReader, MissingField)
     reader.BeginObject();
     int value = 0;
     reader.ReadFieldTo("missing", value);
-    EXPECT_EQ(reader.GetError(), eSerializerError::MissingField);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::MissingField);
 }
 
 TEST(JsonReader, NarrowingRead)
@@ -540,7 +540,7 @@ TEST(JsonReader, ReadFailureDoesNotBlockOtherReads)
 
     test::Vector3 pos;
     reader.ReadFieldTo("position", pos);
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
     EXPECT_FLOAT_EQ(pos.x, 1.0f);
     EXPECT_FLOAT_EQ(pos.y, 2.0f);
 
@@ -549,7 +549,7 @@ TEST(JsonReader, ReadFailureDoesNotBlockOtherReads)
     EXPECT_EQ(sibling, "ok");   // 이전 실패랑 무관하게 정상적으로 읽힘
 
     reader.EndObject();
-    EXPECT_TRUE(reader.HasError());   // GetError()는 여전히 가장 최근/최초의 문제(TypeMismatch)를 보고함
+    EXPECT_TRUE(reader.HasError());   // GetLastError()는 여전히 가장 최근/최초의 문제(TypeMismatch)를 보고함
 }
 
 TEST(JsonReader, ErrorDoesNotBreakScopeOrIteration)
@@ -581,7 +581,7 @@ TEST(JsonReader, ErrorDoesNotBreakScopeOrIteration)
     EXPECT_EQ(sum, 3);
     reader.EndObject();
 
-    EXPECT_EQ(reader.GetError(), eSerializerError::TypeMismatch);   // "bad" 필드의 에러가 마지막으로 남아있음
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);   // "bad" 필드의 에러가 마지막으로 남아있음
 }
 
 TEST(JsonReader, CustomTypes)
@@ -816,7 +816,7 @@ TEST(JsonReader, MoveSemanticsPreservesErrorState)
     ASSERT_TRUE(first.HasError());
 
     JsonReader second = std::move(first);
-    EXPECT_EQ(second.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(second.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 // ==========================================================

@@ -8,7 +8,7 @@ namespace jug
 
 void Logger::Log(
     const eLogLevel        _level,
-    const std::string_view _message)
+    const std::string_view _msg)
 {
     if (!m_filter.Has(_level))
     {
@@ -16,12 +16,12 @@ void Logger::Log(
     }
 
     LogPattern(_level);
-    LogImpl(_level, _message, true);
+    LogImpl(_level, _msg, true);
 }
 
-void Logger::Format(
+void Logger::Log(
     const eLogLevel        _level,
-    const std::string_view _message,
+    const std::string_view _msg,
     const std::format_args _args)
 {
     if (!m_filter.Has(_level))
@@ -30,10 +30,10 @@ void Logger::Format(
     }
 
     LogPattern(_level);
-    FormatImpl(_level, _message, _args, true);
+    VFormatImpl(_level, _msg, _args, true);
 }
 
-void Logger::SetLoggerName(
+void Logger::SetName(
     const std::string_view _name)
 {
     m_name = _name;
@@ -63,15 +63,15 @@ void Logger::LogPattern(
 
         if (m_pattern.HasAll({ eLogPattern::YearMonthDay, eLogPattern::HourMinSec }))
         {
-            FormatImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
+            VFormatImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
         }
         else if (m_pattern.Has(eLogPattern::YearMonthDay))
         {
-            FormatImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
+            VFormatImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
         }
         else
         {
-            FormatImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
+            VFormatImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
         }
 
         bAnyLogged = true;
@@ -86,15 +86,15 @@ void Logger::LogPattern(
         }
 
         constexpr ENUM_ARRAY<eLogLevel, std::string_view> kNames = {
-            "INFO",
             "TRACE",
             "DEBUG",
+            "INFO",
             "WARN",
             "ERROR",
             "FATAL"
         };
 
-        FormatImpl(_level, "[{}]", std::make_format_args(kNames[_level]), false);
+        VFormatImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
         bAnyLogged = true;
     }
 
@@ -106,7 +106,7 @@ void Logger::LogPattern(
             LogImpl(_level, " ", false);
         }
 
-        FormatImpl(_level, "[{}]", std::make_format_args(m_name), false);
+        VFormatImpl(_level, "[{}]", std::make_format_args(m_name), false);
         bAnyLogged = true;
     }
 

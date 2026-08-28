@@ -4,39 +4,22 @@
 #include <format>
 #include <span>
 
+#define DT string_converter_detail
+
 namespace jug
 {
 
-struct ToUtf16Result
-{
-    wchar_t* pEndOrNull = nullptr;   // 변환된 문자열의 끝을 가리키는 포인터. 인자로 빈 span을 넘길 경우 nullptr이 됨
-    size_t   size       = 0;         // 변환될 문자열의 길이
-};
+// 용량부족시 문자열은 단순히 잘린 문자열을 리턴함
+// 반환값은 실제로 쓰여진 문자열의 길이임.
 
-struct ToUtf8Result
-{
-    char*  pEndOrNull = nullptr;   // 변환된 문자열의 끝을 가리키는 포인터. 인자로 빈 span을 넘길 경우 nullptr이 됨
-    size_t size       = 0;         // 변환될 문자열의 길이
-};
+size_t                    ToUtf8(std::span<char> _outUtf8, std::wstring_view _utf16, bool _bTerminate = true);
+[[nodiscard]] std::string ToUtf8(std::wstring_view _utf16);
+[[nodiscard]] size_t      CalcSizeToUtf8(std::wstring_view _utf16);
 
-// 버퍼의 용량이 부족할 시 잘린 문자열이 반환됨.
-// pEndOrNull == nullptr          : _outBufOrEmpty가 비어있음. 변환될 문자열의 길이만 필요한 경우
-// pEndOrNull - pBegin            : 변환된 문자열의 길이
-// pEndOrNull - pBegin == size    : 변환된 문자열이 버퍼에 완전히 들어감
-// pEndOrNull - pBegin < size     : 변환된 문자열이 버퍼에 다 들어가지 못함
-
-// ==========================================================
-//  Utf8 -> Utf16
-// ==========================================================
-
-ToUtf16Result              ToUtf16(std::span<wchar_t> _outBufOrEmpty, std::string_view _utf8, bool _bTerminate = false);
-[[nodiscard]] std::wstring ToUtf16(std::string_view _str);
-
-// ==========================================================
-//  Utf16 -> Utf8
-// =========================================================
-
-ToUtf8Result              ToUtf8(std::span<char> _outBufOrEmpty, std::wstring_view _utf16, bool _bTerminate = false);
-[[nodiscard]] std::string ToUtf8(std::wstring_view _str);
+size_t                     ToUtf16(std::span<wchar_t> _outUtf16, std::string_view _utf8, bool _bTerminate = true);
+[[nodiscard]] std::wstring ToUtf16(std::string_view _utf8);
+[[nodiscard]] size_t       CalcSizeToUtf16(std::string_view _utf8);
 
 }   // namespace jug
+
+#undef DT

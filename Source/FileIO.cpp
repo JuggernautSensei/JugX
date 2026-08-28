@@ -34,7 +34,7 @@ FileIO& FileIO::operator=(
     return *this;
 }
 
-eFileIOError FileIO::Seek(
+void FileIO::Seek(
     const int64_t     _offset,
     const eSeekOrigin _origin) const
 {
@@ -54,90 +54,40 @@ eFileIOError FileIO::Seek(
             break;
         default:
             JUG_ASSERT(false, "Invalid seek origin.\n");
-            return eFileIOError::RuntimeError;
     }
 
     const int err = ::_fseeki64(m_pFile, _offset, origin);
-    if (err != 0)
-    {
-        return ToFileIOError(errno);
-    }
-    return eFileIOError::None;
+    JUG_ASSERT(err == 0, "Failed to seek file position.\n");
 }
 
-FileIOResult<int64_t> FileIO::Tell() const
+int64_t FileIO::Tell() const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
 
     const int64_t n = ::_ftelli64(m_pFile);
-    if (n == -1)
-    {
-        return Failed { ToFileIOError(errno) };
-    }
+    JUG_ASSERT(n != -1, "Failed to tell file position.\n");
     return n;
 }
 
-FileIOResult<int64_t> FileIO::GetSize() const
+int64_t FileIO::GetSize() const
 {
-    FileIOResult<int64_t> curPosOr = Tell();
-    if (!curPosOr)
-    {
-        return curPosOr;
-    }
-
-    const eFileIOError err = Seek(0, eSeekOrigin::End);
-    if (err != eFileIOError::None)
-    {
-        return Failed { err };
-    }
-
-    FileIOResult<int64_t> sizeOr = Tell();
-    if (!sizeOr)
-    {
-        return sizeOr;
-    }
-
-    const eFileIOError rewindErr = Seek(curPosOr.GetValue(), eSeekOrigin::Set);
-    if (rewindErr != eFileIOError::None)
-    {
-        return Failed { rewindErr };
-    }
-
-    return sizeOr;
+    const int64_t cur = Tell();
+    Seek(0, eSeekOrigin::End);
+    const int64_t size = Tell();
+    Seek(cur, eSeekOrigin::Set);
+    return size;
 }
 
-FileIOResult<int64_t> FileIO::GetRemain() const
+int64_t FileIO::GetRemain() const
 {
-    FileIOResult<int64_t> curPosOr = Tell();
-    if (!curPosOr)
-    {
-        return curPosOr;
-    }
-
-    const eFileIOError err = Seek(0, eSeekOrigin::End);
-    if (err != eFileIOError::None)
-    {
-        return Failed { err };
-    }
-
-    FileIOResult<int64_t> sizeOr = Tell();
-    if (!sizeOr)
-    {
-        return sizeOr;
-    }
-
-    const eFileIOError rewindErr = Seek(curPosOr.GetValue(), eSeekOrigin::Set);
-    if (rewindErr != eFileIOError::None)
-    {
-        return Failed { rewindErr };
-    }
-
-    return sizeOr.GetValue() - curPosOr.GetValue();
+    const int64_t cur  = Tell();
+    const int64_t size = GetSize();
+    return size - cur;
 }
 
-eFileIOError FileIO::Rewind() const
+void FileIO::Rewind() const
 {
-    return Seek(0, eSeekOrigin::Set);
+    Seek(0, eSeekOrigin::Set);
 }
 
 FILE* FileIO::GetFile() const
@@ -150,18 +100,17 @@ bool FileIO::IsOpened() const
     return m_pFile != nullptr;
 }
 
-eFileIOError FileIO::Close()
+void FileIO::Close()
 {
     if (m_pFile)
     {
-        const int err = ::fclose(m_pFile);
-        m_pFile       = nullptr;
-        if (err != 0)
+        if (::fclose(m_pFile) == EOF)
         {
-            return ToFileIOError(err);
+            JUG_ASSERT(false, "Failed to close file.\n");
         }
+
+        m_pFile = nullptr;
     }
-    return eFileIOError::None;
 }
 
 FileIO::operator bool() const
@@ -187,53 +136,48 @@ FileIOResult<size_t> FileReader::Read(
     JUG_ASSERT(m_pFile, "File is not open.\n");
     JUG_ASSERT(_outBuffer.GetSize() > 0, "Output buffer size is zero.\n");
 
-    const size_t bufSize   = _outBuffer.GetSize();
-    const size_t elemCount = bufSize;
-    const size_t read      = ::fread_s(_outBuffer.GetPtr(), bufSize, 1, elemCount, m_pFile);
-    if (read < elemCount && !::feof(m_pFile))
+    const size_t size = _outBuffer.GetSize();
+    const size_t read = ::fread_s(_outBuffer.GetPtr(), size, 1, size, m_pFile);
+    if (read < size && !::feof(m_pFile))
     {
         return Failed { ToFileIOError(errno) };
     }
     return read;
 }
 
-FileIOResult<size_t> FileReader::ReadUntil(
+FileIOResult<size_t> FileReader::Read(
     const MutableMemoryView _outBuffer,
     const char              _delimiter) const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
     JUG_ASSERT(_outBuffer.GetSize() > 0, "Output buffer size is zero.\n");
 
-    const size_t bufSize   = _outBuffer.GetSize();
-    const size_t elemCount = bufSize;   // 읽을 수 있는 최대 크기 계산
-    char*        buffer    = reinterpret_cast<char*>(_outBuffer.GetPtr());
-    size_t       read      = 0;
+    const size_t size = _outBuffer.GetSize();
+    char*        buf  = reinterpret_cast<char*>(_outBuffer.GetPtr());
 
-    while (read < elemCount)
+    size_t read = 0;
+    while (read < size)
     {
         const int c = ::fgetc(m_pFile);
         if (c == EOF)
         {
+            // End of file reached
             if (::feof(m_pFile))
             {
-                break;   // End of file reached
+                break;
             }
+
             return Failed { ToFileIOError(errno) };
         }
 
+        // delimiter found
         if (c == _delimiter)
         {
-            break;   // Delimiter found
+            break;
         }
-        buffer[read++] = static_cast<char>(c);
+        buf[read++] = static_cast<char>(c);
     }
     return read;
-}
-
-FileIOResult<size_t> FileReader::ReadLine(
-    const MutableMemoryView _outBuffer) const
-{
-    return ReadUntil(_outBuffer, '\n');
 }
 
 bool FileReader::IsEOF() const
@@ -276,14 +220,34 @@ FileIOResult<size_t> FileWriter::Write(
     JUG_ASSERT(m_pFile, "File is not open.\n");
     JUG_ASSERT(_mem.GetSize() > 0, "Binary data size is zero.\n");
 
-    const size_t bufSize   = _mem.GetSize();
-    const size_t elemCount = bufSize;
-    const size_t written   = ::fwrite(_mem.GetPtr(), 1, elemCount, m_pFile);
-    if (written < elemCount)
+    const size_t size    = _mem.GetSize();
+    const size_t written = ::fwrite(_mem.GetPtr(), 1, size, m_pFile);
+    if (written < size)
     {
         return Failed { ToFileIOError(errno) };
     }
     return written;
+}
+
+FileIOResult<size_t> FileWriter::Write(
+    const char* _str) const
+{
+    JUG_ASSERT(m_pFile, "File is not open.\n");
+    JUG_ASSERT(_str, "String is null.\n");
+
+    const int written = ::fputs(_str, m_pFile);
+    if (written == EOF)
+    {
+        return Failed { ToFileIOError(errno) };
+    }
+    return written;
+}
+
+FileIOResult<size_t> FileWriter::Write(
+    const std::string_view _format,
+    const std::format_args _args) const
+{
+    return VFormat(m_pFile, _format, _args);
 }
 
 eFileIOError FileWriter::Flush() const
@@ -294,40 +258,6 @@ eFileIOError FileWriter::Flush() const
         return ToFileIOError(errno);
     }
     return eFileIOError::None;
-}
-
-FileIOResult<size_t> FileWriter::Write(
-    const char _ch) const
-{
-    return Write(_ch);
-}
-
-FileIOResult<size_t> FileWriter::WriteLine(
-    const std::string_view _str) const
-{
-    size_t n = 0;
-
-    // write string 
-    if (!_str.empty())
-    {
-        FileIOResult<size_t> len0 = Write(_str);
-        if (!len0)
-        {
-            return Failed { len0.GetError() };
-        }
-
-        n += len0.GetValue();
-    }
-
-    // write newline
-    FileIOResult<size_t> len1 = Write('\n');
-    if (!len1)
-    {
-        return Failed { len1.GetError() };
-    }
-    n += len1.GetValue();
-
-    return n;
 }
 
 eFileIOError FileWriter::Open_(

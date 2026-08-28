@@ -131,7 +131,6 @@ private:
     void Write_(uint64_t _value);
     void Write_(double _value);
     void Write_(std::string_view _value);
-    void Write_(const char* _value);
 
     template<typename T>
         requires std::is_enum_v<T>
