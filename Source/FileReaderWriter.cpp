@@ -1,4 +1,4 @@
-﻿#include "FileIO.h"
+﻿#include "FileReaderWriter.h"
 
 #include <cstdarg>
 #include <utility>
@@ -7,6 +7,42 @@
 
 namespace jug
 {
+
+namespace
+{
+    struct Formatter
+    {
+        using value_type = char;
+
+        explicit Formatter(
+            FILE* _pFile)
+            : pFile(_pFile)
+        {
+        }
+
+        void push_back(
+            const char _value)
+        {
+            if (error != eFileError::None)
+            {
+                return;
+            }
+
+            if (::fputc(_value, pFile) == EOF)
+            {
+                error = eFileError::IOError;
+            }
+            else
+            {
+                ++written;
+            }
+        }
+
+        FILE*        pFile   = nullptr;
+        size_t       written = 0;
+        eFileError error   = eFileError::None;
+    };
+}   // namespace
 
 // ===============================================
 //  File IO
@@ -118,19 +154,19 @@ FileIO::operator bool() const
     return IsOpened();
 }
 
-FileIOResult<FileReader> FileReader::Open(
-    const std::filesystem::path& _path)
+FileResult<FileReader> FileReader::Open(
+    const FilePath& _path)
 {
     FileReader         reader = {};
-    const eFileIOError err    = reader.Open_(_path);
-    if (err != eFileIOError::None)
+    const eFileError err    = reader.Open_(_path);
+    if (err != eFileError::None)
     {
         return Failed { err };
     }
     return reader;
 }
 
-FileIOResult<size_t> FileReader::Read(
+FileResult<size_t> FileReader::Read(
     const MutableMemoryView _outBuffer) const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
@@ -140,12 +176,12 @@ FileIOResult<size_t> FileReader::Read(
     const size_t read = ::fread_s(_outBuffer.GetPtr(), size, 1, size, m_pFile);
     if (read < size && !::feof(m_pFile))
     {
-        return Failed { ToFileIOError(errno) };
+        return Failed { ToFileError(errno) };
     }
     return read;
 }
 
-FileIOResult<size_t> FileReader::Read(
+FileResult<size_t> FileReader::Read(
     const MutableMemoryView _outBuffer,
     const char              _delimiter) const
 {
@@ -167,7 +203,7 @@ FileIOResult<size_t> FileReader::Read(
                 break;
             }
 
-            return Failed { ToFileIOError(errno) };
+            return Failed { ToFileError(errno) };
         }
 
         // delimiter found
@@ -186,35 +222,35 @@ bool FileReader::IsEOF() const
     return ::feof(m_pFile) != 0;
 }
 
-eFileIOError FileReader::Open_(
-    const std::filesystem::path& _path)
+eFileError FileReader::Open_(
+    const FilePath& _path)
 {
     const errno_t err = ::_wfopen_s(&m_pFile, _path.c_str(), L"rb");
     if (err != 0)
     {
-        return ToFileIOError(err);
+        return ToFileError(err);
     }
-    return eFileIOError::None;
+    return eFileError::None;
 }
 
 // ===============================================
 //  File Writer
 // ===============================================
 
-FileIOResult<FileWriter> FileWriter::Open(
-    const std::filesystem::path& _path,
+FileResult<FileWriter> FileWriter::Open(
+    const FilePath& _path,
     const bool                   _bAppend)
 {
     FileWriter         writer = {};
-    const eFileIOError err    = writer.Open_(_path, _bAppend);
-    if (err != eFileIOError::None)
+    const eFileError err    = writer.Open_(_path, _bAppend);
+    if (err != eFileError::None)
     {
         return Failed { err };
     }
     return writer;
 }
 
-FileIOResult<size_t> FileWriter::Write(
+FileResult<size_t> FileWriter::Write(
     const MemoryView _mem) const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
@@ -224,12 +260,12 @@ FileIOResult<size_t> FileWriter::Write(
     const size_t written = ::fwrite(_mem.GetPtr(), 1, size, m_pFile);
     if (written < size)
     {
-        return Failed { ToFileIOError(errno) };
+        return Failed { ToFileError(errno) };
     }
     return written;
 }
 
-FileIOResult<size_t> FileWriter::Write(
+FileResult<size_t> FileWriter::Write(
     const char* _str) const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
@@ -238,39 +274,45 @@ FileIOResult<size_t> FileWriter::Write(
     const int written = ::fputs(_str, m_pFile);
     if (written == EOF)
     {
-        return Failed { ToFileIOError(errno) };
+        return Failed { ToFileError(errno) };
     }
     return written;
 }
 
-FileIOResult<size_t> FileWriter::Write(
-    const std::string_view _format,
+FileResult<size_t> FileWriter::WriteV(
+    const StringView       _format,
     const std::format_args _args) const
 {
-    return VFormat(m_pFile, _format, _args);
+    Formatter formatter { m_pFile };
+    std::vformat_to(std::back_inserter(formatter), _format, _args);
+    if (formatter.error == eFileError::None)
+    {
+        return formatter.written;
+    }
+    return Failed { formatter.error };
 }
 
-eFileIOError FileWriter::Flush() const
+eFileError FileWriter::Flush() const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
     if (std::fflush(m_pFile) != 0)
     {
-        return ToFileIOError(errno);
+        return ToFileError(errno);
     }
-    return eFileIOError::None;
+    return eFileError::None;
 }
 
-eFileIOError FileWriter::Open_(
-    const std::filesystem::path& _path,
+eFileError FileWriter::Open_(
+    const FilePath& _path,
     const bool                   _bAppend)
 {
     const wchar_t* mode = _bAppend ? L"ab" : L"wb";
     const errno_t  err  = ::_wfopen_s(&m_pFile, _path.c_str(), mode);
     if (err != 0)
     {
-        return ToFileIOError(err);
+        return ToFileError(err);
     }
-    return eFileIOError::None;
+    return eFileError::None;
 }
 
 }   // namespace jug

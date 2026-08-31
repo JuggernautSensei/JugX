@@ -56,22 +56,14 @@ struct FRUSTUM
         const VECTOR4 c2 = VECTOR4 { _mtx.r[0].e[2], _mtx.r[1].e[2], _mtx.r[2].e[2], _mtx.r[3].e[2] };
         const VECTOR4 c3 = VECTOR4 { _mtx.r[0].e[3], _mtx.r[1].e[3], _mtx.r[2].e[3], _mtx.r[3].e[3] };
 
-        // FRUSTUM ret;
-        // ret.planes[eFrustumPlane::Right] = PLANE { c3 - c0 };
-        // ret.planes[eFrustumPlane::Left]  = PLANE { c3 + c0 };
-        // ret.planes[eFrustumPlane::Up]    = PLANE { c3 - c1 };
-        // ret.planes[eFrustumPlane::Down]  = PLANE { c3 + c1 };
-        // ret.planes[eFrustumPlane::Near]  = PLANE { c2 };
-        // ret.planes[eFrustumPlane::Far]   = PLANE { c3 - c2 };
-
-        return FRUSTUM {
-            PLANE { c3 - c0 },
-            PLANE { c3 + c0 },
-            PLANE { c3 - c1 },
-            PLANE { c3 + c1 },
-            PLANE { c3 - c2 },
-            PLANE { c2 }
-        };
+        FRUSTUM ret;
+        ret.planes[eFrustumPlane::Right] = PLANE { c3 - c0 };
+        ret.planes[eFrustumPlane::Left]  = PLANE { c3 + c0 };
+        ret.planes[eFrustumPlane::Up]    = PLANE { c3 - c1 };
+        ret.planes[eFrustumPlane::Down]  = PLANE { c3 + c1 };
+        ret.planes[eFrustumPlane::Near]  = PLANE { c2 };
+        ret.planes[eFrustumPlane::Far]   = PLANE { c3 - c2 };
+        return ret;
     }
 
     // =======================================================
@@ -189,7 +181,7 @@ struct FRUSTUM
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(FRUSTUM);
+JUG_STATIC_ASSERT_POD(FRUSTUM);
 
 // ========================================================
 //  Constants
@@ -211,35 +203,27 @@ struct MathConstants<FRUSTUM>
     const FRUSTUM& _frustum,
     const MATRIX&  _invTransMtx)   // 평면 변환 * 6임. 역-전치 행렬을 사용해야함.
 {
-    // constexpr union member 제약 때문에.. 아래같은 루프를 못돌림.
-    // FRUSTUM ret;
-    // for (const eFrustumPlane e: RangesOf<eFrustumPlane>())
-    // {
-    //     ret.planes[e] = Transform(_frustum.planes[e], _invTransMtx);
-    // }
-    // return ret;
-
-    return FRUSTUM {
-        Transform(_frustum.planes[eFrustumPlane::Right], _invTransMtx),
-        Transform(_frustum.planes[eFrustumPlane::Left], _invTransMtx),
-        Transform(_frustum.planes[eFrustumPlane::Up], _invTransMtx),
-        Transform(_frustum.planes[eFrustumPlane::Down], _invTransMtx),
-        Transform(_frustum.planes[eFrustumPlane::Far], _invTransMtx),
-        Transform(_frustum.planes[eFrustumPlane::Near], _invTransMtx)
-    };
+    FRUSTUM ret;
+    ret.planes[eFrustumPlane::Right] = Transform(_frustum.planes[eFrustumPlane::Right], _invTransMtx);
+    ret.planes[eFrustumPlane::Left]  = Transform(_frustum.planes[eFrustumPlane::Left], _invTransMtx);
+    ret.planes[eFrustumPlane::Up]    = Transform(_frustum.planes[eFrustumPlane::Up], _invTransMtx);
+    ret.planes[eFrustumPlane::Down]  = Transform(_frustum.planes[eFrustumPlane::Down], _invTransMtx);
+    ret.planes[eFrustumPlane::Far]   = Transform(_frustum.planes[eFrustumPlane::Far], _invTransMtx);
+    ret.planes[eFrustumPlane::Near]  = Transform(_frustum.planes[eFrustumPlane::Near], _invTransMtx);
+    return ret;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr FRUSTUM Normalize(
     const FRUSTUM& _frustum)
 {
-    return FRUSTUM {
-        Normalize(_frustum.planes[eFrustumPlane::Right]),
-        Normalize(_frustum.planes[eFrustumPlane::Left]),
-        Normalize(_frustum.planes[eFrustumPlane::Up]),
-        Normalize(_frustum.planes[eFrustumPlane::Down]),
-        Normalize(_frustum.planes[eFrustumPlane::Far]),
-        Normalize(_frustum.planes[eFrustumPlane::Near])
-    };
+    FRUSTUM ret;
+    ret.planes[eFrustumPlane::Right] = Normalize(_frustum.planes[eFrustumPlane::Right]);
+    ret.planes[eFrustumPlane::Left]  = Normalize(_frustum.planes[eFrustumPlane::Left]);
+    ret.planes[eFrustumPlane::Up]    = Normalize(_frustum.planes[eFrustumPlane::Up]);
+    ret.planes[eFrustumPlane::Down]  = Normalize(_frustum.planes[eFrustumPlane::Down]);
+    ret.planes[eFrustumPlane::Far]   = Normalize(_frustum.planes[eFrustumPlane::Far]);
+    ret.planes[eFrustumPlane::Near]  = Normalize(_frustum.planes[eFrustumPlane::Near]);
+    return ret;
 }
 
 [[nodiscard]] JUG_MATH_API inline bool IsNormalized(

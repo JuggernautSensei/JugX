@@ -1,15 +1,11 @@
 ﻿// JsonSerializer 동작 검증용 테스트 (Google Test)
 //
 // 에러 모델: ReadTo/ReadFieldTo/Read/ReadField 등은 실패해도 예외를 던지지 않고,
-// 각 호출이 독립적으로 성공/실패를 자기 리턴값(bool 또는 default값)으로 알려준다.
+// 각 호출이 독립적으로 성공/실패를 자기 리턴값(bool)으로 알려준다.
 // 한 호출이 실패해도 이후의 다른 호출들은 전혀 영향받지 않고 정상적으로 계속 읽힌다.
-// HasError()/GetLastError()는 "지금 상태가 깨끗한가"가 아니라 "여태 뭐라도 실패한 적 있나(가장 최근에 뭐가 문제였나)"를
-// 보고하는 전역 진단값이다 - 성공한 호출이 이전 에러를 지워주지 않으므로, 특정 호출 하나의 성공/실패를
-// 확인하려면 그 호출 직후에 GetLastError()를 보거나 리턴값을 써야 한다.
-// 단, default를 받는 오버로드(ReadTo/ReadFieldTo/Read/ReadField의 default 버전)는 예외 -
-// 필드가 없거나 타입이 안 맞아서 default로 대체됐어도 그 실패를 m_lastError에 안 남긴다
-// (호출부가 default를 줬다는 건 "이 경우는 내가 감당한다"는 의사표시로 취급 - 실패를 리턴값/bool로만 알리고
-// 전역 에러 상태는 오염시키지 않음). default 없는 버전만 위의 "실패가 누적돼서 남는다" 규칙을 따른다.
+// HasError()/GetLastError()/GetLastErrorMsg()는 "지금 상태가 깨끗한가"가 아니라 "가장 최근 실패가
+// 뭐였나"를 보고하는 전역 진단값이다 - 실패할 때마다 덮어써지고(성공은 건드리지 않음), 특정 호출
+// 하나의 성공/실패를 확인하려면 그 호출의 리턴값을 써야 한다.
 //
 // 배열/오브젝트 순회: Read/ReadTo는 현재 값을 소비하면서 커서를 자동으로 다음으로 전진시킨다.
 // 그래서 순회는 그냥 `while (reader.HasNext()) { reader.Read<T>(); }` 로 충분하다.
@@ -430,33 +426,12 @@ TEST(JsonReader, ObjectKeyValueIteration)
 
 TEST(JsonReader, OptionalField)
 {
-    JsonReader reader = test::MakeReader(R"({"present":7,"wrongType":"x"})");
+    JsonReader reader = test::MakeReader(R"({"present":7})");
 
     reader.BeginObject();
     EXPECT_TRUE(reader.HasField("present"));
     EXPECT_FALSE(reader.HasField("absent"));
-    EXPECT_EQ(reader.ReadField<int>("present", 99), 7);
-    EXPECT_EQ(reader.ReadField<int>("absent", 99), 99);
-    EXPECT_EQ(reader.ReadField<int>("wrongType", 55), 55);
-    EXPECT_EQ(reader.ReadField<std::string>("absent", std::string { "def" }), "def");
     reader.EndObject();
-
-    // default를 쓴 호출은 실패해도 에러로 안 남는다 (필드 없음/타입 불일치 둘 다) - 정상적으로 default를 썼을 뿐
-    // 진짜 문제가 있었던 건 아니라는 뜻.
-    EXPECT_FALSE(reader.HasError());
-}
-
-TEST(JsonReader, ReadOrKeepsExistingError)
-{
-    JsonReader reader = test::MakeReader(R"({"s":"x"})");
-
-    reader.BeginObject();
-    int value = 0;
-    reader.ReadFieldTo("s", value);
-    ASSERT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
-
-    EXPECT_EQ(reader.ReadField<int>("s", 5), 5);
-    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);
 }
 
 TEST(JsonReader, ParseErrors)
@@ -549,7 +524,7 @@ TEST(JsonReader, ReadFailureDoesNotBlockOtherReads)
     EXPECT_EQ(sibling, "ok");   // 이전 실패랑 무관하게 정상적으로 읽힘
 
     reader.EndObject();
-    EXPECT_TRUE(reader.HasError());   // GetLastError()는 여전히 가장 최근/최초의 문제(TypeMismatch)를 보고함
+    EXPECT_TRUE(reader.HasError());   // GetLastError()는 마지막으로 발생한 문제(TypeMismatch)를 보고함
 }
 
 TEST(JsonReader, ErrorDoesNotBreakScopeOrIteration)
@@ -581,7 +556,7 @@ TEST(JsonReader, ErrorDoesNotBreakScopeOrIteration)
     EXPECT_EQ(sum, 3);
     reader.EndObject();
 
-    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);   // "bad" 필드의 에러가 마지막으로 남아있음
+    EXPECT_EQ(reader.GetLastError(), eSerializerError::TypeMismatch);   // 이후 읽기가 전부 성공해서 "bad" 필드의 에러가 마지막 에러로 그대로 남아있음
 }
 
 TEST(JsonReader, CustomTypes)
@@ -615,12 +590,9 @@ TEST(JsonReader, CustomTypes)
     EXPECT_EQ(reader.ReadField<test::Rgba>("color"), color);
 
     // non-default-constructible + factory 타입(Handle: static Deserialize, Version: 프리 함수 Deserialize)은
-    // Read<T>()/ReadField<T>()를 못 쓰니 default 버전으로 읽는다.
-    const test::Handle readHandle = reader.ReadField<test::Handle>("handle", test::Handle { 0 });
-    EXPECT_EQ(readHandle.GetID(), handle.GetID());
-
-    const test::Version readVersion = reader.ReadField<test::Version>("version", test::Version { 0, 0 });
-    EXPECT_EQ(readVersion, version);
+    // ReadField<T>(key)로 못 읽는다 - 필드 하나 없어도 T{}로 되돌릴 방법이 없어서 아예 requires로 막아둠.
+    // Read<T>()로 커서 위치에서 직접 읽는 형태만 지원 (배열 원소 등, 위의 "positions" 읽기 참고).
+    // 위쪽 EXPECT_NE로 handle/version이 정상 직렬화됐는지는 이미 문자열로 확인함.
 
     reader.BeginArray("positions");
     EXPECT_EQ(reader.GetSize(), 2u);

@@ -33,26 +33,26 @@ void GroupLogger::RemoveLogger(
     }
 }
 
-void GroupLogger::LogImpl(
+void GroupLogger::WriteImpl(
     const eLogLevel        _level,
-    const std::string_view _msg,
+    const StringView _msg,
     const bool             _bEndLog)
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->LogImpl(_level, _msg, _bEndLog);
+        pLogger->WriteImpl(_level, _msg, _bEndLog);
     }
 }
 
-void GroupLogger::VFormatImpl(
+void GroupLogger::WriteImpl(
     const eLogLevel        _level,
-    const std::string_view _msg,
+    const StringView _msg,
     const std::format_args _args,
     const bool              _bEndLog)
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->VFormatImpl(_level, _msg, _args, _bEndLog);
+        pLogger->WriteImpl(_level, _msg, _args, _bEndLog);
     }
 }
 

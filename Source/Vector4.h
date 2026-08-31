@@ -15,8 +15,7 @@ namespace jug
 
 struct alignas(16) VECTOR4
 {
-    using ValueT                 = float;
-    constexpr static size_t kDim = 4;
+    using ValueT = float;
 
     VECTOR4() = default;
 
@@ -290,6 +289,8 @@ struct alignas(16) VECTOR4
     const static VECTOR4 kMax;
     const static VECTOR4 kMin;
 
+    constexpr static size_t kDim = 4;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -300,7 +301,7 @@ struct alignas(16) VECTOR4
             float z;
             float w;
         };
-        std::array<float, 4> e;
+        ARRAY<float, 4> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
@@ -529,7 +530,7 @@ struct alignas(16) VECTOR4
             float z;
             float w;
         };
-        std::array<float, 4> e;
+        ARRAY<float, 4> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
@@ -538,7 +539,7 @@ struct alignas(16) VECTOR4
 
 static_assert(sizeof(VECTOR4) == 16, "VECTOR4 must be tightly packed");
 static_assert(alignof(VECTOR4) == 16, "VECTOR4 must be 16-byte aligned for SIMD");
-JUG_CHECK_POD_BY_STATIC_ASSERT(VECTOR4);
+JUG_STATIC_ASSERT_POD(VECTOR4);
 
 // =======================================================
 //  Constants

@@ -10,7 +10,7 @@ namespace jug
 
 namespace
 {
-    constexpr ENUM_ARRAY<eLogLevel, std::string_view> kColors = {
+    constexpr ENUM_ARRAY<eLogLevel, StringView> kColors = {
         "\033[0m",          // TRACE 흰색
         "\033[38;5;39m",    // DEBUG 하늘색
         "\033[38;5;46m",    // INFO  초록
@@ -19,12 +19,12 @@ namespace
         "\033[38;5;201m"    // FATAL 마젠타
     };
 
-    constexpr std::string_view kResetColor = "\033[0m";
+    constexpr StringView kResetColor = "\033[0m";
 }   // namespace
 
-void ConsoleLogger::LogImpl(
+void ConsoleLogger::WriteImpl(
     const eLogLevel        _level,
-    const std::string_view _msg,
+    const StringView _msg,
     const bool             _bEndLog)
 {
     std::cout << kColors[_level] << _msg << kResetColor;
@@ -34,9 +34,9 @@ void ConsoleLogger::LogImpl(
     }
 }
 
-void ConsoleLogger::VFormatImpl(
+void ConsoleLogger::WriteImpl(
     const eLogLevel        _level,
-    const std::string_view _msg,
+    const StringView _msg,
     const std::format_args _args,
     const bool             _bEndLog)
 {

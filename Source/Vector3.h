@@ -14,8 +14,7 @@ namespace jug
 
 struct VECTOR3
 {
-    using ValueT                 = float;
-    constexpr static size_t kDim = 3;
+    using ValueT = float;
 
     JUG_MATH_API VECTOR3() = default;
 
@@ -248,6 +247,8 @@ struct VECTOR3
     const static VECTOR3 kMax;
     const static VECTOR3 kMin;
 
+    constexpr static size_t kDim = 3;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -257,12 +258,12 @@ struct VECTOR3
             float y;
             float z;
         };
-        std::array<float, 3> e;
+        ARRAY<float, 3> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(VECTOR3);
+JUG_STATIC_ASSERT_POD(VECTOR3);
 
 // =======================================================
 //  Constants

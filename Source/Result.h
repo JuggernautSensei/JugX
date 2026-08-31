@@ -6,12 +6,10 @@
 
 #include "Config.h"   // NOLINT
 
-#define DT expect_detail
-
 namespace jug
 {
 
-namespace DT
+namespace result_detail
 {
     enum class eState
     {
@@ -62,11 +60,11 @@ public:
         const Result& _value)
         : m_state(_value.m_state)
     {
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), _value.m_value);
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), _value.m_error);
         }
@@ -76,11 +74,11 @@ public:
         Result&& _value) noexcept
         : m_state(_value.m_state)
     {
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), std::move(_value.m_value));
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), std::move(_value.m_error));
         }
@@ -93,11 +91,11 @@ public:
         const Result<U, F>& _value)
         : m_state(_value.m_state)
     {
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), _value.m_value);
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), _value.m_error);
         }
@@ -109,11 +107,11 @@ public:
         Result<U, F> && _value)
         : m_state(_value.m_state)
     {
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), std::move(_value.m_value));
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), std::move(_value.m_error));
         }
@@ -127,11 +125,11 @@ public:
         {
             Reset();
             m_state = _value.m_state;
-            if (m_state == DT::eState::Value)
+            if (m_state == result_detail::eState::Value)
             {
                 std::construct_at(std::addressof(m_value), _value.m_value);
             }
-            else if (m_state == DT::eState::Error)
+            else if (m_state == result_detail::eState::Error)
             {
                 std::construct_at(std::addressof(m_error), _value.m_error);
             }
@@ -146,11 +144,11 @@ public:
         {
             Reset();
             m_state = _value.m_state;
-            if (m_state == DT::eState::Value)
+            if (m_state == result_detail::eState::Value)
             {
                 std::construct_at(std::addressof(m_value), std::move(_value.m_value));
             }
-            else if (m_state == DT::eState::Error)
+            else if (m_state == result_detail::eState::Error)
             {
                 std::construct_at(std::addressof(m_error), std::move(_value.m_error));
             }
@@ -166,11 +164,11 @@ public:
     {
         Reset();
         m_state = _value.m_state;
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), _value.m_value);
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), _value.m_error);
         }
@@ -184,11 +182,11 @@ public:
     {
         Reset();
         m_state = _value.m_state;
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::construct_at(std::addressof(m_value), std::move(_value.m_value));
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::construct_at(std::addressof(m_error), std::move(_value.m_error));
         }
@@ -207,14 +205,14 @@ public:
 
     /* implicit */ Result(
         const T& _value)
-        : m_state(DT::eState::Value)
+        : m_state(result_detail::eState::Value)
     {
         std::construct_at(std::addressof(m_value), _value);
     }
 
     /* implicit */ Result(
         T&& _value)
-        : m_state(DT::eState::Value)
+        : m_state(result_detail::eState::Value)
     {
         std::construct_at(std::addressof(m_value), std::move(_value));
     }
@@ -223,7 +221,7 @@ public:
     /* implicit */ Result(
         const std::in_place_t,
         TArgs&&... _args)
-        : m_state(DT::eState::Value)
+        : m_state(result_detail::eState::Value)
     {
         std::construct_at(std::addressof(m_value), std::forward<TArgs>(_args)...);
     }
@@ -232,7 +230,7 @@ public:
         const T& _value)
     {
         Reset();
-        m_state = DT::eState::Value;
+        m_state = result_detail::eState::Value;
         std::construct_at(std::addressof(m_value), _value);
         return *this;
     }
@@ -241,7 +239,7 @@ public:
         T&& _value)
     {
         Reset();
-        m_state = DT::eState::Value;
+        m_state = result_detail::eState::Value;
         std::construct_at(std::addressof(m_value), std::move(_value));
         return *this;
     }
@@ -252,14 +250,14 @@ public:
 
     /* implicit */ Result(
         const Failed<E>& _failed)
-        : m_state(DT::eState::Error)
+        : m_state(result_detail::eState::Error)
     {
         std::construct_at(std::addressof(m_error), _failed.error);
     }
 
     /* implicit */ Result(
         Failed<E>&& _failed)
-        : m_state(DT::eState::Error)
+        : m_state(result_detail::eState::Error)
     {
         std::construct_at(std::addressof(m_error), std::move(_failed.error));
     }
@@ -270,26 +268,26 @@ public:
 
     [[nodiscard]] bool HasValue() const
     {
-        return m_state == DT::eState::Value;
+        return m_state == result_detail::eState::Value;
     }
 
     [[nodiscard]] T& GetValue()
     {
-        JUG_ASSERT(m_state == DT::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
         return m_value;
     }
 
     [[nodiscard]] const T& GetValue() const
     {
-        JUG_ASSERT(m_state == DT::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
         return m_value;
     }
 
     [[nodiscard]] T Take()
     {
-        JUG_ASSERT(m_state == DT::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
         T value = std::move(m_value);
-        m_state = DT::eState::Invalid;
+        m_state = result_detail::eState::Invalid;
         std::destroy_at(std::addressof(m_value));
         return value;
     }
@@ -316,18 +314,18 @@ public:
 
     [[nodiscard]] bool HasError() const
     {
-        return m_state == DT::eState::Error;
+        return m_state == result_detail::eState::Error;
     }
 
     [[nodiscard]] E& GetError()
     {
-        JUG_ASSERT(m_state == DT::eState::Error, "Result does not contain an error");
+        JUG_ASSERT(m_state == result_detail::eState::Error, "Result does not contain an error");
         return m_error;
     }
 
     [[nodiscard]] const E& GetError() const
     {
-        JUG_ASSERT(m_state == DT::eState::Error, "Result does not contain an error");
+        JUG_ASSERT(m_state == result_detail::eState::Error, "Result does not contain an error");
         return m_error;
     }
 
@@ -338,15 +336,15 @@ public:
 
     void Reset()
     {
-        if (m_state == DT::eState::Value)
+        if (m_state == result_detail::eState::Value)
         {
             std::destroy_at(std::addressof(m_value));
         }
-        else if (m_state == DT::eState::Error)
+        else if (m_state == result_detail::eState::Error)
         {
             std::destroy_at(std::addressof(m_error));
         }
-        m_state = DT::eState::Invalid;
+        m_state = result_detail::eState::Invalid;
     }
 
 private:
@@ -355,7 +353,7 @@ private:
         T m_value;
         E m_error;
     };
-    DT::eState m_state;
+    result_detail::eState m_state;
 };
 
 // =====================================
@@ -570,5 +568,3 @@ private:
     JUG_END_MACRO_BLOCK
 
 }   // namespace jug
-
-#undef DT

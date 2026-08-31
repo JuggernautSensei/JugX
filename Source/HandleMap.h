@@ -1,20 +1,20 @@
 ﻿#pragma once
-#include <vector>
+#include <iterator>
 #include <span>
+#include <type_traits>
+#include <vector>
 
 #include "Handle.h"
-
-#define DT handle_map_detail
 
 namespace jug
 {
 
-namespace DT
+namespace handle_map_detail
 {
     constexpr size_t kNullIndex  = SIZE_MAX;
     constexpr size_t kGrowFactor = 2;
     constexpr size_t kMinSize    = 4;
-}   // namespace DT
+}   // namespace handle_map_detail
 
 // ================================================
 //  HandleMap
@@ -29,10 +29,7 @@ namespace DT
 //   ResourcePool을 쓸 것
 // ================================================
 
-template<
-    typename TTag,
-    typename TValue,
-    template<typename...> class TVector = std::vector>
+template<typename TTag, typename TValue>
 class HandleMap
 {
     using Handle = Handle<TTag>;
@@ -49,31 +46,47 @@ public:
         friend class BaseIterator;
         friend class HandleMap;
 
-        using ValueT = std::conditional_t<kbIsConst, const TValue, TValue>;
+        using ContainerT = std::conditional_t<kbIsConst, const HandleMap, HandleMap>;
+        using ValueT     = std::conditional_t<kbIsConst, const TValue, TValue>;
 
     public:
+        using iterator_concept  = std::random_access_iterator_tag;
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type        = TValue;
+        using difference_type   = ptrdiff_t;
+        using pointer           = ValueT*;
+        using reference         = ValueT&;
+
         BaseIterator() = default;
-
-        [[nodiscard]] ValueT& operator*() const
-        {
-            return *m_pValue;
-        }
-
-        [[nodiscard]] ValueT* operator->() const
-        {
-            return m_pValue;
-        }
 
         [[nodiscard]] Handle GetHandle() const
         {
-            const ptrdiff_t dense = m_pValue - m_pStorage->m_dense.data();
-            return m_pStorage->m_handles[dense];
+            JUG_ASSERT(m_pMap && m_index < m_pMap->GetSize(), "Cannot get a handle from an out of range iterator.\n");
+            return m_pMap->m_handles[m_index];
+        }
+
+        [[nodiscard]] reference operator*() const
+        {
+            JUG_ASSERT(m_pMap && m_index < m_pMap->GetSize(), "Cannot dereference an out of range iterator.\n");
+            return m_pMap->m_dense[m_index];
+        }
+
+        [[nodiscard]] pointer operator->() const
+        {
+            JUG_ASSERT(m_pMap && m_index < m_pMap->GetSize(), "Cannot dereference an out of range iterator.\n");
+            return std::addressof(m_pMap->m_dense[m_index]);
+        }
+
+        [[nodiscard]] reference operator[](
+            const difference_type _offset) const
+        {
+            return *(*this + _offset);
         }
 
         BaseIterator& operator++()
         {
-            JUG_ASSERT(m_pStorage->m_dense.data() <= m_pValue && m_pValue < m_pStorage->m_dense.data() + m_pStorage->GetSize(), "Iterator is already at the end. Cannot increment further.\n");
-            ++m_pValue;
+            JUG_ASSERT(m_pMap && m_index < m_pMap->GetSize(), "Iterator is already at the end. Cannot increment further.\n");
+            ++m_index;
             return *this;
         }
 
@@ -85,36 +98,113 @@ public:
             return tmp;
         }
 
-        bool operator!=(
-            const BaseIterator& _other) const
+        BaseIterator& operator--()
         {
-            return !(*this == _other);
+            JUG_ASSERT(m_index > 0, "Iterator is already at the beginning. Cannot decrement further.\n");
+            --m_index;
+            return *this;
         }
 
-        bool operator==(
+        BaseIterator operator--(
+            const int)
+        {
+            BaseIterator tmp = *this;
+            --(*this);
+            return tmp;
+        }
+
+        BaseIterator& operator+=(
+            const difference_type _offset)
+        {
+            m_index = static_cast<size_t>(static_cast<difference_type>(m_index) + _offset);
+            JUG_ASSERT(m_pMap && m_index <= m_pMap->GetSize(), "Iterator is out of range.\n");
+            return *this;
+        }
+
+        BaseIterator& operator-=(
+            const difference_type _offset)
+        {
+            return *this += -_offset;
+        }
+
+        [[nodiscard]] BaseIterator operator+(
+            const difference_type _offset) const
+        {
+            BaseIterator tmp = *this;
+            return tmp += _offset;
+        }
+
+        [[nodiscard]] friend BaseIterator operator+(
+            const difference_type _offset,
+            const BaseIterator&   _it)
+        {
+            return _it + _offset;
+        }
+
+        [[nodiscard]] BaseIterator operator-(
+            const difference_type _offset) const
+        {
+            BaseIterator tmp = *this;
+            return tmp -= _offset;
+        }
+
+        [[nodiscard]] difference_type operator-(
             const BaseIterator& _other) const
         {
-            return m_pValue == _other.m_pValue;
+            JUG_ASSERT(m_pMap == _other.m_pMap, "Cannot compare iterators from different HandleMaps.\n");
+            return static_cast<difference_type>(m_index) - static_cast<difference_type>(_other.m_index);
+        }
+
+        [[nodiscard]] bool operator==(
+            const BaseIterator& _other) const
+        {
+            JUG_ASSERT(m_pMap == _other.m_pMap, "Cannot compare iterators from different HandleMaps.\n");
+            return m_index == _other.m_index;
+        }
+
+        [[nodiscard]] bool operator<(
+            const BaseIterator& _other) const
+        {
+            JUG_ASSERT(m_pMap == _other.m_pMap, "Cannot compare iterators from different HandleMaps.\n");
+            return m_index < _other.m_index;
+        }
+
+        [[nodiscard]] bool operator>(
+            const BaseIterator& _other) const
+        {
+            return _other < *this;
+        }
+
+        [[nodiscard]] bool operator<=(
+            const BaseIterator& _other) const
+        {
+            return !(_other < *this);
+        }
+
+        [[nodiscard]] bool operator>=(
+            const BaseIterator& _other) const
+        {
+            return !(*this < _other);
         }
 
         [[nodiscard]] operator BaseIterator<true>() const
             requires(!kbIsConst)
         {
-            return BaseIterator<true> { m_pStorage, m_pValue };
+            return BaseIterator<true> { m_pMap, m_index };
         }
 
-    protected:
+    private:
         constexpr BaseIterator(
-            const HandleMap* _pSet,
-            ValueT*          _pValue)
-            : m_pStorage(_pSet)
-            , m_pValue(_pValue)
+            ContainerT*  _pMap,
+            const size_t _index)
+            : m_pMap(_pMap)
+            , m_index(_index)
         {
-            JUG_ASSERT(_pSet, "HandleMap must not be null.\n");
+            JUG_ASSERT(_pMap, "HandleMap must not be null.\n");
         }
 
-        const HandleMap* m_pStorage = nullptr;
-        ValueT*          m_pValue   = nullptr;
+        ContainerT* m_pMap  = nullptr;
+        size_t      m_index = 0;
     };
 
     using Iterator      = BaseIterator<false>;
@@ -132,12 +222,12 @@ public:
         // realloc
         if (m_sparse.size() <= index)
         {
-            const size_t size = std::max(DT::kMinSize, index * DT::kGrowFactor);
-            m_sparse.resize(size, DT::kNullIndex);
+            const size_t size = std::max(handle_map_detail::kMinSize, index * handle_map_detail::kGrowFactor);
+            m_sparse.resize(size, handle_map_detail::kNullIndex);
         }
 
         // insert
-        JUG_ASSERT(m_sparse[index] == DT::kNullIndex, "Handle dense {} is already occupied.\n", idx);
+        JUG_ASSERT(m_sparse[index] == handle_map_detail::kNullIndex, "Handle is already occupied in HandleMap.\n");
         m_sparse[index] = m_dense.size();
         m_handles.push_back(_handle);
         return m_dense.emplace_back(std::forward<TArgs>(_args)...);
@@ -163,7 +253,7 @@ public:
         const size_t idx   = _handle.GetIndex();
         const size_t dense = m_sparse[idx];
         const size_t last  = m_dense.size() - 1;
-        JUG_ASSERT(dense != DT::kNullIndex, "Handle {} does not exist in HandleMap.\n", _handle.GetValue());
+        JUG_ASSERT(dense != handle_map_detail::kNullIndex, "Handle does not exist in HandleMap.\n");
 
         if (dense != last)
         {
@@ -173,7 +263,7 @@ public:
             m_sparse[lastHandle.GetIndex()] = dense;
         }
 
-        m_sparse[idx] = DT::kNullIndex;
+        m_sparse[idx] = handle_map_detail::kNullIndex;
         m_dense.pop_back();
         m_handles.pop_back();
     }
@@ -183,7 +273,7 @@ public:
     {
         // null 도 동시에 잡음
         const size_t index = _handle.GetIndex();
-        if (index >= m_sparse.size() || m_sparse[index] == DT::kNullIndex)
+        if (index >= m_sparse.size() || m_sparse[index] == handle_map_detail::kNullIndex)
         {
             return false;
         }
@@ -194,7 +284,7 @@ public:
     [[nodiscard]] TValue& Get(
         const Handle _handle)
     {
-        JUG_ASSERT(Contains(_handle), "Handle {} does not exist in HandleMap.\n", _handle.GetValue());
+        JUG_ASSERT(Contains(_handle), "Handle does not exist in HandleMap.\n");
         return m_dense[m_sparse[_handle.GetIndex()]];
     }
 
@@ -250,22 +340,22 @@ public:
         m_dense.clear();
     }
 
-    [[nodiscard]] std::span<Handle> GetHandles()
+    [[nodiscard]] Span<Handle> GetHandles()
     {
         return m_handles;
     }
 
-    [[nodiscard]] std::span<const Handle> GetHandles() const
+    [[nodiscard]] Span<const Handle> GetHandles() const
     {
         return m_handles;
     }
 
-    [[nodiscard]] std::span<TValue> GetValues()
+    [[nodiscard]] Span<TValue> GetValues()
     {
         return m_dense;
     }
 
-    [[nodiscard]] std::span<const TValue> GetValues() const
+    [[nodiscard]] Span<const TValue> GetValues() const
     {
         return m_dense;
     }
@@ -282,38 +372,40 @@ public:
 
     [[nodiscard]] Iterator Begin()
     {
-        return Iterator { this, m_dense.data() };
+        return Iterator { this, 0 };
     }
 
     [[nodiscard]] Iterator End()
     {
-        return Iterator { this, m_dense.data() + GetSize() };
+        return Iterator { this, GetSize() };
     }
 
     [[nodiscard]] ConstIterator Begin() const
     {
-        return ConstIterator { this, m_dense.data() };
+        return ConstIterator { this, 0 };
     }
 
     [[nodiscard]] ConstIterator End() const
     {
-        return ConstIterator { this, m_dense.data() + GetSize() };
+        return ConstIterator { this, GetSize() };
     }
 
     [[nodiscard]] ConstIterator CBegin() const
     {
-        return ConstIterator { this, m_dense.data() };
+        return ConstIterator { this, 0 };
     }
 
     [[nodiscard]] ConstIterator CEnd() const
     {
-        return ConstIterator { this, m_dense.data() + GetSize() };
+        return ConstIterator { this, GetSize() };
     }
 
     // ==========================================
     //  STL like
     // ==========================================
 
+    using value_type     = TValue;
+    using size_type      = size_t;
     using iterator       = Iterator;
     using const_iterator = ConstIterator;
 
@@ -368,11 +460,9 @@ public:
     }
 
 protected:
-    TVector<size_t> m_sparse  = {};   // dense index 저장
-    TVector<TValue> m_dense   = {};   // 값을 연속적으로 저장
-    TVector<Handle> m_handles = {};   // dense index에 대응하는 handle 저장
+    Vector<size_t> m_sparse  = {};   // dense index 저장
+    Vector<TValue> m_dense   = {};   // 값을 연속적으로 저장
+    Vector<Handle> m_handles = {};   // dense index에 대응하는 handle 저장
 };
 
 }   // namespace jug
-
-#undef DT

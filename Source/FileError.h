@@ -4,7 +4,7 @@
 namespace jug
 {
 
-enum class eFileIOError
+enum class eFileError
 {
     None = 0,
 
@@ -19,9 +19,9 @@ enum class eFileIOError
     UnknownError,         // 알 수 없는 오류
 };
 
-[[nodiscard]] eFileIOError ToFileIOError(int _errorCode);
+[[nodiscard]] eFileError ToFileError(int _errorCode);
 
 template<typename T>
-using FileIOResult = Result<T, eFileIOError>;
+using FileResult = Result<T, eFileError>;
 
 }   // namespace jug

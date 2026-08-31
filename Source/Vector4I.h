@@ -12,10 +12,9 @@ namespace jug
 
 struct alignas(16) VECTOR4I
 {
-    using ValueT                 = int;
-    constexpr static size_t kDim = 4;
+    using ValueT = int;
 
-    JUG_MATH_API  VECTOR4I() = default;
+    JUG_MATH_API VECTOR4I() = default;
 
     JUG_MATH_API constexpr VECTOR4I(
         const int _x,
@@ -222,6 +221,8 @@ struct alignas(16) VECTOR4I
     const static VECTOR4I kMax;
     const static VECTOR4I kMin;
 
+    constexpr static size_t kDim = 4;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -232,12 +233,12 @@ struct alignas(16) VECTOR4I
             int z;
             int w;
         };
-        std::array<int, 4> e;
+        ARRAY<int, 4> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(VECTOR4I);
+JUG_STATIC_ASSERT_POD(VECTOR4I);
 
 // =======================================================
 //  Constants

@@ -1,24 +1,23 @@
 ﻿#pragma once
-#include <string_view>
-
 #include "Macros.h"
 #include "StringHasher.h"
-#define DT type_refl_detail
+#include "Typedef.h"
 
 namespace jug
 {
-namespace DT
+
+namespace type_refl_detail
 {
     template<typename T>
-    [[nodiscard]] constexpr std::string_view ExtractFullName()
+    [[nodiscard]] constexpr StringView ExtractFullName()
     {
-        constexpr std::string_view kName = JUG_PRETTY_FUNCTION;
+        constexpr StringView kName = JUG_PRETTY_FUNCTION;
 #if defined(__clang__) || defined(__GNUC__)
-        constexpr std::string_view kMarker    = "T = ";
-        constexpr size_t           kMarkerPos = kName.find(kMarker);
-        static_assert(kMarkerPos != std::string_view::npos);   // NOLINT
+        constexpr StringView kMarker    = "T = ";
+        constexpr size_t     kMarkerPos = kName.find(kMarker);
+        static_assert(kMarkerPos != StringView::npos);   // NOLINT
         constexpr size_t kBegin = kMarkerPos + kMarker.size();
-        size_t           endPos = std::string_view::npos;
+        size_t           endPos = StringView::npos;
         size_t           depth  = 0;
         for (size_t i = kBegin; i < kName.size(); ++i)
         {
@@ -41,18 +40,18 @@ namespace DT
 #elif defined(_MSC_VER)
         constexpr size_t kBegin = kName.rfind('<');
         constexpr size_t kEnd   = kName.rfind('>');
-        static_assert(kBegin != std::string_view::npos && kEnd != std::string_view::npos);
+        static_assert(kBegin != StringView::npos && kEnd != StringView::npos);
         return kName.substr(kBegin + 1, kEnd - kBegin - 1);
 #else
 #    error "TypeRefl: unsupported compiler (requires MSVC, Clang, or GCC)"
 #endif
     }
 
-    [[nodiscard]] constexpr std::string_view ExtractName(
-        const std::string_view _fullName)
+    [[nodiscard]] constexpr StringView ExtractName(
+        const StringView _fullName)
     {
         size_t depth = 0;
-        size_t colon = std::string_view::npos;
+        size_t colon = StringView::npos;
         for (size_t i = _fullName.size(); i-- > 0;)
         {
             const char c = _fullName[i];
@@ -70,48 +69,39 @@ namespace DT
                 break;
             }
         }
-        return colon == std::string_view::npos ? _fullName : _fullName.substr(colon + 2);
-    }
-
-    [[nodiscard]] constexpr uint64_t HashOf(
-        const std::string_view _fullName)
-    {
-        Fnv1a64 hasher;
-        hasher.Mix(_fullName);
-        return hasher.GetHash();
+        return colon == StringView::npos ? _fullName : _fullName.substr(colon + 2);
     }
 
     template<typename T>
-    constexpr std::string_view kFullName = ExtractFullName<T>();
+    constexpr StringView kFullName = ExtractFullName<T>();
 
     template<typename T>
-    constexpr std::string_view kName = ExtractName(kFullName<T>);
+    constexpr StringView kName = ExtractName(kFullName<T>);
 
     template<typename T>
-    constexpr uint64_t kHash = HashOf(kFullName<T>);
-}   // namespace DT
+    constexpr uint64_t kHash = HashString64(kFullName<T>);
+}   // namespace type_refl_detail
 
 // =========================================================
 //  Public API
 // =========================================================
 
 template<typename T>
-[[nodiscard]] constexpr std::string_view FullNameOf()
+[[nodiscard]] constexpr StringView FullNameOf()
 {
-    return DT::kFullName<T>;
+    return type_refl_detail::kFullName<T>;
 }
 
 template<typename T>
-[[nodiscard]] constexpr std::string_view NameOf()
+[[nodiscard]] constexpr StringView NameOf()
 {
-    return DT::kName<T>;
+    return type_refl_detail::kName<T>;
 }
 
 template<typename T>
 [[nodiscard]] constexpr uint64_t HashOf()
 {
-    return DT::kHash<T>;
+    return type_refl_detail::kHash<T>;
 }
 
 }   // namespace jug
-#undef DT

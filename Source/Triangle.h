@@ -45,7 +45,7 @@ struct TRIANGLE
     VECTOR3 p2;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(TRIANGLE);
+JUG_STATIC_ASSERT_POD(TRIANGLE);
 
 // ========================================================
 //  Constants

@@ -44,13 +44,13 @@ concept JsonWriteableByCustomT = JsonWriteableByMethodT<T> || JsonWriteableByFun
 enum class eJsonWriteOption : uint32_t
 {
     None                = 0,
-    Pretty              = 1 << 0,   // Write JSON pretty with 4 space indent.
+    Pretty              = 1 << 0,   // WriteV JSON pretty with 4 space indent.
     EscapeUnicode       = 1 << 1,   // Escape unicode as `uXXXX`, make the output ASCII only.
     EscapeSlashes       = 1 << 2,   // Escape '/' as '\/'.
-    AllowInfAndNan      = 1 << 3,   // Write inf and nan number as 'Infinity' and 'NaN' literal.
-    InfAndNanAsNull     = 1 << 4,   // Write inf and nan number as null literal. Overrides AllowInfAndNan.
+    AllowInfAndNan      = 1 << 3,   // WriteV inf and nan number as 'Infinity' and 'NaN' literal.
+    InfAndNanAsNull     = 1 << 4,   // WriteV inf and nan number as null literal. Overrides AllowInfAndNan.
     AllowInvalidUnicode = 1 << 5,   // Allow invalid unicode when encoding string values.
-    PrettyTwoSpaces     = 1 << 6,   // Write JSON pretty with 2 space indent. Overrides Pretty.
+    PrettyTwoSpaces     = 1 << 6,   // WriteV JSON pretty with 2 space indent. Overrides Pretty.
     NewlineAtEnd        = 1 << 7,   // Adds a newline character `\n` at the end of the JSON.
     LowercaseHex        = 1 << 8,   // Use lowercase hex digits in `\uXXXX`. Only with EscapeUnicode.
 };
@@ -73,7 +73,7 @@ public:
     JsonWriter& operator=(JsonWriter&& _other) noexcept;
 
     // ======================================
-    //  Write
+    //  WriteV
     // ======================================
 
     template<typename T>
@@ -85,7 +85,7 @@ public:
 
     template<typename T>
     void WriteField(
-        const std::string_view _key,
+        const StringView _key,
         const T&               _value)
     {
         WriteKey(_key);
@@ -97,32 +97,32 @@ public:
     // ======================================
 
     void BeginObject();
-    void BeginObject(std::string_view _key);
+    void BeginObject(StringView _key);
     void EndObject();
 
-    void WriteKey(std::string_view _key);
+    void WriteKey(StringView _key);
 
     // ======================================
     //  Array
     // ======================================
 
     void BeginArray();
-    void BeginArray(std::string_view _key);
+    void BeginArray(StringView _key);
     void EndArray();
 
     // ======================================
     //  Output
     // ======================================
 
-    [[nodiscard]] SerializerResult<std::string> SaveToString(Flags<eJsonWriteOption> _options = eJsonWriteOption::None) const;
-    eSerializerError                            SaveToFile(const std::filesystem::path& _path, Flags<eJsonWriteOption> _options = eJsonWriteOption::None) const;
+    [[nodiscard]] SerializerResult<String> SaveToString(Flags<eJsonWriteOption> _options = eJsonWriteOption::None) const;
+    eSerializerError                            SaveToFile(const FilePath& _path, Flags<eJsonWriteOption> _options = eJsonWriteOption::None) const;
 
 private:
     void AttachValue_(yyjson_mut_val* _pValue);
     void PushFrame_(bool _bObject);
 
     // ===========================================
-    //  Write Pritmive
+    //  WriteV Pritmive
     // ===========================================
 
     void Write_(std::nullptr_t);
@@ -130,7 +130,8 @@ private:
     void Write_(int64_t _value);
     void Write_(uint64_t _value);
     void Write_(double _value);
-    void Write_(std::string_view _value);
+    void Write_(StringView _value);
+    void Write_(const char* _value);
 
     template<typename T>
         requires std::is_enum_v<T>
@@ -163,7 +164,7 @@ private:
     }
 
     // ===========================================
-    //  Write Custom
+    //  WriteV Custom
     // ===========================================
 
     template<JsonWriteableByCustomT T>
@@ -182,7 +183,7 @@ private:
 
     yyjson_mut_doc*    m_pDoc        = nullptr;
     yyjson_mut_val*    m_pPendingKey = nullptr;
-    std::vector<Frame> m_frameStack  = {};
+    Vector<Frame> m_frameStack  = {};
 };
 
 }   // namespace jug

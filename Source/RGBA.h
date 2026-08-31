@@ -89,7 +89,7 @@ struct RGBA
     uint8_t a;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(RGBA);
+JUG_STATIC_ASSERT_POD(RGBA);
 
 // ======================================================
 //  Constants

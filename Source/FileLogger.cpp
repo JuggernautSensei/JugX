@@ -1,6 +1,5 @@
 ﻿#include "FileLogger.h"
 
-#include "FileFormatter.h"
 #include "Macros.h"
 
 namespace jug
@@ -12,11 +11,11 @@ FileLogger::FileLogger(
 {
 }
 
-FileIOResult<FileLogger> FileLogger::Open(
-    const std::filesystem::path& _path,
+FileResult<FileLogger> FileLogger::Open(
+    const FilePath& _path,
     const bool                   _bAppend)
 {
-    FileIOResult<FileWriter> writer = FileWriter::Open(_path, _bAppend);
+    FileResult<FileWriter> writer = FileWriter::Open(_path, _bAppend);
     JUG_DISPATCH_FAILED(writer);
     return FileLogger { writer.Take() };
 }
@@ -26,9 +25,9 @@ void FileLogger::Flush()
     m_writer.Flush();
 }
 
-void FileLogger::LogImpl(
+void FileLogger::WriteImpl(
     const eLogLevel,
-    const std::string_view _msg,
+    const StringView _msg,
     const bool             _bEndLog)
 {
     m_writer.Write(_msg);
@@ -39,13 +38,13 @@ void FileLogger::LogImpl(
     }
 }
 
-void FileLogger::VFormatImpl(
+void FileLogger::WriteImpl(
     const eLogLevel,
-    const std::string_view _msg,
+    const StringView _msg,
     const std::format_args _args,
     const bool             _bEndLog)
 {
-    m_writer.Write(_msg, _args);
+    m_writer.WriteV(_msg, _args);
 
     if (_bEndLog)
     {

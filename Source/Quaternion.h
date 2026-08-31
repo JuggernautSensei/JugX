@@ -15,8 +15,7 @@ struct MATRIX;
 
 struct alignas(16) QUATERNION
 {
-    using ValueT                 = float;
-    constexpr static size_t kDim = 4;
+    using ValueT = float;
 
     JUG_MATH_API QUATERNION() = default;
 
@@ -326,6 +325,8 @@ struct alignas(16) QUATERNION
     const static QUATERNION kZero;
     const static QUATERNION kIdentity;
 
+    constexpr static size_t kDim = 4;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -343,15 +344,15 @@ struct alignas(16) QUATERNION
             float   real;
         };
 
-        VECTOR4              v;
-        std::array<float, 4> e;
+        VECTOR4         v;
+        ARRAY<float, 4> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
 static_assert(sizeof(QUATERNION) == 16, "QUATERNION must be tightly packed");
 static_assert(alignof(QUATERNION) == 16, "QUATERNION must be 16-byte aligned for SIMD");
-JUG_CHECK_POD_BY_STATIC_ASSERT(QUATERNION);
+JUG_STATIC_ASSERT_POD(QUATERNION);
 
 // =======================================================
 //  Constants

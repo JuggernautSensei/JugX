@@ -2,6 +2,8 @@
 #include <chrono>
 #include <cstdint>
 
+#include "Typedef.h"
+
 namespace jug
 {
 
@@ -18,10 +20,6 @@ enum class eTimeUnit
 
 class Timer
 {
-    using Clock     = std::chrono::steady_clock;
-    using TimePoint = std::chrono::time_point<Clock>;
-    using Nano      = std::chrono::nanoseconds;
-
 public:
     void Start();
     void Lap();
@@ -33,10 +31,10 @@ public:
     [[nodiscard]] bool     IsRunning() const;
 
 private:
-    TimePoint m_startCount   = {};
-    uint64_t  m_elapsedCount = 0;
-    uint64_t  m_totalCount   = 0;
-    bool      m_bRunning     = false;
+    TimePoint<SteadyClock> m_startCount   = {};
+    uint64_t               m_elapsedCount = 0;
+    uint64_t               m_totalCount   = 0;
+    bool                   m_bRunning     = false;
 };
 
 }   // namespace jug

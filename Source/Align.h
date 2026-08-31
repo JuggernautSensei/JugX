@@ -3,16 +3,10 @@
 #include <concepts>
 
 #include "Config.h"
+#include "Math.h"
 
 namespace jug
 {
-
-template<std::unsigned_integral T>
-[[nodiscard]] constexpr bool IsPowerOf2(
-    const T _value)
-{
-    return std::has_single_bit(_value);
-}
 
 template<std::unsigned_integral T>
 [[nodiscard]] constexpr bool IsAligned(

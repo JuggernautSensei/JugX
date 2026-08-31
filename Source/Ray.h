@@ -64,7 +64,7 @@ struct RAY
     VECTOR3 dir;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(RAY);
+JUG_STATIC_ASSERT_POD(RAY);
 
 // ========================================================
 //  Constants

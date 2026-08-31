@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include <filesystem>
 
-#include "FileFormatter.h"
+#include "Typedef.h"
+#include "FileError.h"
 #include "Memory.h"
 #include "MemoryView.h"
 
@@ -53,17 +54,17 @@ protected:
 class FileReader : public FileIO
 {
 public:
-    [[nodiscard]] static FileIOResult<FileReader> Open(const std::filesystem::path& _path);
+    [[nodiscard]] static FileResult<FileReader> Open(const FilePath& _path);
 
     // 최대 _outBuffer의 크기만큼 읽고 실제로 읽은 바이트 수를 반환함.
-    FileIOResult<size_t> Read(MutableMemoryView _outBuffer) const;
-    FileIOResult<size_t> Read(MutableMemoryView _outBuffer, char _delimiter) const;
+    FileResult<size_t> Read(MutableMemoryView _outBuffer) const;
+    FileResult<size_t> Read(MutableMemoryView _outBuffer, char _delimiter) const;
 
     bool IsEOF() const;
 
 private:
     FileReader() = default;
-    eFileIOError Open_(const std::filesystem::path& _path);
+    eFileError Open_(const FilePath& _path);
 };
 
 // ===========================================================
@@ -73,23 +74,26 @@ private:
 class FileWriter : public FileIO
 {
 public:
-    [[nodiscard]] static FileIOResult<FileWriter> Open(const std::filesystem::path& _path, bool _bAppend = false);
+    [[nodiscard]] static FileResult<FileWriter> Open(const FilePath& _path, bool _bAppend = false);
 
-    FileIOResult<size_t> Write(MemoryView _mem) const;
-    FileIOResult<size_t> Write(const char* _str) const;   // for string literal
-    FileIOResult<size_t> Write(std::string_view _format, std::format_args _args) const;
+    FileResult<size_t> Write(MemoryView _mem) const;
+    FileResult<size_t> Write(const char* _str) const;
+
+    FileResult<size_t> WriteV(StringView _format, std::format_args _args) const;
 
     template<typename... TArgs>
-    FileIOResult<size_t> Write(std::format_string<TArgs...> _format, TArgs&&... _args) const
+    FileResult<size_t> Write(
+        std::format_string<TArgs...> _format,
+        TArgs&&... _args) const
     {
-        return Format(m_pFile, _format, std::forward<TArgs>(_args)...);
+        return WriteV(_format.get(), std::make_format_args(_args...));
     }
 
-    eFileIOError Flush() const;
+    eFileError Flush() const;
 
 private:
     FileWriter() = default;
-    eFileIOError Open_(const std::filesystem::path& _path, bool _bAppend);
+    eFileError Open_(const FilePath& _path, bool _bAppend);
 };
 
 }   // namespace jug

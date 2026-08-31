@@ -10,10 +10,9 @@ namespace jug
 
 struct VECTOR2I
 {
-    using ValueT                 = int;
-    constexpr static size_t kDim = 2;
+    using ValueT = int;
 
-    JUG_MATH_API  VECTOR2I() = default;
+    JUG_MATH_API VECTOR2I() = default;
 
     JUG_MATH_API constexpr VECTOR2I(
         const int _x,
@@ -200,6 +199,8 @@ struct VECTOR2I
     const static VECTOR2I kMax;
     const static VECTOR2I kMin;
 
+    constexpr static size_t kDim = 2;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -208,12 +209,12 @@ struct VECTOR2I
             int x;
             int y;
         };
-        std::array<int, 2> e;
+        ARRAY<int, 2> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(VECTOR2I);
+JUG_STATIC_ASSERT_POD(VECTOR2I);
 
 // =======================================================
 //  Constants

@@ -18,9 +18,9 @@ void MemoryLogger::Clear()
     m_logs.clear();
 }
 
-void MemoryLogger::LogImpl(
+void MemoryLogger::WriteImpl(
     const eLogLevel,
-    const std::string_view _msg,
+    const StringView _msg,
     const bool             _bEndLog)
 {
     m_pendding += _msg;
@@ -31,9 +31,9 @@ void MemoryLogger::LogImpl(
     }
 }
 
-void MemoryLogger::VFormatImpl(
+void MemoryLogger::WriteImpl(
     const eLogLevel,
-    const std::string_view _msg,
+    const StringView _msg,
     const std::format_args _args,
     const bool             _bEndLog)
 {

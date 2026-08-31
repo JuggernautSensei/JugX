@@ -3,8 +3,6 @@
 
 #include "Handle.h"
 
-#define DT handle_allocator_detail
-
 namespace jug
 {
 
@@ -15,23 +13,21 @@ namespace jug
 //   할당, 해제 모두 O(1).
 // ===============================================================
 
-namespace DT
+namespace handle_allocator_detail
 {
     constexpr size_t kNullIndex  = SIZE_MAX;
     constexpr size_t kGrowFactor = 2;
     constexpr size_t kMinSize    = 4;
-}   // namespace DT
+}   // namespace handle_allocator_detail
 
-template<
-    typename TTag,
-    template<typename...> class TVector = std::vector>
+template<typename TTag>
 class HandleAllocator
 {
     using Handle = Handle<TTag>;
 
     struct Item
     {
-        size_t  nextFree = DT::kNullIndex;   // free list의 다음 인덱스. intrusive linked list로 구현. DT::kNullIndex이면 free list의 끝.
+        size_t  nextFree = handle_allocator_detail::kNullIndex;   // free list의 다음 인덱스. intrusive linked list로 구현. handle_allocator_detail::kNullIndex이면 free list의 끝.
         uint8_t token    = 0;
         bool    bAlloced = false;
     };
@@ -42,14 +38,14 @@ public:
         size_t index = 0;
         size_t token = 0;
 
-        if (m_freeHead == DT::kNullIndex)   // free list가 없음
+        if (m_freeHead == handle_allocator_detail::kNullIndex)   // free list가 없음
         {
             index = m_nextIndex;
             ++m_nextIndex;
 
             if (m_sparse.size() <= index)
             {
-                const size_t size = std::max<size_t>(DT::kMinSize, index * DT::kGrowFactor);
+                const size_t size = std::max<size_t>(handle_allocator_detail::kMinSize, index * handle_allocator_detail::kGrowFactor);
                 m_sparse.resize(size);
             }
 
@@ -61,9 +57,9 @@ public:
             token = m_sparse[index].token;   // Free()에서 이미 다음 토큰으로 올려둠
 
             m_freeHead = m_sparse[index].nextFree;
-            if (m_freeHead == DT::kNullIndex)
+            if (m_freeHead == handle_allocator_detail::kNullIndex)
             {
-                m_freeTail = DT::kNullIndex;
+                m_freeTail = handle_allocator_detail::kNullIndex;
             }
         }
 
@@ -83,10 +79,10 @@ public:
 
         Item& item    = m_sparse[index];
         item.bAlloced = false;
-        item.nextFree = DT::kNullIndex;
+        item.nextFree = handle_allocator_detail::kNullIndex;
         ++item.token;   // 토큰을 1 증가시켜 무효화, 8비트 범위 [0, 256)에서 순환
 
-        if (m_freeTail == DT::kNullIndex)
+        if (m_freeTail == handle_allocator_detail::kNullIndex)
         {
             m_freeHead = index;
             m_freeTail = index;
@@ -127,8 +123,8 @@ public:
     void Clear()
     {
         m_sparse.clear();
-        m_freeHead   = DT::kNullIndex;
-        m_freeTail   = DT::kNullIndex;
+        m_freeHead   = handle_allocator_detail::kNullIndex;
+        m_freeTail   = handle_allocator_detail::kNullIndex;
         m_numAlloced = 0;
         m_nextIndex  = 0;
     }
@@ -136,13 +132,11 @@ public:
 private:
     constexpr static int kGrowFactor = 2;
 
-    TVector<Item> m_sparse     = {};               // For Random Access. { next free index, token, alloced }
-    size_t        m_freeHead   = DT::kNullIndex;   // free list의 첫 원소. 다음에 Alloc될 슬롯
-    size_t        m_freeTail   = DT::kNullIndex;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
-    size_t        m_numAlloced = 0;
-    size_t        m_nextIndex  = 0;
+    Vector<Item> m_sparse     = {};                                    // For Random Access. { next free index, token, alloced }
+    size_t            m_freeHead   = handle_allocator_detail::kNullIndex;   // free list의 첫 원소. 다음에 Alloc될 슬롯
+    size_t            m_freeTail   = handle_allocator_detail::kNullIndex;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
+    size_t            m_numAlloced = 0;
+    size_t            m_nextIndex  = 0;
 };
 
 }   // namespace jug
-
-#undef DT

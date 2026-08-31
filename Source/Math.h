@@ -1,12 +1,6 @@
 ﻿#pragma once
-#include <bit>
-#include <cfloat>
-#include <concepts>
-#include <cstdint>
-#include <limits>
 #include <numbers>
 
-#include "SIMD.h"
 #include "MathMacros.h"
 #include "TypeTraits.h"
 
@@ -175,6 +169,15 @@ template<std::integral T>
 template<std::integral T>
 [[nodiscard]] JUG_MATH_API constexpr T Round(T _value, T _multiple);
 
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr bool IsPowerOf2(T _value);
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T CeilPowerOf2(T _value);
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T FloorPowerOf2(T _value);
+
 // =========================================
 //  Constexpr Float Math
 // =========================================
@@ -197,7 +200,7 @@ template<std::integral T>
 [[nodiscard]] JUG_MATH_API constexpr float SmoothStep(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Bias(float _time, float _bias);
 [[nodiscard]] JUG_MATH_API constexpr float Gain(float _time, float _gain);
-[[nodiscard]] JUG_MATH_API constexpr float Log(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float LogCore(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Exp(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Pow(float _x, float _y);
 [[nodiscard]] JUG_MATH_API constexpr float Sqrt(float _x);

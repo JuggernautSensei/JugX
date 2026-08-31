@@ -3,8 +3,6 @@
 
 #include "EnumRefl.h"
 
-#define DT enum_refl_detail
-
 namespace jug
 {
 
@@ -14,30 +12,29 @@ namespace jug
 //   키를 Enum의 값으로하여 간편하게 접근할 수 있음
 // ===========================================================================
 
-template<EnumReflT TEnum, typename TValue>
+template<EnumT E, typename TValue>
     requires std::is_object_v<TValue>
 struct ENUM_ARRAY
 {
-    using Iterator                = TValue*;
-    using ConstIterator           = const TValue*;
-    constexpr static size_t kSize = CountOf<TEnum>();
+    using Iterator      = TValue*;
+    using ConstIterator = const TValue*;
 
     [[nodiscard]] constexpr TValue& operator[](
-        const TEnum _i)
+        const E _i)
     {
-        if constexpr (DirectIndexableEnumT<TEnum>)
+        if constexpr (DirectIndexableEnumT<E>)
         {
             return elems[static_cast<size_t>(_i)];   // fast access for contiguous enums starting at 0
         }
         else
         {
-            const size_t index = GetSequence(_i);
+            const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(_i);
             return elems[index];
         }
     }
 
     [[nodiscard]] constexpr const TValue& operator[](
-        const TEnum _e) const
+        const E _e) const
     {
         return const_cast<ENUM_ARRAY*>(this)->operator[](_e);
     }
@@ -188,64 +185,22 @@ struct ENUM_ARRAY
     //  Fields
     // ==========================================================
 
+    constexpr static size_t kSize = CountOf<E>();
+
     TValue elems[kSize];   // NOLINT
 };
 
-// ==========================================================
+// =================================================================
 //  Direct Enum Array
 //   Direct Indexing이 가능한 Enum만 key로 쓸 수 있는 배열
-//   대부분의 경우 ENUM_ARRAY가 상위 개념이며 이것만 사용해도 됨.
-//   CUDA와 범용가능한 코드를 만들어야 할 경우 EnumRelf을 사용하지 못하기 때문에
-//   ENUM_ARRAY를 사용하고 싶다면 반드시 DirectIndexable해야함
-//   그것을 명시적으로 표현하기위한 클래스.
-//   실제로는 using 및 requires로 충분하지만.
-//   Visual Studio 파서가 컴파일 타임 리플렉션을 파싱시에 제대로 처리하지 못해
-//   오류가 아님에도 오류로 인식해버림. 그래서 static_assert로 처리함.
-// ==========================================================
+//   CUDA와 범용가능한 코드를 만들어야 할 경우 리플렉션 사용하지 못하기 때문에
+//   이런 시나리오에서 ENUM_ARRAY를 사용하고 싶다면, 반드시 DirectIndexable해야함
+// =================================================================
 
-// 원래는 아래 코드가 맞으나, 오류가 간주된다. (빌드는 됨)
-// template<EnumReflT TEnum, typename TValue>
-//     requires DirectIndexableEnumT<TEnum>
-// using DIRECT_ENUM_ARRAY = ENUM_ARRAY<TEnum, TValue>;
-
-template<EnumReflT TEnum, typename TValue>
-struct DIRECT_ENUM_ARRAY : public ENUM_ARRAY<TEnum, TValue>
+template<EnumT E, typename TValue>
+struct DIRECT_ENUM_ARRAY : public ENUM_ARRAY<E, TValue>
 {
-    static_assert(DirectIndexableEnumT<TEnum>, "DIRECT_ENUM_ARRAY: TEnum must be direct indexable");   // intellisense가 requires를 잘못 인식하는 경우가 있어 static_assert를 사용함.
-
-    using SuperT = ENUM_ARRAY<TEnum, TValue>;
-    using SuperT::GetPtr;
-    using SuperT::GetSize;
-
-    DIRECT_ENUM_ARRAY() = default;
-
-    /* implicit */ DIRECT_ENUM_ARRAY(
-        const SuperT& _other)
-    {
-        std::copy_n(_other.GetPtr(), _other.GetSize(), GetPtr());
-    }
-
-    /* implicit */ DIRECT_ENUM_ARRAY(
-        SuperT&& _other)
-    {
-        std::move(_other.GetPtr(), _other.GetPtr() + _other.GetSize(), GetPtr());
-    }
-
-    DIRECT_ENUM_ARRAY& operator=(
-        const SuperT& _other)
-    {
-        std::copy_n(_other.GetPtr(), _other.GetSize(), GetPtr());
-        return *this;
-    }
-
-    DIRECT_ENUM_ARRAY& operator=(
-        SuperT&& _other)
-    {
-        std::move(_other.GetPtr(), _other.GetPtr() + _other.GetSize(), GetPtr());
-        return *this;
-    }
+    static_assert(DirectIndexableEnumT<E>, "DIRECT_ENUM_ARRAY: E must be direct indexable");   // intellisense가 requires를 잘못 인식하는 경우가 있어 static_assert를 사용함.
 };
 
 }   // namespace jug
-
-#undef DT

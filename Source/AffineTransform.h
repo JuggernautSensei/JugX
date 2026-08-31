@@ -133,7 +133,7 @@ struct AFFINE_TRANSFORM
     VECTOR3    translation;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(AFFINE_TRANSFORM);
+JUG_STATIC_ASSERT_POD(AFFINE_TRANSFORM);
 
 // =======================================================
 //  Constants

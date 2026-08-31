@@ -4,7 +4,7 @@
 #include <utility>
 
 #include "Config.h"
-#include "FileIO.h"
+#include "FileReaderWriter.h"
 #include "MemoryView.h"
 #include "Vendor/yyjson/src/yyjson.h"
 
@@ -57,7 +57,7 @@ void JsonWriter::BeginObject()
 }
 
 void JsonWriter::BeginObject(
-    const std::string_view _key)
+    const StringView _key)
 {
     WriteKey(_key);
     PushFrame_(true);
@@ -71,7 +71,7 @@ void JsonWriter::EndObject()
 }
 
 void JsonWriter::WriteKey(
-    const std::string_view _key)
+    const StringView _key)
 {
     JUG_ASSERT(!m_frameStack.empty() && m_frameStack.back().bObject, "WriteKey: requires an object frame - call BeginObject first");
     JUG_ASSERT(!m_pPendingKey, "WriteKey: previous key has no value yet");
@@ -85,7 +85,7 @@ void JsonWriter::BeginArray()
 }
 
 void JsonWriter::BeginArray(
-    const std::string_view _key)
+    const StringView _key)
 {
     WriteKey(_key);
     PushFrame_(false);
@@ -165,12 +165,18 @@ void JsonWriter::Write_(
 }
 
 void JsonWriter::Write_(
-    const std::string_view _value)
+    const StringView _value)
 {
     AttachValue_(yyjson_mut_strncpy(m_pDoc, _value.data(), _value.size()));
 }
 
-SerializerResult<std::string> JsonWriter::SaveToString(
+void JsonWriter::Write_(
+    const char* _value)
+{
+    AttachValue_(yyjson_mut_strcpy(m_pDoc, _value));
+}
+
+SerializerResult<String> JsonWriter::SaveToString(
     const Flags<eJsonWriteOption> _options) const
 {
     JUG_ASSERT(m_frameStack.empty(), "SaveToString: unclosed BeginObject/BeginArray");
@@ -183,19 +189,19 @@ SerializerResult<std::string> JsonWriter::SaveToString(
         return Failed { eSerializerError::OutputFailed };
     }
 
-    std::string text(pText, len);
+    String text(pText, len);
     std::free(pText);
     return text;
 }
 
 eSerializerError JsonWriter::SaveToFile(
-    const std::filesystem::path&  _path,
+    const FilePath&  _path,
     const Flags<eJsonWriteOption> _options) const
 {
     JUG_ASSERT(m_frameStack.empty(), "SaveToString: unclosed BeginObject/BeginArray");
     JUG_ASSERT(!m_pPendingKey, "SaveToString: pending key has no value");
 
-    FileIOResult<FileWriter> writer = FileWriter::Open(_path);
+    FileResult<FileWriter> writer = FileWriter::Open(_path);
     if (!writer)
     {
         return eSerializerError::FileError;

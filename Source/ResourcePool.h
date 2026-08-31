@@ -10,16 +10,12 @@ namespace jug
 //   Handle의 발급과 Resource 관리를 동시에 하는 컨테이너.
 // ================================================
 
-template<
-    typename TTag,
-    typename TResource,
-    template<typename...> class TAllocatorVector = std::vector,
-    template<typename...> class TStorageVector   = std::vector>
+template<typename TTag, typename TResource>
 class ResourcePool
 {
     using Handle          = Handle<TTag>;
-    using HandleAllocator = HandleAllocator<TTag, TAllocatorVector>;
-    using HandleMap       = HandleMap<TTag, TResource, TStorageVector>;
+    using HandleAllocator = HandleAllocator<TTag>;
+    using HandleMap       = HandleMap<TTag, TResource>;
 
 public:
     using Iterator      = typename HandleMap::Iterator;
@@ -113,22 +109,22 @@ public:
         return m_storage.IsEmpty();
     }
 
-    [[nodiscard]] std::span<Handle> GetHandles()
+    [[nodiscard]] Span<Handle> GetHandles()
     {
         return m_storage.GetHandles();
     }
 
-    [[nodiscard]] std::span<const Handle> GetHandles() const
+    [[nodiscard]] Span<const Handle> GetHandles() const
     {
         return m_storage.GetHandles();
     }
 
-    [[nodiscard]] std::span<TResource> GetValues()
+    [[nodiscard]] Span<TResource> GetValues()
     {
         return m_storage.GetValues();
     }
 
-    [[nodiscard]] std::span<const TResource> GetValues() const
+    [[nodiscard]] Span<const TResource> GetValues() const
     {
         return m_storage.GetValues();
     }

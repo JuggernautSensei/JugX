@@ -69,10 +69,10 @@ public:
     void* Alloc(
         const size_t _size)
     {
-        return AlignedAlloc(_size, alignof(std::max_align_t));
+        return Alloc(_size, alignof(std::max_align_t));
     }
 
-    void* AlignedAlloc(
+    void* Alloc(
         const size_t _size,
         const size_t _alignment)
     {

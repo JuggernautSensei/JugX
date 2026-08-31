@@ -107,8 +107,8 @@ public:
     //  Factory
     // ======================================
 
-    [[nodiscard]] static SerializerResult<JsonReader> LoadFromString(std::string_view _json, Flags<eJsonReadOption> _options = eJsonReadOption::None);
-    [[nodiscard]] static SerializerResult<JsonReader> LoadFromFile(const std::filesystem::path& _path, Flags<eJsonReadOption> _options = eJsonReadOption::None);
+    [[nodiscard]] static SerializerResult<JsonReader> LoadFromString(StringView _json, Flags<eJsonReadOption> _options = eJsonReadOption::None);
+    [[nodiscard]] static SerializerResult<JsonReader> LoadFromFile(const FilePath& _path, Flags<eJsonReadOption> _options = eJsonReadOption::None);
 
     // ======================================
     //  ReadTo
@@ -121,24 +121,10 @@ public:
         return ReadTo_(GetValue_(true), _outValue, true);
     }
 
-    template<typename T, typename U>
-        requires std::is_assignable_v<T&, U>
-    bool ReadTo(
-        T&  _outValue,
-        U&& _default)
-    {
-        if (!ReadTo_(GetValue_(true), _outValue, false))
-        {
-            _outValue = std::forward<U>(_default);
-            return false;
-        }
-        return true;
-    }
-
     template<typename T>
     bool ReadFieldTo(
-        const std::string_view _key,
-        T&                     _outValue)
+        const StringView _key,
+        T&               _outValue)
     {
         yyjson_val* pValue = FindFieldOrNull_(_key, true);
         if (!pValue)
@@ -146,22 +132,6 @@ public:
             return false;
         }
         return ReadTo_(pValue, _outValue, true);
-    }
-
-    template<typename T, typename U>
-        requires std::is_assignable_v<T&, U>
-    bool ReadFieldTo(
-        const std::string_view _key,
-        T&                     _outValue,
-        U&&                    _default)
-    {
-        yyjson_val* pValue = FindFieldOrNull_(_key, false);
-        if (!pValue || !ReadTo_(pValue, _outValue, false))
-        {
-            _outValue = std::forward<U>(_default);
-            return false;
-        }
-        return true;
     }
 
     // ======================================
@@ -174,18 +144,10 @@ public:
         return Read_<T>(GetValue_(true), true);
     }
 
-    template<typename T, typename U>
-        requires std::is_constructible_v<T, U>
-    [[nodiscard]] T Read(
-        U&& _default)
-    {
-        return ReadOr_<T>(GetValue_(true), std::forward<U>(_default));
-    }
-
     template<typename T>
         requires std::is_default_constructible_v<T>
     [[nodiscard]] T ReadField(
-        const std::string_view _key)
+        const StringView _key)
     {
         yyjson_val* pValue = FindFieldOrNull_(_key, true);
         if (!pValue)
@@ -195,37 +157,23 @@ public:
         return Read_<T>(pValue, true);
     }
 
-    template<typename T, typename U>
-        requires std::is_constructible_v<T, U>
-    [[nodiscard]] T ReadField(
-        const std::string_view _key,
-        U&&                    _default)
-    {
-        yyjson_val* pValue = FindFieldOrNull_(_key, false);
-        if (!pValue)
-        {
-            return std::forward<U>(_default);
-        }
-        return ReadOr_<T>(pValue, std::forward<U>(_default));
-    }
-
     // ======================================
     //  Object
     // ======================================
 
     bool BeginObject();
-    bool BeginObject(std::string_view _key);
+    bool BeginObject(StringView _key);
     void EndObject();
 
-    [[nodiscard]] bool             HasField(std::string_view _key) const;
-    [[nodiscard]] std::string_view GetKey() const;
+    [[nodiscard]] bool       HasField(StringView _key) const;
+    [[nodiscard]] StringView GetKey() const;
 
     // ======================================
     //  Array
     // ======================================
 
     bool BeginArray();
-    bool BeginArray(std::string_view _key);
+    bool BeginArray(StringView _key);
     void EndArray();
 
     // ======================================
@@ -252,15 +200,17 @@ public:
 
     [[nodiscard]] bool             HasError() const;
     [[nodiscard]] eSerializerError GetLastError() const;
+    [[nodiscard]] std::string_view GetLastErrorMsg() const;
 
 private:
     JsonReader() = default;
-    eSerializerError InitFromString_(std::string_view _json, Flags<eJsonReadOption> _options);
-    eSerializerError InitFromFile_(const std::filesystem::path& _path, Flags<eJsonReadOption> _options);
+    eSerializerError InitFromString_(StringView _json, Flags<eJsonReadOption> _options);
+    eSerializerError InitFromFile_(const FilePath& _path, Flags<eJsonReadOption> _options);
 
     [[nodiscard]] yyjson_val* GetValue_(bool _bNext);
-    [[nodiscard]] yyjson_val* FindFieldOrNull_(std::string_view _key, bool _bCheckError);
+    [[nodiscard]] yyjson_val* FindFieldOrNull_(StringView _key, bool _bCheckError);
     void                      PushFrame_(yyjson_val* _pValue, bool _bObject);
+    void                      SetError_(eSerializerError _error, std::string_view _msg);
 
     // ===========================================
     //  ReadTo Primitive
@@ -270,19 +220,19 @@ private:
     bool ReadTo_(const yyjson_val* _pValue, int64_t& _outValue, bool _bCheckError);
     bool ReadTo_(const yyjson_val* _pValue, uint64_t& _outValue, bool _bCheckError);
     bool ReadTo_(const yyjson_val* _pValue, double& _outValue, bool _bCheckError);
-    bool ReadTo_(const yyjson_val* _pValue, std::string_view& _outValue, bool _bCheckError);
-    bool ReadTo_(const yyjson_val* _pValue, std::string& _outValue, bool _bCheckError);
+    bool ReadTo_(const yyjson_val* _pValue, StringView& _outValue, bool _bCheckError);
+    bool ReadTo_(const yyjson_val* _pValue, String& _outValue, bool _bCheckError);
     bool ReadTo_(const yyjson_val* _pValue, const char*& _outValue, bool _bCheckError);
 
-    template<EnumT TEnum>
+    template<EnumT E>
     bool ReadTo_(
         const yyjson_val* _pValue,
-        TEnum&            _outValue,
+        E&                _outValue,
         bool              _bCheckError)
     {
-        UnderlyingT<TEnum> value;
-        const bool         bSucceeded = ReadTo_(_pValue, value, _bCheckError);
-        _outValue                     = static_cast<TEnum>(value);
+        UnderlyingT<E> value;
+        const bool     bSucceeded = ReadTo_(_pValue, value, _bCheckError);
+        _outValue                 = static_cast<E>(value);
         return bSucceeded;
     }
 
@@ -332,10 +282,10 @@ private:
         T&          _outValue,
         const bool  _bCheckError)
     {
-        JUG_ASSERT(_pValue, "ReadTo_: value must not be null - caller assumed a wrong JSON layout");
+        JUG_ASSERT(_pValue, "Value must not be null - caller assumed a wrong JSON layout");
 
-        // store last error for check custom deserialization.
-        const eSerializerError lastError = std::exchange(m_lastError, eSerializerError::None);
+        // detect whether the nested deserialize raised an error via the generation counter.
+        const int lastGen = m_errorGen;
 
         // custom deserialize
         m_pPendingValue = _pValue;
@@ -353,13 +303,7 @@ private:
         }
         m_pPendingValue = nullptr;
 
-        // check deserialization succeeded and update error code.
-        const bool bSucceeded = !HasError();
-        if (bSucceeded || !_bCheckError)
-        {
-            m_lastError = lastError;
-        }
-        return bSucceeded;
+        return m_errorGen == lastGen;
     }
 
     // ===========================================
@@ -371,7 +315,7 @@ private:
         yyjson_val* _pValue,
         bool        _bCheckError)
     {
-        JUG_ASSERT(_pValue, "ReadTo_: value must not be null - caller assumed a wrong JSON layout");
+        JUG_ASSERT(_pValue, "Value must not be null - caller assumed a wrong JSON layout");
 
         if constexpr (std::is_default_constructible_v<T>)
         {
@@ -388,44 +332,10 @@ private:
         }
     }
 
-    template<typename T, typename U>
-        requires std::is_constructible_v<T, U>
-    [[nodiscard]] T ReadOr_(
-        yyjson_val* _pValue,
-        U&&         _default)
-    {
-        JUG_ASSERT(_pValue, "ReadTo_: value must not be null - caller assumed a wrong JSON layout");
-
-        if constexpr (std::is_default_constructible_v<T>)
-        {
-            T value;
-            if (!ReadTo_(_pValue, value, false))
-            {
-                return std::forward<U>(_default);
-            }
-            return value;
-        }
-        else
-        {
-            // store last error for check custom deserialization.
-            const eSerializerError lastError = std::exchange(m_lastError, eSerializerError::None);
-
-            // custom deserialize
-            m_pPendingValue = _pValue;
-            T value         = CallFactory_<T>();
-            m_pPendingValue = nullptr;
-
-            // check deserialization succeeded and update error code.
-            const bool bSucceeded = !HasError();
-            m_lastError           = lastError;
-            return bSucceeded ? value : std::forward<U>(_default);
-        }
-    }
-
     template<JsonReaderableByFactoryT T>
     [[nodiscard]] T CallFactory_()
     {
-        JUG_ASSERT(m_pPendingValue, "CallFactory_: pending value must not be null - caller assumed a wrong JSON layout");
+        JUG_ASSERT(m_pPendingValue, "Pending value must not be null - caller assumed a wrong JSON layout");
 
         if constexpr (JsonReaderableByFactoryMethodT<T>)
         {
@@ -437,11 +347,13 @@ private:
         }
     }
 
-    yyjson_doc*        m_pDoc          = nullptr;
-    yyjson_val*        m_pRoot         = nullptr;
-    yyjson_val*        m_pPendingValue = nullptr;
-    std::vector<Frame> m_frameStack    = {};
-    eSerializerError   m_lastError     = eSerializerError::None;
+    yyjson_doc*      m_pDoc          = nullptr;
+    yyjson_val*      m_pRoot         = nullptr;
+    yyjson_val*      m_pPendingValue = nullptr;
+    Vector<Frame>    m_frameStack    = {};
+    eSerializerError m_error         = eSerializerError::None;
+    std::string      m_errorMsg      = {};
+    int              m_errorGen      = 0;
 };
 
 }   // namespace jug

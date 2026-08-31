@@ -91,7 +91,7 @@ struct OBB
     AFFINE_TRANSFORM transform;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(OBB);
+JUG_STATIC_ASSERT_POD(OBB);
 
 // ========================================================
 //  Constants

@@ -1,64 +1,37 @@
 ﻿#pragma once
 #include <cstdint>
-#include <string_view>
+#include "Typedef.h"
 
 namespace jug
 {
 
-class Fnv1a32
+namespace string_hasher_detail
 {
-public:
-    explicit constexpr Fnv1a32(
-        const uint32_t _seed = 0x811c9dc5)
-        : m_hash(_seed)
-    {
-    }
+    constexpr uint64_t kFnv1a64Seed  = 0xcbf29ce484222325;
+    constexpr uint64_t kFnv1a64Prime = 0x100000001b3;
 
-    constexpr void Mix(
-        const std::string_view _str)
+    [[nodiscard]] constexpr uint64_t Fnv1a64(
+        const char*  _str,
+        const size_t _length)
     {
-        for (const char c: _str)
+        uint64_t hash = kFnv1a64Seed;
+        for (size_t i = 0; i < _length; ++i)
         {
-            m_hash ^= static_cast<uint32_t>(c);
-            m_hash *= 0x01000193;
+            hash ^= static_cast<uint64_t>(_str[i]);
+            hash *= kFnv1a64Prime;
         }
+        return hash;
     }
+}   // namespace string_hasher_detail
 
-    [[nodiscard]] constexpr uint32_t GetHash() const
-    {
-        return m_hash;
-    }
+// ===========================================
+//  Constexpr String Hasher
+// ===========================================
 
-private:
-    uint32_t m_hash;
-};
-
-class Fnv1a64
+[[nodiscard]] constexpr uint64_t HashString(
+    const StringView _str)
 {
-public:
-    explicit constexpr Fnv1a64(
-        const uint64_t _seed = 0xcbf29ce484222325)
-        : m_hash(_seed)
-    {
-    }
-
-    constexpr void Mix(
-        const std::string_view _str)
-    {
-        for (const char c: _str)
-        {
-            m_hash ^= static_cast<uint64_t>(c);
-            m_hash *= 0x100000001b3;
-        }
-    }
-
-    [[nodiscard]] constexpr uint64_t GetHash() const
-    {
-        return m_hash;
-    }
-
-private:
-    uint64_t m_hash;
-};
+    return string_hasher_detail::Fnv1a64(_str.data(), _str.size());
+}
 
 }   // namespace jug

@@ -25,7 +25,6 @@
 #    endif
 
 #    ifdef JUG_SIMD_AVAILABLE
-#        define DT simd_detail
 
 namespace jug::simd
 {
@@ -621,7 +620,7 @@ inline void Transpose4(
 #        endif
 }
 
-namespace DT
+namespace simd_detail
 {
     [[nodiscard]] inline M128 HorizontalSumAll(
         const M128 _a)
@@ -642,7 +641,7 @@ namespace DT
         return _mm_shuffle_ps(sums, sums, _MM_SHUFFLE(0, 0, 0, 0));
 #        endif
     }
-}   // namespace DT
+}   // namespace simd_detail
 
 // =======================================================
 //  TVector operations
@@ -652,14 +651,14 @@ namespace DT
     const M128 _a,
     const M128 _b)
 {
-    return DT::HorizontalSumAll(Mul(_a, _b));
+    return simd_detail::HorizontalSumAll(Mul(_a, _b));
 }
 
 [[nodiscard]] inline M128 Dot3V(
     const M128 _a,
     const M128 _b)
 {
-    return DT::HorizontalSumAll(ZeroW(Mul(_a, _b)));
+    return simd_detail::HorizontalSumAll(ZeroW(Mul(_a, _b)));
 }
 
 [[nodiscard]] inline float Dot4(
@@ -752,6 +751,5 @@ namespace DT
 
 }   // namespace jug::simd
 
-#        undef DT
 #    endif   // JUG_SIMD_AVAILABLE
 #endif       // !defined(__CUDA_ARCH__) && !defined(JUG_MATH_NO_SIMD)

@@ -136,9 +136,6 @@
     <ClInclude Include="Source\Vendor\yyjson\src\yyjson.h">
       <Filter>Vendor\yyjson</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Vendor\xxHash\xxhash.h">
-      <Filter>Vendor\xxhash</Filter>
-    </ClInclude>
     <ClInclude Include="Source\TypeTraits.h">
       <Filter>Type</Filter>
     </ClInclude>
@@ -154,23 +151,8 @@
     <ClInclude Include="Source\EnumFlags.h">
       <Filter>Enum</Filter>
     </ClInclude>
-    <ClInclude Include="Source\StringConverter.h">
+    <ClInclude Include="Source\StringEncoder.h">
       <Filter>String</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\StringHasher.h">
-      <Filter>Hasher</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\StringFormatter.h">
-      <Filter>String</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Alloc.h">
-      <Filter>Memroy\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\FileIO.h">
-      <Filter>File\FileIO</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\FileIOError.h">
-      <Filter>File\Base</Filter>
     </ClInclude>
     <ClInclude Include="Source\FixedBlockPool.h">
       <Filter>Memroy\MemoryPool</Filter>
@@ -208,11 +190,47 @@
     <ClInclude Include="Source\GroupLogger.h">
       <Filter>Log</Filter>
     </ClInclude>
-    <ClInclude Include="Source\FileFormatter.h">
-      <Filter>File\Base</Filter>
-    </ClInclude>
     <ClInclude Include="Source\SerializerError.h">
       <Filter>Serializer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StringFormatter.h">
+      <Filter>String</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\RingBuffer.h">
+      <Filter>Container\RingBuffer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Alloc.h">
+      <Filter>Memroy\Alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Assertion.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CoreLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\DebugLogger.h">
+      <Filter>Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Allocator.h">
+      <Filter>Memroy\Alloc</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Typedef.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\NoopHasher.h">
+      <Filter>Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileError.h">
+      <Filter>File\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\FileReaderWriter.h">
+      <Filter>File\FileReaderWriter</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Random.h">
+      <Filter>Random</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\StringHasher.h">
+      <Filter>Hasher</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -222,20 +240,8 @@
     <ClCompile Include="Source\Vendor\yyjson\src\yyjson.c">
       <Filter>Vendor\yyjson</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Vendor\xxHash\xxhash.c">
-      <Filter>Vendor\xxhash</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\StringConverter.cpp">
+    <ClCompile Include="Source\StringEncoder.cpp">
       <Filter>String</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\FileIO.cpp">
-      <Filter>File\FileIO</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\FileIOError.cpp">
-      <Filter>File\Base</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Alloc.cpp">
-      <Filter>Memroy\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Source\JsonReader.cpp">
       <Filter>Serializer\Json</Filter>
@@ -267,8 +273,26 @@
     <ClCompile Include="Source\GroupLogger.cpp">
       <Filter>Log</Filter>
     </ClCompile>
-    <ClCompile Include="Source\FileFormatter.cpp">
+    <ClCompile Include="Source\Alloc.cpp">
+      <Filter>Memroy\Alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Assertion.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\CoreLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\DebugLogger.cpp">
+      <Filter>Log</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileError.cpp">
       <Filter>File\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\FileReaderWriter.cpp">
+      <Filter>File\FileReaderWriter</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Random.cpp">
+      <Filter>Random</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -337,9 +361,6 @@
     <Filter Include="Memroy\MemoryPool">
       <UniqueIdentifier>{da9d66ec-3e16-4056-9cfc-2467fe9523c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Memroy\Utils">
-      <UniqueIdentifier>{b06543a9-5805-4f72-9929-eb026fd63fb2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="PlatformDetector">
       <UniqueIdentifier>{5334e8dc-fd3c-4269-8fec-c05fcd6647f9}</UniqueIdentifier>
     </Filter>
@@ -348,9 +369,6 @@
     </Filter>
     <Filter Include="Vendor\yyjson">
       <UniqueIdentifier>{cb5122c1-4967-402a-974c-25d1662ce844}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Vendor\xxhash">
-      <UniqueIdentifier>{59ea9943-d373-4025-9ad1-bfab02826679}</UniqueIdentifier>
     </Filter>
     <Filter Include="Enum">
       <UniqueIdentifier>{d700385b-22bf-4fe2-9c97-4c257729b4e6}</UniqueIdentifier>
@@ -363,12 +381,6 @@
     </Filter>
     <Filter Include="String">
       <UniqueIdentifier>{27827b7f-5600-4238-8b8e-671cb89fb07d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="File\FileIO">
-      <UniqueIdentifier>{e3bee013-f079-40de-aee0-4b86d14b4430}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="File\Base">
-      <UniqueIdentifier>{f7e03542-4200-45d6-a8d9-d80a4a4c4858}</UniqueIdentifier>
     </Filter>
     <Filter Include="Serializer\Json">
       <UniqueIdentifier>{123e75fc-a018-44f5-976b-f84c64259643}</UniqueIdentifier>
@@ -387,6 +399,21 @@
     </Filter>
     <Filter Include="Container\RingBuffer">
       <UniqueIdentifier>{b0809a31-d670-42e3-87b4-f6d617c827d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\Utils">
+      <UniqueIdentifier>{b06543a9-5805-4f72-9929-eb026fd63fb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\Alloc">
+      <UniqueIdentifier>{8a4b4ae4-fde1-4f53-8145-5f347b6948cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Random">
+      <UniqueIdentifier>{5fd620fc-eab8-4a71-8807-6697971a5a16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File\Base">
+      <UniqueIdentifier>{4ca06dce-ce8c-4b03-b527-30b9cd9b8dce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="File\FileReaderWriter">
+      <UniqueIdentifier>{5231be14-ce62-4dc5-8998-5b31f4917df9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

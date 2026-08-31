@@ -29,7 +29,7 @@ struct SPHERE
     float   radius;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(SPHERE);
+JUG_STATIC_ASSERT_POD(SPHERE);
 
 // ========================================================
 //  Constants

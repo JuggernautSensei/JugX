@@ -48,7 +48,7 @@ double TimeCast(
 void Timer::Start()
 {
     JUG_ASSERT(!m_bRunning, "Timer is already running.\n");
-    m_startCount = Clock::now();
+    m_startCount = SteadyClock::now();
     m_bRunning   = true;
 }
 
@@ -56,8 +56,8 @@ void Timer::Lap()
 {
     JUG_ASSERT(m_bRunning, "Timer is not running.\n");
 
-    const TimePoint now          = Clock::now();
-    const uint64_t  elapsedCount = std::chrono::duration_cast<Nano>(now - m_startCount).count();
+    const TimePoint now          = SteadyClock::now();
+    const uint64_t  elapsedCount = std::chrono::duration_cast<Ns>(now - m_startCount).count();
     m_elapsedCount               = elapsedCount;
     m_totalCount += elapsedCount;
     m_startCount = now;

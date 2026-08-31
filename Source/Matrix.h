@@ -8,8 +8,6 @@
 #include "SIMD.h"
 #include "Vector.h"
 
-#define DT matrix_detail
-
 namespace jug
 {
 
@@ -25,9 +23,7 @@ struct QUATERNION;
 
 struct alignas(16) MATRIX
 {
-    using ValueT                 = float;
-    constexpr static size_t kRow = 4;
-    constexpr static size_t kCol = 4;
+    using ValueT = float;
 
     JUG_MATH_API MATRIX() = default;
 
@@ -624,6 +620,9 @@ struct alignas(16) MATRIX
 
     const static MATRIX kIdentity;
     const static MATRIX kZero;
+    
+    constexpr static size_t kRow = 4;
+    constexpr static size_t kCol = 4;
 
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
@@ -644,16 +643,16 @@ struct alignas(16) MATRIX
             VECTOR4 r3;
         };
 
-        std::array<VECTOR4, 4>              r;
-        std::array<float, 16>               e;
-        std::array<std::array<float, 4>, 4> m;
+        ARRAY<VECTOR4, 4>              r;
+        ARRAY<float, 16>               e;
+        ARRAY<ARRAY<float, 4>, 4> m;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
 static_assert(sizeof(MATRIX) == 64, "MATRIX must be tightly packed");
 static_assert(alignof(MATRIX) == 16, "MATRIX must be 16-byte aligned for SIMD");
-JUG_CHECK_POD_BY_STATIC_ASSERT(MATRIX);
+JUG_STATIC_ASSERT_POD(MATRIX);
 
 // =======================================================
 //  Constants
@@ -738,7 +737,7 @@ struct MathConstants<MATRIX>
     };
 }
 
-namespace DT
+namespace matrix_detail
 {
     struct MATRIX_COFACTORS
     {
@@ -769,12 +768,12 @@ namespace DT
         cof.c0 = m20 * m31 - m30 * m21;
         return cof;
     }
-}   // namespace DT
+}   // namespace collision_detail
 
 [[nodiscard]] JUG_MATH_API constexpr float Determinant(
     const MATRIX& _mtx)
 {
-    const DT::MATRIX_COFACTORS k = DT::MakeMatrixCofactors(_mtx);
+    const matrix_detail::MATRIX_COFACTORS k = matrix_detail::MakeMatrixCofactors(_mtx);
     return k.s0 * k.c5 - k.s1 * k.c4 + k.s2 * k.c3 + k.s3 * k.c2 - k.s4 * k.c1 + k.s5 * k.c0;
 }
 
@@ -916,7 +915,7 @@ namespace DT
     const float m20 = _mtx.r[2].e[0], m21 = _mtx.r[2].e[1], m22 = _mtx.r[2].e[2], m23 = _mtx.r[2].e[3];
     const float m30 = _mtx.r[3].e[0], m31 = _mtx.r[3].e[1], m32 = _mtx.r[3].e[2], m33 = _mtx.r[3].e[3];
 
-    const DT::MATRIX_COFACTORS k = DT::MakeMatrixCofactors(_mtx);
+    const matrix_detail::MATRIX_COFACTORS k = matrix_detail::MakeMatrixCofactors(_mtx);
 
     const float det = k.s0 * k.c5 - k.s1 * k.c4 + k.s2 * k.c3 + k.s3 * k.c2 - k.s4 * k.c1 + k.s5 * k.c0;
     if (_outDet)
@@ -1024,5 +1023,3 @@ JUG_MATH_API constexpr void Decompose(
 }   // namespace jug
 
 #include "Matrix.inl"
-
-#undef DT

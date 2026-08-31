@@ -17,14 +17,14 @@ template<bool kbIsConst>
 class BasicMemoryView
 {
 public:
-    using ByteT         = std::conditional_t<kbIsConst, const std::byte, std::byte>;
-    using Iterator      = ByteT*;
-    using ConstIterator = const ByteT*;
+    using ValueT        = std::conditional_t<kbIsConst, const std::byte, std::byte>;
+    using Iterator      = ValueT*;
+    using ConstIterator = const ValueT*;
 
     BasicMemoryView() = default;
 
     BasicMemoryView(
-        ByteT*       _pValue,
+        ValueT*      _pValue,
         const size_t _size)
         : m_pMem(_pValue)
         , m_size(_size)
@@ -35,7 +35,7 @@ public:
         requires(kbIsConst || !std::is_const_v<TValue>)
     /* implicit */ BasicMemoryView(
         TContainer& _container)
-        : m_pMem(reinterpret_cast<ByteT*>(_container.data()))
+        : m_pMem(reinterpret_cast<ValueT*>(_container.data()))
         , m_size(_container.size() * sizeof(TValue))
     {
     }
@@ -45,7 +45,7 @@ public:
     /* implicit */ BasicMemoryView(
         TContainer&  _container,
         const size_t _count)
-        : m_pMem(reinterpret_cast<ByteT*>(_container.data()))
+        : m_pMem(reinterpret_cast<ValueT*>(_container.data()))
         , m_size(_count * sizeof(TValue))
     {
         JUG_ASSERT(_count <= _container.size(), "Count exceeds _cont bounds.\n");
@@ -55,7 +55,7 @@ public:
         requires(kbIsConst || !std::is_const_v<T>)
     /* implicit */ BasicMemoryView(
         T (&_data)[N])
-        : m_pMem(reinterpret_cast<ByteT*>(_data))
+        : m_pMem(reinterpret_cast<ValueT*>(_data))
         , m_size(N * sizeof(T))
     {
     }
@@ -65,7 +65,7 @@ public:
     /* implicit */ BasicMemoryView(
         T (&_data)[N],
         const size_t _count)
-        : m_pMem(reinterpret_cast<ByteT*>(_data))
+        : m_pMem(reinterpret_cast<ValueT*>(_data))
         , m_size(_count * sizeof(T))
     {
         JUG_ASSERT(_count <= N, "Count exceeds array bounds.\n");
@@ -75,26 +75,26 @@ public:
         requires(!MemoryViewConstructableContainerT<T> && (kbIsConst || !std::is_const_v<T>))
     /* implicit */ BasicMemoryView(
         T& _data)
-        : m_pMem(reinterpret_cast<ByteT*>(&_data))
+        : m_pMem(reinterpret_cast<ValueT*>(&_data))
         , m_size(sizeof(T))
     {
     }
 
-    [[nodiscard]] ByteT& operator[](
+    [[nodiscard]] ValueT& operator[](
         const size_t _index)
     {
         JUG_ASSERT(_index < m_size, "Index exceeds bounds.\n");
         return m_pMem[_index];
     }
 
-    [[nodiscard]] const ByteT& operator[](
+    [[nodiscard]] const ValueT& operator[](
         const size_t _index) const
     {
         JUG_ASSERT(_index < m_size, "Index exceeds bounds.\n");
         return m_pMem[_index];
     }
 
-    [[nodiscard]] ByteT* GetPtr() const
+    [[nodiscard]] ValueT* GetPtr() const
     {
         return m_pMem;
     }
@@ -158,6 +158,7 @@ public:
     //  STL Like
     // ========================================
 
+    using value_type     = ValueT;
     using iterator       = Iterator;
     using const_iterator = ConstIterator;
 
@@ -171,12 +172,12 @@ public:
         return m_size == 0;
     }
 
-    [[nodiscard]] ByteT* data()
+    [[nodiscard]] value_type* data()
     {
         return m_pMem;
     }
 
-    [[nodiscard]] ByteT* data() const
+    [[nodiscard]] value_type* data() const
     {
         return m_pMem;
     }
@@ -212,8 +213,8 @@ public:
     }
 
 private:
-    ByteT* m_pMem = nullptr;
-    size_t m_size = 0;
+    ValueT* m_pMem = nullptr;
+    size_t  m_size = 0;
 };
 
 using MemoryView        = BasicMemoryView<true>;

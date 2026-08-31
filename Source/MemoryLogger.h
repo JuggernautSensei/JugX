@@ -14,12 +14,12 @@ public:
     void Clear();
 
 private:
-    void LogImpl(eLogLevel _level, std::string_view _msg, bool _bEndLog) override;
-    void VFormatImpl(eLogLevel _level, std::string_view _msg, std::format_args _args, bool _bEndLog) override;
+    void WriteImpl(eLogLevel _level, StringView _msg, bool _bEndLog) override;
+    void WriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndLog) override;
     void PushPendding_();
 
-    std::list<std::string> m_logs     = {};
-    std::string            m_pendding = {};
+    std::list<String> m_logs     = {};
+    String            m_pendding = {};
     size_t                 m_cap      = 0;
 };
 

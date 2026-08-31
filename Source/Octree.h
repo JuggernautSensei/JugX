@@ -51,7 +51,7 @@
 ////     typename TKey,
 ////     typename TValue,
 ////     typename TKeyEqual = std::equal_to<TKey>,
-////     template<typename ...> class TVector = std::vector,
+////     template<typename ...> class TVector = Vector,
 ////     template<typename ...> class TUnorderedMap = std::unordered_map>
 // class Octree
 //{
@@ -64,7 +64,7 @@
 //     using TKeyEqual  = std::equal_to<TKey>;
 //
 //     template<typename T>
-//     using TVector = std::vector<T>;
+//     using TVector = Vector<T>;
 //
 //     template<typename K, typename V, typename H = TKeyHasher, typename E = TKeyEqual>
 //     using TUnorderedMap = std::unordered_map<K, V, H, E>;

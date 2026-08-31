@@ -4,11 +4,11 @@
 namespace jug
 {
 
-template<typename T>
-concept ArithmeticT = std::is_arithmetic_v<T>;
-
 template<typename T, typename... TArgs>
 constexpr bool IsAnyTypeOfV = std::disjunction_v<std::is_same<T, TArgs>...>;
+
+template<typename T>
+concept ArithmeticT = std::is_arithmetic_v<T>;
 
 template<typename T>
 concept PodT = std::is_trivial_v<T> && std::is_standard_layout_v<T>;

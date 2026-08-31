@@ -42,7 +42,7 @@ struct INTERVAL
     float max;
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(INTERVAL);
+JUG_STATIC_ASSERT_POD(INTERVAL);
 
 // =========================================================
 //  Constants

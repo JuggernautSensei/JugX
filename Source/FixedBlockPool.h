@@ -99,7 +99,7 @@ public:
             const size_t poolSize       = poolHeaderSize + m_alignedBlockSize * m_numBlocksPerPool;
             JUG_ASSERT(IsAligned(poolSize, m_blockAlign), "poolSize must be aligned to m_blockAlign");
 
-            void* pPool    = AlignedAlloc(poolSize, m_blockAlign);
+            void* pPool    = jug::Alloc(poolSize, m_blockAlign);
             LINK* pHeader  = static_cast<LINK*>(pPool);
             pHeader->pLink = m_pPoolList;
             m_pPoolList    = pHeader;
@@ -131,7 +131,7 @@ public:
         while (pPool)
         {
             LINK* pNext = pPool->pLink;
-            AlignedFree(pPool, m_blockAlign);
+            jug::Free(pPool, m_blockAlign);
             pPool = pNext;
         }
 

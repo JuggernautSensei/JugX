@@ -7,8 +7,8 @@ namespace jug
 class ConsoleLogger : public Logger
 {
 private:
-    void LogImpl(eLogLevel _level, std::string_view _msg, bool _bEndLog) override;
-    void VFormatImpl(eLogLevel _level, std::string_view _msg, std::format_args _args, bool _bEndLog) override;
+    void WriteImpl(eLogLevel _level, StringView _msg, bool _bEndLog) override;
+    void WriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndLog) override;
     void Flush() override;
 };
 

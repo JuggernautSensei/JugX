@@ -1,9 +1,8 @@
 ﻿#pragma once
-#include <array>
-
 #include "Macros.h"
 #include "Math.h"
 #include "MathMacros.h"
+#include "Typedef.h"
 #include "TypeTraits.h"
 
 namespace jug
@@ -11,8 +10,7 @@ namespace jug
 
 struct VECTOR2
 {
-    using ValueT                 = float;
-    constexpr static size_t kDim = 2;
+    using ValueT = float;
 
     JUG_MATH_API VECTOR2() = default;
 
@@ -214,6 +212,8 @@ struct VECTOR2
     const static VECTOR2 kMax;
     const static VECTOR2 kMin;
 
+    constexpr static size_t kDim = 2;
+
     JUG_MATH_DISABLE_ANON_WARNING_BEGIN
     union
     {
@@ -222,12 +222,12 @@ struct VECTOR2
             float x;
             float y;
         };
-        std::array<float, 2> e;
+        ARRAY<float, 2> e;
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(VECTOR2);
+JUG_STATIC_ASSERT_POD(VECTOR2);
 
 // =======================================================
 //  Constants

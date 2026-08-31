@@ -4,3 +4,15 @@
 [submodule "Source/Vendor/yyjson"]
 	path = Source/Vendor/yyjson
 	url = https://github.com/ibireme/yyjson
+[submodule "Source/Vendor/Vendor/simdutf"]
+	path = Source/Vendor/Vendor/simdutf
+	url = https://github.com/simdutf/simdutf.git
+[submodule "Source/Vendor/simdutf"]
+	path = Source/Vendor/simdutf
+	url = https://github.com/simdutf/simdutf.git
+[submodule "Source/Vendor/utfcpp"]
+	path = Source/Vendor/utfcpp
+	url = https://github.com/nemtrif/utfcpp.git
+[submodule "Source/Vendor/parallel-hashmap"]
+	path = Source/Vendor/parallel-hashmap
+	url = https://github.com/greg7mdp/parallel-hashmap.git

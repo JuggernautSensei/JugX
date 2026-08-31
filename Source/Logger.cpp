@@ -7,21 +7,21 @@ namespace jug
 {
 
 void Logger::Log(
-    const eLogLevel        _level,
-    const std::string_view _msg)
+    const eLogLevel  _level,
+    const StringView _msg)
 {
     if (!m_filter.Has(_level))
     {
         return;
     }
 
-    LogPattern(_level);
-    LogImpl(_level, _msg, true);
+    WritePrefix_(_level);
+    WriteImpl(_level, _msg, true);
 }
 
-void Logger::Log(
+void Logger::LogV(
     const eLogLevel        _level,
-    const std::string_view _msg,
+    const StringView       _msg,
     const std::format_args _args)
 {
     if (!m_filter.Has(_level))
@@ -29,12 +29,12 @@ void Logger::Log(
         return;
     }
 
-    LogPattern(_level);
-    VFormatImpl(_level, _msg, _args, true);
+    WritePrefix_(_level);
+    WriteImpl(_level, _msg, _args, true);
 }
 
 void Logger::SetName(
-    const std::string_view _name)
+    const StringView _name)
 {
     m_name = _name;
 }
@@ -51,7 +51,7 @@ void Logger::SetFilter(
     m_filter = _filter;
 }
 
-void Logger::LogPattern(
+void Logger::WritePrefix_(
     const eLogLevel _level)
 {
     bool bAnyLogged = false;
@@ -63,15 +63,15 @@ void Logger::LogPattern(
 
         if (m_pattern.HasAll({ eLogPattern::YearMonthDay, eLogPattern::HourMinSec }))
         {
-            VFormatImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
+            WriteImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
         }
         else if (m_pattern.Has(eLogPattern::YearMonthDay))
         {
-            VFormatImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
+            WriteImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
         }
         else
         {
-            VFormatImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
+            WriteImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
         }
 
         bAnyLogged = true;
@@ -82,10 +82,10 @@ void Logger::LogPattern(
     {
         if (bAnyLogged)
         {
-            LogImpl(_level, " ", false);
+            WriteImpl(_level, " ", false);
         }
 
-        constexpr ENUM_ARRAY<eLogLevel, std::string_view> kNames = {
+        constexpr ENUM_ARRAY<eLogLevel, StringView> kNames = {
             "TRACE",
             "DEBUG",
             "INFO",
@@ -94,7 +94,7 @@ void Logger::LogPattern(
             "FATAL"
         };
 
-        VFormatImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
+        WriteImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
         bAnyLogged = true;
     }
 
@@ -103,16 +103,16 @@ void Logger::LogPattern(
     {
         if (bAnyLogged)
         {
-            LogImpl(_level, " ", false);
+            WriteImpl(_level, " ", false);
         }
 
-        VFormatImpl(_level, "[{}]", std::make_format_args(m_name), false);
+        WriteImpl(_level, "[{}]", std::make_format_args(m_name), false);
         bAnyLogged = true;
     }
 
     if (bAnyLogged)
     {
-        LogImpl(_level, ": ", false);
+        WriteImpl(_level, ": ", false);
     }
 }
 

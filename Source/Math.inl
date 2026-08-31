@@ -1,18 +1,18 @@
 ﻿#pragma once
-
-#define DT math_detail
+#include <bit>
+#include <cfloat>
 
 namespace jug
 {
 
-namespace
+namespace math_detail
 {
     constexpr uint32_t kFloatSignMask     = 0x80000000u;
     constexpr uint32_t kFloatExponentMask = 0x7f800000u;
     constexpr uint32_t kFloatMantissaMask = 0x007fffffu;
-    constexpr float    kFloatInfinity     = std::bit_cast<float>(kFloatExponentMask);
+    constexpr float    kFloatInfinity     = std::bit_cast<float>(math_detail::kFloatExponentMask);
     constexpr float    kFloatSmallest     = FLT_MIN;
-}
+}   // namespace math_detail
 
 // ==========================================
 //  Type Safe Comparison
@@ -163,8 +163,8 @@ template<ArithmeticT T>
 
     if constexpr (std::is_same_v<T, float>)
     {
-        const uint32_t magnitude = std::bit_cast<uint32_t>(_x) & ~kFloatSignMask;
-        const uint32_t sign      = std::bit_cast<uint32_t>(_y) & kFloatSignMask;
+        const uint32_t magnitude = std::bit_cast<uint32_t>(_x) & ~math_detail::kFloatSignMask;
+        const uint32_t sign      = std::bit_cast<uint32_t>(_y) & math_detail::kFloatSignMask;
         return std::bit_cast<float>(magnitude | sign);
     }
     else
@@ -242,6 +242,24 @@ template<std::integral T>
     return Ceil(_value + _multiple / 2, _multiple);
 }
 
+template<std::integral T>
+constexpr bool IsPowerOf2(T _value)
+{
+    return _value > 0 && std::has_single_bit(static_cast<std::make_unsigned_t<T>>(_value));
+}
+
+template<std::integral T>
+constexpr T CeilPowerOf2(T _value)
+{
+    return _value <= 1 ? 1 : static_cast<T>(std::bit_ceil(static_cast<std::make_unsigned_t<T>>(_value)));
+}
+
+template<std::integral T>
+constexpr T FloorPowerOf2(T _value)
+{
+    return _value <= 1 ? 0 : static_cast<T>(std::bit_floor(static_cast<std::make_unsigned_t<T>>(_value)));
+}
+
 // =========================================
 //  Constexpr Float Math
 // =========================================
@@ -303,24 +321,24 @@ template<std::integral T>
 [[nodiscard]] JUG_MATH_API constexpr bool IsNan(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp > kFloatExponentMask;
+    return tmp > math_detail::kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsFinite(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp < kFloatExponentMask;
+    return tmp < math_detail::kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsInfinite(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp == kFloatExponentMask;
+    return tmp == math_detail::kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float RcpSafe(const float _x)
 {
-    return 1.f / CopySign(Max(kFloatSmallest, Abs(_x)), _x);
+    return 1.f / CopySign(Max(math_detail::kFloatSmallest, Abs(_x)), _x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Lerp(const float _x, const float _y, const float _t)
@@ -352,7 +370,7 @@ template<std::integral T>
     return Bias(_time * 2.f - 1.f, 1.f - _gain) * 0.5f + 0.5f;
 }
 
-namespace DT
+namespace math_detail
 {
 
     [[nodiscard]] JUG_MATH_API constexpr float Log(
@@ -360,17 +378,17 @@ namespace DT
     {
         if (_x < 0.f)
         {
-            return std::bit_cast<float>(kFloatSignMask | kFloatExponentMask | kFloatMantissaMask);
+            return std::bit_cast<float>(math_detail::kFloatSignMask | math_detail::kFloatExponentMask | math_detail::kFloatMantissaMask);
         }
 
         if (_x == 0.f)
         {
-            return -kFloatInfinity;
+            return -math_detail::kFloatInfinity;
         }
 
         const uint32_t ftob    = std::bit_cast<uint32_t>(_x);
-        const int      exp0    = static_cast<int>((ftob & kFloatExponentMask) >> 23) - 0x7e;
-        const uint32_t masked1 = (ftob & (kFloatSignMask | kFloatMantissaMask)) | 0x3f000000u;
+        const int      exp0    = static_cast<int>((ftob & math_detail::kFloatExponentMask) >> 23) - 0x7e;
+        const uint32_t masked1 = (ftob & (math_detail::kFloatSignMask | math_detail::kFloatMantissaMask)) | 0x3f000000u;
         float          ff      = std::bit_cast<float>(masked1);
         int            exp     = exp0;
         if (ff < kSqrt2 * 0.5f)
@@ -409,7 +427,7 @@ namespace DT
             return _x + 1.f;
         }
 
-        if (_x <= Log(kFloatSmallest))
+        if (_x <= Log(math_detail::kFloatSmallest))
         {
             return 0.f;
         }
@@ -436,18 +454,18 @@ namespace DT
         const float tmp6  = 1.f - ((lo - tmp5) - hi);
 
         const uint32_t ftob    = std::bit_cast<uint32_t>(tmp6);
-        const uint32_t expbits = static_cast<uint32_t>(static_cast<int>((ftob & kFloatExponentMask) >> 23) + static_cast<int>(kk));
-        const uint32_t ret     = (ftob & ~kFloatExponentMask) | ((expbits & 0xffu) << 23);
+        const uint32_t expbits = static_cast<uint32_t>(static_cast<int>((ftob & math_detail::kFloatExponentMask) >> 23) + static_cast<int>(kk));
+        const uint32_t ret     = (ftob & ~math_detail::kFloatExponentMask) | ((expbits & 0xffu) << 23);
         return std::bit_cast<float>(ret);
     }
 
-}   // namespace DT
+}   // namespace math_detail
 
-[[nodiscard]] JUG_MATH_API constexpr float Log(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float LogCore(const float _x)
 {
     if (std::is_constant_evaluated())
     {
-        return DT::Log(_x);
+        return math_detail::Log(_x);
     }
 
     return ::logf(_x);
@@ -457,7 +475,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::Exp(_x);
+        return math_detail::Exp(_x);
     }
 
     return ::expf(_x);
@@ -467,17 +485,17 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        if (Abs(_y) < kFloatSmallest)
+        if (Abs(_y) < math_detail::kFloatSmallest)
         {
             return 1.f;
         }
 
-        if (Abs(_x) < kFloatSmallest)
+        if (Abs(_x) < math_detail::kFloatSmallest)
         {
             return 0.f;
         }
 
-        return DT::Exp(_y * DT::Log(Abs(_x)));
+        return math_detail::Exp(_y * math_detail::Log(Abs(_x)));
     }
 
     return ::powf(_x, _y);
@@ -489,10 +507,10 @@ namespace DT
     {
         if (_x < 0.f)
         {
-            return std::bit_cast<float>(kFloatExponentMask | kFloatMantissaMask);
+            return std::bit_cast<float>(math_detail::kFloatExponentMask | math_detail::kFloatMantissaMask);
         }
 
-        if (_x < kFloatSmallest)
+        if (_x < math_detail::kFloatSmallest)
         {
             return 0.f;
         }
@@ -509,9 +527,9 @@ namespace DT
 
 [[nodiscard]] JUG_MATH_API constexpr float RSqrt(const float _x)
 {
-    if (_x < kFloatSmallest)
+    if (_x < math_detail::kFloatSmallest)
     {
-        return kFloatInfinity;
+        return math_detail::kFloatInfinity;
     }
 
     if (std::is_constant_evaluated())
@@ -531,7 +549,7 @@ namespace DT
     return Clamp(_x, 0.f, 1.f);
 }
 
-namespace DT
+namespace math_detail
 {
     [[nodiscard]] JUG_MATH_API constexpr float Cos(
         const float _x)
@@ -627,13 +645,13 @@ namespace DT
         const float tmp7 = _x < 0.f ? kPI - tmp6 : tmp6;
         return _y < 0.f ? -tmp7 : tmp7;
     }
-}   // namespace DT
+}   // namespace math_detail
 
 [[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
 {
     if (std::is_constant_evaluated())
     {
-        return DT::Cos(_x - kHalfPI);
+        return math_detail::Cos(_x - kHalfPI);
     }
 
     return ::sinf(_x);
@@ -643,7 +661,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::Cos(_x);
+        return math_detail::Cos(_x);
     }
 
     return ::cosf(_x);
@@ -653,7 +671,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::Cos(_x - kHalfPI) / DT::Cos(_x);
+        return math_detail::Cos(_x - kHalfPI) / math_detail::Cos(_x);
     }
 
     return ::tanf(_x);
@@ -663,7 +681,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::ACos(_x);
+        return math_detail::ACos(_x);
     }
 
     return ::acosf(_x);
@@ -673,7 +691,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return kHalfPI - DT::ACos(_x);
+        return kHalfPI - math_detail::ACos(_x);
     }
 
     return ::asinf(_x);
@@ -683,7 +701,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::ATan2(_y, _x);
+        return math_detail::ATan2(_y, _x);
     }
 
     return ::atan2f(_y, _x);
@@ -693,7 +711,7 @@ namespace DT
 {
     if (std::is_constant_evaluated())
     {
-        return DT::ATan2(_x, 1.f);
+        return math_detail::ATan2(_x, 1.f);
     }
 
     return ::atanf(_x);
@@ -711,5 +729,3 @@ namespace DT
 }
 
 }   // namespace jug
-
-#undef DT

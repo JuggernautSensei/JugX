@@ -44,16 +44,16 @@ inline constexpr AllFlagType kAllFlag { AllFlagType::Tag {} };
 //                            enum eColor { Red, Green, Blue }; // 이런식으로 정의되어있으면 kbBitmaskItSelf = false
 // ==========================================================
 
-template<EnumT TEnum, bool kbBitmaskItSelf>
+template<EnumT E, bool kbBitmaskItSelf>
 class BaseFlags
 {
 public:
-    using UnderlyingT = UnderlyingT<TEnum>;
+    using UnderlyingT = UnderlyingT<E>;
 
     constexpr BaseFlags() noexcept = default;
 
     /* implicit */ constexpr BaseFlags(
-        const TEnum _value) noexcept
+        const E _value) noexcept
         : m_flags(MakeMask_(_value))
     {
     }
@@ -71,9 +71,9 @@ public:
     }
 
     constexpr BaseFlags(
-        const std::initializer_list<TEnum> _values) noexcept
+        const std::initializer_list<E> _values) noexcept
     {
-        for (const TEnum& value: _values)
+        for (const E& value: _values)
         {
             m_flags = static_cast<UnderlyingT>(m_flags | MakeMask_(value));
         }
@@ -86,7 +86,7 @@ public:
     }
 
     [[nodiscard]] constexpr bool Has(
-        const TEnum _value) const noexcept
+        const E _value) const noexcept
     {
         return (m_flags & MakeMask_(_value)) != 0;
     }
@@ -172,7 +172,7 @@ public:
 
 private:
     [[nodiscard]] static constexpr UnderlyingT MakeMask_(
-        const TEnum _value) noexcept
+        const E _value) noexcept
     {
         if constexpr (!kbBitmaskItSelf && std::is_signed_v<UnderlyingT>)
         {
@@ -193,10 +193,10 @@ private:
     UnderlyingT m_flags = 0;
 };
 
-template<EnumT TEnum>
-using Flags = BaseFlags<TEnum, true>;
+template<EnumT E>
+using Flags = BaseFlags<E, true>;
 
-template<EnumT TEnum>
-using IndexedFlags = BaseFlags<TEnum, false>;
+template<EnumT E>
+using IndexedFlags = BaseFlags<E, false>;
 
 }   // namespace jug

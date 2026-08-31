@@ -92,7 +92,7 @@ struct AABB
     VECTOR3 center;
     VECTOR3 extends;
 };
-JUG_CHECK_POD_BY_STATIC_ASSERT(AABB);
+JUG_STATIC_ASSERT_POD(AABB);
 
 // ========================================================
 //  Constants

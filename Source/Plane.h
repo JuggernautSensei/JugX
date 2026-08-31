@@ -72,7 +72,7 @@ struct PLANE
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
 
-JUG_CHECK_POD_BY_STATIC_ASSERT(PLANE);
+JUG_STATIC_ASSERT_POD(PLANE);
 
 // =======================================================
 //  Constants

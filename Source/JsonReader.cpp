@@ -2,14 +2,38 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <format>
 #include <utility>
 
 #include "Config.h"
-#include "FileIO.h"
+#include "FileReaderWriter.h"
 #include "Vendor/yyjson/src/yyjson.h"
 
 namespace jug
 {
+
+namespace
+{
+
+    [[nodiscard]] std::string_view JsonTypeString_(
+        const yyjson_val* _pValue)
+    {
+        JUG_ASSERT(_pValue != nullptr, "_pValue is null");
+        const yyjson_type type = unsafe_yyjson_get_type(_pValue);
+        switch (type)
+        {
+            case YYJSON_TYPE_NONE: return "none";
+            case YYJSON_TYPE_NULL: return "null";
+            case YYJSON_TYPE_BOOL: return "bool";
+            case YYJSON_TYPE_NUM: return "number";
+            case YYJSON_TYPE_STR: return "string";
+            case YYJSON_TYPE_ARR: return "array";
+            case YYJSON_TYPE_OBJ: return "object";
+            default: return "unknown";
+        }
+    }
+
+}   // namespace
 
 bool JsonReader::Frame::TryNext()
 {
@@ -40,7 +64,7 @@ bool JsonReader::Frame::TryNext()
 }
 
 SerializerResult<JsonReader> JsonReader::LoadFromString(
-    const std::string_view       _json,
+    const StringView             _json,
     const Flags<eJsonReadOption> _options)
 {
     JsonReader             reader = {};
@@ -53,7 +77,7 @@ SerializerResult<JsonReader> JsonReader::LoadFromString(
 }
 
 SerializerResult<JsonReader> JsonReader::LoadFromFile(
-    const std::filesystem::path& _path,
+    const FilePath&              _path,
     const Flags<eJsonReadOption> _options)
 {
     JsonReader             reader = {};
@@ -80,7 +104,9 @@ JsonReader::JsonReader(
     , m_pRoot(std::exchange(_other.m_pRoot, nullptr))
     , m_pPendingValue(std::exchange(_other.m_pPendingValue, nullptr))
     , m_frameStack(std::move(_other.m_frameStack))
-    , m_lastError(std::exchange(_other.m_lastError, eSerializerError::None))
+    , m_error(std::exchange(_other.m_error, eSerializerError::None))
+    , m_errorMsg(std::move(_other.m_errorMsg))
+    , m_errorGen(std::exchange(_other.m_errorGen, 0))
 {
 }
 
@@ -98,7 +124,9 @@ JsonReader& JsonReader::operator=(
         m_pRoot         = std::exchange(_other.m_pRoot, nullptr);
         m_pPendingValue = std::exchange(_other.m_pPendingValue, nullptr);
         m_frameStack    = std::move(_other.m_frameStack);
-        m_lastError     = std::exchange(_other.m_lastError, eSerializerError::None);
+        m_error         = std::exchange(_other.m_error, eSerializerError::None);
+        m_errorMsg      = std::move(_other.m_errorMsg);
+        m_errorGen      = std::exchange(_other.m_errorGen, 0);
     }
     return *this;
 }
@@ -108,7 +136,7 @@ bool JsonReader::BeginObject()
     yyjson_val* pValue = GetValue_(true);
     if (!unsafe_yyjson_is_obj(pValue))
     {
-        m_lastError = eSerializerError::TypeMismatch;
+        SetError_(eSerializerError::TypeMismatch, std::format("Current value is not a JSON object. It is a {}", JsonTypeString_(pValue)));
         return false;
     }
 
@@ -117,18 +145,18 @@ bool JsonReader::BeginObject()
 }
 
 bool JsonReader::BeginObject(
-    const std::string_view _key)
+    const StringView _key)
 {
     yyjson_val* pValue = FindFieldOrNull_(_key, true);
     if (!pValue)
     {
-        m_lastError = eSerializerError::MissingField;
+        SetError_(eSerializerError::MissingField, std::format("Field '{}' not found", _key));
         return false;
     }
 
     if (!unsafe_yyjson_is_obj(pValue))
     {
-        m_lastError = eSerializerError::TypeMismatch;
+        SetError_(eSerializerError::TypeMismatch, std::format("Field '{}' is not a JSON object. It is a {}", _key, JsonTypeString_(pValue)));
         return false;
     }
 
@@ -138,25 +166,25 @@ bool JsonReader::BeginObject(
 
 void JsonReader::EndObject()
 {
-    JUG_ASSERT(!m_frameStack.empty() && m_frameStack.back().bObject, "EndObject: no frame to pop - call BeginObject first");
+    JUG_ASSERT(!m_frameStack.empty() && m_frameStack.back().bObject, "No frame to pop - call BeginObject first");
     m_frameStack.pop_back();
 }
 
 bool JsonReader::HasField(
-    const std::string_view _key) const
+    const StringView _key) const
 {
-    JUG_ASSERT(!m_frameStack.empty(), "HasField: no frame to search - call BeginObject first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to search - call BeginObject first");
     const Frame& frame = m_frameStack.back();
-    JUG_ASSERT(frame.bObject, "HasField: requires an object frame - call BeginObject first");
+    JUG_ASSERT(frame.bObject, "Requires an object frame - call BeginObject first");
     return yyjson_obj_getn(frame.pContainer, _key.data(), _key.size()) != nullptr;
 }
 
-std::string_view JsonReader::GetKey() const
+StringView JsonReader::GetKey() const
 {
-    JUG_ASSERT(!m_frameStack.empty(), "GetKey: no frame to get key - call BeginObject first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to get key - call BeginObject first");
     const Frame& frame = m_frameStack.back();
-    JUG_ASSERT(frame.bObject, "GetKey: requires an object frame - call BeginObject first");
-    JUG_ASSERT(frame.pKey, "GetKey: no key to get - call BeginObject first");
+    JUG_ASSERT(frame.bObject, "Requires an object frame - call BeginObject first");
+    JUG_ASSERT(frame.pKey, "No key to get - call BeginObject first");
     return { unsafe_yyjson_get_str(frame.pKey), unsafe_yyjson_get_len(frame.pKey) };
 }
 
@@ -165,7 +193,7 @@ bool JsonReader::BeginArray()
     yyjson_val* pValue = GetValue_(true);
     if (!unsafe_yyjson_is_arr(pValue))
     {
-        m_lastError = eSerializerError::TypeMismatch;
+        SetError_(eSerializerError::TypeMismatch, std::format("Current value is not a JSON array. It is a {}", JsonTypeString_(pValue)));
         return false;
     }
     PushFrame_(pValue, false);
@@ -173,18 +201,18 @@ bool JsonReader::BeginArray()
 }
 
 bool JsonReader::BeginArray(
-    const std::string_view _key)
+    const StringView _key)
 {
     yyjson_val* pValue = FindFieldOrNull_(_key, true);
     if (!pValue)
     {
-        m_lastError = eSerializerError::MissingField;
+        SetError_(eSerializerError::MissingField, std::format("Field '{}' not found", _key));
         return false;
     }
 
     if (!unsafe_yyjson_is_arr(pValue))
     {
-        m_lastError = eSerializerError::TypeMismatch;
+        SetError_(eSerializerError::TypeMismatch, std::format("Field '{}' is not a JSON array. It is a {}", _key, JsonTypeString_(pValue)));
         return false;
     }
 
@@ -194,30 +222,30 @@ bool JsonReader::BeginArray(
 
 void JsonReader::EndArray()
 {
-    JUG_ASSERT(!m_frameStack.empty() && !m_frameStack.back().bObject, "EndArray: no frame to pop - call BeginArray first");
+    JUG_ASSERT(!m_frameStack.empty() && !m_frameStack.back().bObject, "No frame to pop - call BeginArray first");
     m_frameStack.pop_back();
 }
 
 void JsonReader::Next()
 {
-    JUG_ASSERT(!m_frameStack.empty(), "Next: no frame to advance - call BeginObject/BeginArray first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to advance - call BeginObject/BeginArray first");
     Frame& frame = m_frameStack.back();
     if (!frame.TryNext())
     {
-        JUG_ASSERT(false, "Next: no more elements to read - call HasNext first");
+        JUG_ASSERT(false, "No more elements to read - call HasNext first");
     }
 }
 
 bool JsonReader::HasNext() const
 {
-    JUG_ASSERT(!m_frameStack.empty(), "HasNext: no frame to check - call BeginObject/BeginArray first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to check - call BeginObject/BeginArray first");
     const Frame& frame = m_frameStack.back();
     return frame.index < frame.size;
 }
 
 size_t JsonReader::GetSize() const
 {
-    JUG_ASSERT(!m_frameStack.empty(), "GetSize: no frame to get size - call BeginObject/BeginArray first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to get size - call BeginObject/BeginArray first");
     return m_frameStack.back().size;
 }
 
@@ -249,19 +277,24 @@ bool JsonReader::IsValue()
 
 bool JsonReader::HasError() const
 {
-    return m_lastError != eSerializerError::None;
+    return m_error != eSerializerError::None;
 }
 
 eSerializerError JsonReader::GetLastError() const
 {
-    return m_lastError;
+    return m_error;
+}
+
+std::string_view JsonReader::GetLastErrorMsg() const
+{
+    return m_errorMsg;
 }
 
 eSerializerError JsonReader::InitFromString_(
-    const std::string_view       _json,
+    const StringView             _json,
     const Flags<eJsonReadOption> _options)
 {
-    JUG_ASSERT(m_pDoc == nullptr && m_pRoot == nullptr, "InitFromString_: JsonReader is already initialized");
+    JUG_ASSERT(m_pDoc == nullptr && m_pRoot == nullptr, "JsonReader is already initialized");
 
     yyjson_doc* pDoc = yyjson_read(_json.data(), _json.size(), _options.GetFlags());
     if (pDoc == nullptr)
@@ -282,13 +315,13 @@ eSerializerError JsonReader::InitFromString_(
 }
 
 eSerializerError JsonReader::InitFromFile_(
-    const std::filesystem::path& _path,
+    const FilePath&              _path,
     const Flags<eJsonReadOption> _options)
 {
-    JUG_ASSERT(m_pDoc == nullptr && m_pRoot == nullptr, "InitFromFile_: JsonReader is already initialized");
+    JUG_ASSERT(m_pDoc == nullptr && m_pRoot == nullptr, "JsonReader is already initialized");
 
     // open file
-    FileIOResult<FileReader> file = FileReader::Open(_path);
+    FileResult<FileReader> file = FileReader::Open(_path);
     if (!file)
     {
         return eSerializerError::FileError;
@@ -327,28 +360,28 @@ yyjson_val* JsonReader::GetValue_(
 
     Frame&      frame  = m_frameStack.back();
     yyjson_val* pValue = frame.pValue;
-    JUG_ASSERT(pValue, "GetValue_: no value to read");
+    JUG_ASSERT(pValue, "No value to read");
     if (_bNext)
     {
         if (!frame.TryNext())
         {
-            JUG_ASSERT(false, "GetValue_: no more elements to read");
+            JUG_ASSERT(false, "No more elements to read");
         }
     }
     return pValue;
 }
 
 yyjson_val* JsonReader::FindFieldOrNull_(
-    const std::string_view _key,
-    const bool             _bCheckError)
+    const StringView _key,
+    const bool       _bCheckError)
 {
-    JUG_ASSERT(!m_frameStack.empty(), "FindFieldOrNull_: no frame to search - call BeginObject first");
+    JUG_ASSERT(!m_frameStack.empty(), "No frame to search - call BeginObject first");
     Frame& frame = m_frameStack.back();
-    JUG_ASSERT(frame.bObject, "FindFieldOrNull_: requires an object frame - call BeginObject first");
+    JUG_ASSERT(frame.bObject, "Requires an object frame - call BeginObject first");
     yyjson_val* pValue = yyjson_obj_getn(frame.pContainer, _key.data(), _key.size());
     if (!pValue && _bCheckError)
     {
-        m_lastError = eSerializerError::MissingField;
+        SetError_(eSerializerError::MissingField, std::format("Field '{}' not found", _key));
     }
     return pValue;
 }
@@ -357,7 +390,7 @@ void JsonReader::PushFrame_(
     yyjson_val* _pValue,
     const bool  _bObject)
 {
-    JUG_ASSERT(_pValue, "PushFrame_: value must not be null - caller assumed a wrong JSON layout");
+    JUG_ASSERT(_pValue, "Value must not be null - caller assumed a wrong JSON layout");
 
     Frame frame   = {};
     frame.bObject = _bObject;
@@ -386,18 +419,27 @@ void JsonReader::PushFrame_(
     m_frameStack.push_back(frame);
 }
 
+void JsonReader::SetError_(
+    const eSerializerError _error,
+    const std::string_view _msg)
+{
+    ++m_errorGen;
+    m_error    = _error;
+    m_errorMsg = _msg;
+}
+
 bool JsonReader::ReadTo_(
     const yyjson_val* _pValue,
     bool&             _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
+    JUG_ASSERT(_pValue, "Value must not be null");
 
     if (!unsafe_yyjson_is_bool(_pValue))
     {
         if (_bCheckError)
         {
-            m_lastError = eSerializerError::TypeMismatch;
+            SetError_(eSerializerError::TypeMismatch, std::format("Value is not a JSON boolean. It is a {}", JsonTypeString_(_pValue)));
         }
         _outValue = false;
         return false;
@@ -412,13 +454,13 @@ bool JsonReader::ReadTo_(
     int64_t&          _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
+    JUG_ASSERT(_pValue, "Value must not be null");
 
     if (!unsafe_yyjson_is_int(_pValue))
     {
         if (_bCheckError)
         {
-            m_lastError = eSerializerError::TypeMismatch;
+            SetError_(eSerializerError::TypeMismatch, std::format("Value is not a JSON integer. It is a {}", JsonTypeString_(_pValue)));
         }
         _outValue = 0;
         return false;
@@ -433,13 +475,13 @@ bool JsonReader::ReadTo_(
     uint64_t&         _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
+    JUG_ASSERT(_pValue, "Value must not be null");
 
     if (!unsafe_yyjson_is_int(_pValue))
     {
         if (_bCheckError)
         {
-            m_lastError = eSerializerError::TypeMismatch;
+            SetError_(eSerializerError::TypeMismatch, std::format("Value is not a JSON integer. It is a {}", JsonTypeString_(_pValue)));
         }
         _outValue = 0;
         return false;
@@ -454,13 +496,13 @@ bool JsonReader::ReadTo_(
     double&           _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
+    JUG_ASSERT(_pValue, "Value must not be null");
 
     if (!unsafe_yyjson_is_num(_pValue))
     {
         if (_bCheckError)
         {
-            m_lastError = eSerializerError::TypeMismatch;
+            SetError_(eSerializerError::TypeMismatch, std::format("Value is not a JSON number. It is a {}", JsonTypeString_(_pValue)));
         }
         _outValue = 0.;
         return false;
@@ -472,16 +514,16 @@ bool JsonReader::ReadTo_(
 
 bool JsonReader::ReadTo_(
     const yyjson_val* _pValue,
-    std::string_view& _outValue,
+    StringView&       _outValue,
     const bool        _bCheckError)
 {
-    JUG_ASSERT(_pValue, "ReadTo_: value must not be null");
+    JUG_ASSERT(_pValue, "Value must not be null");
 
     if (!unsafe_yyjson_is_str(_pValue))
     {
         if (_bCheckError)
         {
-            m_lastError = eSerializerError::TypeMismatch;
+            SetError_(eSerializerError::TypeMismatch, std::format("Value is not a JSON string. It is a {}", JsonTypeString_(_pValue)));
         }
         _outValue = {};
         return false;
@@ -493,17 +535,17 @@ bool JsonReader::ReadTo_(
 
 bool JsonReader::ReadTo_(
     const yyjson_val* _pValue,
-    std::string&      _outValue,
+    String&           _outValue,
     const bool        _bCheckError)
 {
-    std::string_view value;
+    StringView value;
     if (!ReadTo_(_pValue, value, _bCheckError))
     {
         _outValue = {};
         return false;
     }
 
-    _outValue = std::string { value };
+    _outValue = String { value };
     return true;
 }
 
@@ -512,7 +554,7 @@ bool JsonReader::ReadTo_(
     const char*&      _outValue,
     const bool        _bCheckError)
 {
-    std::string_view value;
+    StringView value;
     if (!ReadTo_(_pValue, value, _bCheckError))
     {
         _outValue = nullptr;

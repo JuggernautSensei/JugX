@@ -9,8 +9,6 @@
 #include "Triangle.h"
 #include "Vector.h"
 
-#define DT collision_detail
-
 namespace jug
 {
 
@@ -26,7 +24,7 @@ namespace jug
 
 constexpr INTERVAL kDefaultInterval = INTERVAL { 0.f, MathConstants<float>::kMax };
 
-namespace DT
+namespace collision_detail
 {
 
     // AABB/OBB 에 대한 공통 타입
@@ -34,7 +32,7 @@ namespace DT
     {
         VECTOR3                center;
         VECTOR3                extents;
-        std::array<VECTOR3, 3> axes;
+        ARRAY<VECTOR3, 3> axes;
     };
 
     [[nodiscard]] JUG_MATH_API constexpr BOX MakeBox(
@@ -107,8 +105,8 @@ namespace DT
         const BOX& _a,
         const BOX& _b)
     {
-        std::array<std::array<float, 3>, 3> r;
-        std::array<std::array<float, 3>, 3> absR;
+        ARRAY<ARRAY<float, 3>, 3> r;
+        ARRAY<ARRAY<float, 3>, 3> absR;
 
         for (int i = 0; i < 3; ++i)
         {
@@ -121,7 +119,7 @@ namespace DT
         }
 
         const VECTOR3              d  = _b.center - _a.center;
-        const std::array<float, 3> t  = { Dot(d, _a.axes[0]), Dot(d, _a.axes[1]), Dot(d, _a.axes[2]) };
+        const ARRAY<float, 3> t  = { Dot(d, _a.axes[0]), Dot(d, _a.axes[1]), Dot(d, _a.axes[2]) };
         const VECTOR3              ea = _a.extents;
         const VECTOR3              eb = _b.extents;
 
@@ -441,7 +439,7 @@ namespace DT
         _pOutHit->normal     = _pOutHit->bFrontFace ? _outwardNormal : -_outwardNormal;
     }
 
-}   // namespace DT
+}   // namespace collision_detail
 
 // ====================================================
 //  ClosestPoint
@@ -460,9 +458,9 @@ namespace DT
     const OBB&    _obb,
     const VECTOR3 _point)
 {
-    const DT::BOX box   = DT::MakeBox(_obb);
-    const VECTOR3 local = DT::ToBoxLocal(box, _point);
-    return DT::ToBoxWorld(box, Clamp(local, -box.extents, box.extents));
+    const collision_detail::BOX box   = collision_detail::MakeBox(_obb);
+    const VECTOR3               local = collision_detail::ToBoxLocal(box, _point);
+    return collision_detail::ToBoxWorld(box, Clamp(local, -box.extents, box.extents));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
@@ -550,7 +548,7 @@ namespace DT
     HIT* const     _pOutHitOrNull = nullptr,
     const INTERVAL _interval      = kDefaultInterval)
 {
-    const DT::SLAB_RESULT slab = DT::RaycastSlab(_ray.origin - _aabb.center, _ray.dir, Abs(_aabb.extends));
+    const collision_detail::SLAB_RESULT slab = collision_detail::RaycastSlab(_ray.origin - _aabb.center, _ray.dir, Abs(_aabb.extends));
     if (!slab.bValid)
     {
         return false;
@@ -558,7 +556,7 @@ namespace DT
 
     float t;
     bool  bIsEnter;
-    if (!DT::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
+    if (!collision_detail::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
     {
         return false;
     }
@@ -566,7 +564,7 @@ namespace DT
     if (_pOutHitOrNull)
     {
         const VECTOR3 localHit = _ray.origin + _ray.dir * t - _aabb.center;
-        DT::FillHit(_pOutHitOrNull, _ray, t, DT::CalcSlabNormal(localHit, Abs(_aabb.extends)));
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, collision_detail::CalcSlabNormal(localHit, Abs(_aabb.extends)));
     }
     return true;
 }
@@ -577,11 +575,11 @@ namespace DT
     HIT* const     _pOutHitOrNull = nullptr,
     const INTERVAL _interval      = kDefaultInterval)
 {
-    const DT::BOX box      = DT::MakeBox(_obb);
-    const VECTOR3 localPos = DT::ToBoxLocal(box, _ray.origin);
-    const VECTOR3 localDir = VECTOR3 { Dot(_ray.dir, box.axes[0]), Dot(_ray.dir, box.axes[1]), Dot(_ray.dir, box.axes[2]) };
+    const collision_detail::BOX box      = collision_detail::MakeBox(_obb);
+    const VECTOR3               localPos = collision_detail::ToBoxLocal(box, _ray.origin);
+    const VECTOR3               localDir = VECTOR3 { Dot(_ray.dir, box.axes[0]), Dot(_ray.dir, box.axes[1]), Dot(_ray.dir, box.axes[2]) };
 
-    const DT::SLAB_RESULT slab = DT::RaycastSlab(localPos, localDir, box.extents);
+    const collision_detail::SLAB_RESULT slab = collision_detail::RaycastSlab(localPos, localDir, box.extents);
     if (!slab.bValid)
     {
         return false;
@@ -589,7 +587,7 @@ namespace DT
 
     float t        = 0.f;
     bool  bIsEnter = false;
-    if (!DT::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
+    if (!collision_detail::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
     {
         return false;
     }
@@ -597,14 +595,14 @@ namespace DT
     if (_pOutHitOrNull)
     {
         const VECTOR3 localHit    = localPos + localDir * t;
-        const VECTOR3 localNormal = DT::CalcSlabNormal(localHit, box.extents);
+        const VECTOR3 localNormal = collision_detail::CalcSlabNormal(localHit, box.extents);
 
         // 로컬 법선을 박스 축으로 되돌린다. 성분이 하나만 ±1 이라 축 하나만 살아남는다.
         const VECTOR3 outward = box.axes[0] * localNormal.e[0]
                               + box.axes[1] * localNormal.e[1]
                               + box.axes[2] * localNormal.e[2];
 
-        DT::FillHit(_pOutHitOrNull, _ray, t, outward);
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, outward);
     }
     return true;
 }
@@ -630,7 +628,7 @@ namespace DT
 
     float t        = 0.f;
     bool  bIsEnter = false;
-    if (!DT::SelectRayT((-halfB - sq) * invA, (-halfB + sq) * invA, _interval, &t, &bIsEnter))
+    if (!collision_detail::SelectRayT((-halfB - sq) * invA, (-halfB + sq) * invA, _interval, &t, &bIsEnter))
     {
         return false;
     }
@@ -639,7 +637,7 @@ namespace DT
     {
         const VECTOR3 point   = RayAt(_ray, t);
         const VECTOR3 outward = Normalize(point - _sphere.center);
-        DT::FillHit(_pOutHitOrNull, _ray, t, outward);
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, outward);
     }
     return true;
 }
@@ -664,7 +662,7 @@ namespace DT
 
     if (_pOutHitOrNull)
     {
-        DT::FillHit(_pOutHitOrNull, _ray, t, _plane.normal);
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, _plane.normal);
     }
     return true;
 }
@@ -708,7 +706,7 @@ namespace DT
 
     if (_pOutHitOrNull)
     {
-        DT::FillHit(_pOutHitOrNull, _ray, t, Normalize(Cross(edge1, edge2)));
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, Normalize(Cross(edge1, edge2)));
     }
     return true;
 }
@@ -765,7 +763,7 @@ namespace DT
 
     float t        = 0.f;
     bool  bIsEnter = false;
-    if (!DT::SelectRayT(tEnter, tExit, _interval, &t, &bIsEnter))
+    if (!collision_detail::SelectRayT(tEnter, tExit, _interval, &t, &bIsEnter))
     {
         return false;
     }
@@ -779,12 +777,12 @@ namespace DT
     if (_pOutHitOrNull)
     {
         // 절두체 법선은 안쪽을 향하므로 바깥 법선은 부호를 뒤집는다.
-        DT::FillHit(_pOutHitOrNull, _ray, t, -_frustum.planes[static_cast<size_t>(planeIndex)].normal);
+        collision_detail::FillHit(_pOutHitOrNull, _ray, t, -_frustum.planes[static_cast<size_t>(planeIndex)].normal);
     }
     return true;
 }
 
-namespace DT
+namespace collision_detail
 {
     // ===================================================
     //  AABB vs ...
@@ -1200,26 +1198,26 @@ namespace DT
         return Raycast(_ray, _frustum);
     }
 
-}   // namespace DT
+}   // namespace collision_detail
 
 // ====================================================
 //  Intersect / Disjoint 확장
 // ====================================================
 
 template<typename T, typename U>
-    requires requires(const T& _x, const U& _y) { DT::Intersect(_x, _y); }
-          || requires(const T& _x, const U& _y) { DT::Intersect(_y, _x); }
+    requires requires(const T& _x, const U& _y) { collision_detail::Intersect(_x, _y); }
+          || requires(const T& _x, const U& _y) { collision_detail::Intersect(_y, _x); }
 [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
     const T& _x,
     const U& _y)
 {
-    if constexpr (requires { DT::Intersect(_x, _y); })
+    if constexpr (requires { collision_detail::Intersect(_x, _y); })
     {
-        return DT::Intersect(_x, _y);
+        return collision_detail::Intersect(_x, _y);
     }
     else
     {
-        return DT::Intersect(_y, _x);
+        return collision_detail::Intersect(_y, _x);
     }
 }
 
@@ -1268,16 +1266,16 @@ template<typename T, typename U>
     const PLANE _plane,
     const OBB&  _obb)
 {
-    const DT::BOX box = DT::MakeBox(_obb);
-    return Distance(_plane, box.center) > DT::ProjectedRadius(box, _plane.normal);
+    const collision_detail::BOX box = collision_detail::MakeBox(_obb);
+    return Distance(_plane, box.center) > collision_detail::ProjectedRadius(box, _plane.normal);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsBehind(
     const PLANE _plane,
     const OBB&  _obb)
 {
-    const DT::BOX box = DT::MakeBox(_obb);
-    return Distance(_plane, box.center) < -DT::ProjectedRadius(box, _plane.normal);
+    const collision_detail::BOX box = collision_detail::MakeBox(_obb);
+    return Distance(_plane, box.center) < -collision_detail::ProjectedRadius(box, _plane.normal);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsFront(
@@ -1352,7 +1350,7 @@ template<typename T>
     const AABB&   _aabb,
     const VECTOR3 _point)
 {
-    return DT::Intersect(_aabb, _point);
+    return collision_detail::Intersect(_aabb, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1372,7 +1370,7 @@ template<typename T>
     const AABB& _aabb,
     const OBB&  _obb)
 {
-    return DT::Contains(DT::MakeBox(_aabb), DT::MakeBox(_obb));
+    return collision_detail::Contains(collision_detail::MakeBox(_aabb), collision_detail::MakeBox(_obb));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1391,9 +1389,9 @@ template<typename T>
     const AABB&     _aabb,
     const TRIANGLE& _triangle)
 {
-    return DT::Intersect(_aabb, _triangle.p0)
-        && DT::Intersect(_aabb, _triangle.p1)
-        && DT::Intersect(_aabb, _triangle.p2);
+    return collision_detail::Intersect(_aabb, _triangle.p0)
+        && collision_detail::Intersect(_aabb, _triangle.p1)
+        && collision_detail::Intersect(_aabb, _triangle.p2);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1403,7 +1401,7 @@ template<typename T>
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
     for (const eCorner e: RangesOf<eCorner>())
     {
-        if (!DT::Intersect(_aabb, corners[e]))
+        if (!collision_detail::Intersect(_aabb, corners[e]))
         {
             return false;
         }
@@ -1415,29 +1413,29 @@ template<typename T>
     const OBB&    _obb,
     const VECTOR3 _point)
 {
-    return DT::ContainBoxLocalPoint(DT::MakeBox(_obb), _point);
+    return collision_detail::ContainBoxLocalPoint(collision_detail::MakeBox(_obb), _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const OBB&  _obb,
     const AABB& _aabb)
 {
-    return DT::Contains(DT::MakeBox(_obb), DT::MakeBox(_aabb));
+    return collision_detail::Contains(collision_detail::MakeBox(_obb), collision_detail::MakeBox(_aabb));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const OBB& _x,
     const OBB& _y)
 {
-    return DT::Contains(DT::MakeBox(_x), DT::MakeBox(_y));
+    return collision_detail::Contains(collision_detail::MakeBox(_x), collision_detail::MakeBox(_y));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const OBB&    _obb,
     const SPHERE& _sphere)
 {
-    const DT::BOX box   = DT::MakeBox(_obb);
-    const VECTOR3 local = Abs(DT::ToBoxLocal(box, _sphere.center));
+    const collision_detail::BOX box   = collision_detail::MakeBox(_obb);
+    const VECTOR3               local = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
     return local.e[0] + _sphere.radius <= box.extents.e[0]
         && local.e[1] + _sphere.radius <= box.extents.e[1]
         && local.e[2] + _sphere.radius <= box.extents.e[2];
@@ -1447,21 +1445,21 @@ template<typename T>
     const OBB&      _obb,
     const TRIANGLE& _triangle)
 {
-    const DT::BOX box = DT::MakeBox(_obb);
-    return DT::ContainBoxLocalPoint(box, _triangle.p0)
-        && DT::ContainBoxLocalPoint(box, _triangle.p1)
-        && DT::ContainBoxLocalPoint(box, _triangle.p2);
+    const collision_detail::BOX box = collision_detail::MakeBox(_obb);
+    return collision_detail::ContainBoxLocalPoint(box, _triangle.p0)
+        && collision_detail::ContainBoxLocalPoint(box, _triangle.p1)
+        && collision_detail::ContainBoxLocalPoint(box, _triangle.p2);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const OBB&     _obb,
     const FRUSTUM& _frustum)
 {
-    const DT::BOX                             box     = DT::MakeBox(_obb);
+    const collision_detail::BOX               box     = collision_detail::MakeBox(_obb);
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
     for (const eCorner e: RangesOf<eCorner>())
     {
-        if (!DT::ContainBoxLocalPoint(box, corners[e]))
+        if (!collision_detail::ContainBoxLocalPoint(box, corners[e]))
         {
             return false;
         }
@@ -1473,7 +1471,7 @@ template<typename T>
     const SPHERE& _sphere,
     const VECTOR3 _point)
 {
-    return DT::Intersect(_sphere, _point);
+    return collision_detail::Intersect(_sphere, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1489,9 +1487,9 @@ template<typename T>
     const SPHERE& _sphere,
     const OBB&    _obb)
 {
-    const DT::BOX box      = DT::MakeBox(_obb);
-    const VECTOR3 local    = Abs(DT::ToBoxLocal(box, _sphere.center));
-    const VECTOR3 farthest = local + box.extents;   // 박스 축은 정규 직교이므로 로컬 거리 = 월드 거리
+    const collision_detail::BOX box      = collision_detail::MakeBox(_obb);
+    const VECTOR3               local    = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
+    const VECTOR3               farthest = local + box.extents;   // 박스 축은 정규 직교이므로 로컬 거리 = 월드 거리
     return LengthSq(farthest) <= _sphere.radius * _sphere.radius;
 }
 
@@ -1537,14 +1535,14 @@ template<typename T>
     const TRIANGLE& _triangle,
     const VECTOR3   _point)
 {
-    return DT::Intersect(_triangle, _point);
+    return collision_detail::Intersect(_triangle, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const PLANE   _plane,
     const VECTOR3 _point)
 {
-    return DT::Intersect(_plane, _point);
+    return collision_detail::Intersect(_plane, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1560,7 +1558,7 @@ template<typename T>
     const FRUSTUM& _frustum,
     const VECTOR3  _point)
 {
-    return DT::Intersect(_frustum, _point);
+    return collision_detail::Intersect(_frustum, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1583,11 +1581,11 @@ template<typename T>
     const FRUSTUM& _frustum,
     const OBB&     _obb)
 {
-    const DT::BOX box = DT::MakeBox(_obb);
+    const collision_detail::BOX box = collision_detail::MakeBox(_obb);
     for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
     {
         const PLANE plane = _frustum.planes[i];
-        if (Distance(plane, box.center) < DT::ProjectedRadius(box, plane.normal))
+        if (Distance(plane, box.center) < collision_detail::ProjectedRadius(box, plane.normal))
         {
             return false;
         }
@@ -1613,9 +1611,9 @@ template<typename T>
     const FRUSTUM&  _frustum,
     const TRIANGLE& _triangle)
 {
-    return DT::Intersect(_frustum, _triangle.p0)
-        && DT::Intersect(_frustum, _triangle.p1)
-        && DT::Intersect(_frustum, _triangle.p2);
+    return collision_detail::Intersect(_frustum, _triangle.p0)
+        && collision_detail::Intersect(_frustum, _triangle.p1)
+        && collision_detail::Intersect(_frustum, _triangle.p2);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1625,7 +1623,7 @@ template<typename T>
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _y.CalcCorners();
     for (const eCorner e: RangesOf<eCorner>())
     {
-        if (!DT::Intersect(_x, corners[e]))
+        if (!collision_detail::Intersect(_x, corners[e]))
         {
             return false;
         }
@@ -1634,5 +1632,3 @@ template<typename T>
 }
 
 }   // namespace jug
-
-#undef DT
