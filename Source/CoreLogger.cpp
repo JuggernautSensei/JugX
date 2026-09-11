@@ -7,8 +7,20 @@ namespace jug
 
 namespace
 {
+
     Logger* g_pLoggerOrNull = nullptr;
-}
+
+    void LogToCoreImpl_(
+        const eLogLevel        _level,
+        const StringView       _msg,
+        const std::format_args _args)
+    {
+        if (g_pLoggerOrNull)
+        {
+            g_pLoggerOrNull->VLog(_level, _msg, _args);
+        }
+    }
+}   // namespace
 
 void SetCoreLogger(
     Logger* _pLoggerOrNull)
@@ -16,20 +28,9 @@ void SetCoreLogger(
     g_pLoggerOrNull = _pLoggerOrNull;
 }
 
-Logger* GetCoreLogger()
+Logger* GetCoreLoggerOrNull()
 {
     return g_pLoggerOrNull;
-}
-
-void LogToCoreImpl_(
-    const eLogLevel        _level,
-    const StringView       _msg,
-    const std::format_args _args)
-{
-    if (g_pLoggerOrNull)
-    {
-        g_pLoggerOrNull->LogV(_level, _msg, _args);
-    }
 }
 
 void LogCore(
@@ -39,6 +40,17 @@ void LogCore(
     if (g_pLoggerOrNull)
     {
         g_pLoggerOrNull->Log(_level, _msg);
+    }
+}
+
+void VLogCore(
+    const eLogLevel        _level,
+    const StringView       _msg,
+    const std::format_args _args)
+{
+    if (g_pLoggerOrNull)
+    {
+        g_pLoggerOrNull->VLog(_level, _msg, _args);
     }
 }
 

@@ -92,10 +92,10 @@ struct AABB
     VECTOR3 center;
     VECTOR3 extends;
 };
-JUG_STATIC_ASSERT_POD(AABB);
+static_assert(PodT<AABB>, "AABB must be POD type.");
 
 // ========================================================
-//  Constants
+//  Constant
 // ========================================================
 
 inline constexpr AABB AABB::kZero = AABB { Zero<VECTOR3>(), Zero<VECTOR3>() };

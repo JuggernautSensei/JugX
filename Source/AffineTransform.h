@@ -132,8 +132,7 @@ struct AFFINE_TRANSFORM
     QUATERNION rotation;
     VECTOR3    translation;
 };
-
-JUG_STATIC_ASSERT_POD(AFFINE_TRANSFORM);
+static_assert(PodT<AFFINE_TRANSFORM>, "AFFINE_TRANSFORM must be POD type.");
 
 // =======================================================
 //  Constants

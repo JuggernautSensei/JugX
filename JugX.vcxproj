@@ -24,18 +24,24 @@
     <ClInclude Include="Source\Align.h" />
     <ClInclude Include="Source\Allocator.h" />
     <ClInclude Include="Source\Assertion.h" />
+    <ClInclude Include="Source\Config.h" />
+    <ClInclude Include="Source\Event.h" />
+    <ClInclude Include="Source\EventDispatcher.h" />
+    <ClInclude Include="Source\JsonAdlSerializer.h" />
+    <ClInclude Include="Source\LruCache.h" />
     <ClInclude Include="Source\NoopHasher.h" />
     <ClInclude Include="Source\Random.h" />
+    <ClInclude Include="Source\RingBuffer.h" />
     <ClInclude Include="Source\StringHasher.h" />
+    <ClInclude Include="Source\StringParser.h" />
     <ClInclude Include="Source\Typedef.h" />
     <ClInclude Include="Source\AxisAngle.h" />
     <ClInclude Include="Source\ConsoleLogger.h" />
     <ClInclude Include="Source\DebugLogger.h" />
     <ClInclude Include="Source\FileLogger.h" />
-    <ClInclude Include="Source\FixedBlockPool.h" />
+    <ClInclude Include="Source\FixedBlockMemoryPool.h" />
     <ClInclude Include="Source\Callable.h" />
     <ClInclude Include="Source\Collision.h" />
-    <ClInclude Include="Source\Config.h" />
     <ClInclude Include="Source\Corner.h" />
     <ClInclude Include="Source\EnumArray.h" />
     <ClInclude Include="Source\EnumFlags.h" />
@@ -44,27 +50,25 @@
     <ClInclude Include="Source\CoreLogger.h" />
     <ClInclude Include="Source\GroupLogger.h" />
     <ClInclude Include="Source\Logger.h" />
-    <ClInclude Include="Source\JsonWriter.h" />
+    <ClInclude Include="Source\JsonSerializer.h" />
     <ClInclude Include="Source\Memory.h" />
     <ClInclude Include="Source\MemoryLogger.h" />
-    <ClInclude Include="Source\RingBuffer.h" />
     <ClInclude Include="Source\StringEncoder.h" />
     <ClInclude Include="Source\StringFormatter.h" />
     <ClInclude Include="Source\Timer.h" />
     <ClInclude Include="Source\TimeStamp.h" />
     <ClInclude Include="Source\TypeRefl.h" />
-    <ClInclude Include="Source\SerializerError.h" />
+    <ClInclude Include="Source\SerializeError.h" />
     <ClInclude Include="Source\FileReaderWriter.h" />
     <ClInclude Include="Source\FileError.h" />
     <ClInclude Include="Source\Float16.h" />
     <ClInclude Include="Source\Frustum.h" />
     <ClInclude Include="Source\Handle.h" />
     <ClInclude Include="Source\HandleAllocator.h" />
-    <ClInclude Include="Source\HandleMap.h" />
+    <ClInclude Include="Source\HandleStorage.h" />
     <ClInclude Include="Source\Interval.h" />
-    <ClInclude Include="Source\JsonReader.h" />
-    <ClInclude Include="Source\MathMacros.h" />
-    <ClInclude Include="Source\Macros.h" />
+    <ClInclude Include="Source\JsonDeserializer.h" />
+    <ClInclude Include="Source\Macro.h" />
     <ClInclude Include="Source\Matrix.h" />
     <ClInclude Include="Source\MemoryArena.h" />
     <ClInclude Include="Source\MemoryHasher.h" />
@@ -73,7 +77,7 @@
     <ClInclude Include="Source\ObjectPool.h" />
     <ClInclude Include="Source\Octree.h" />
     <ClInclude Include="Source\Plane.h" />
-    <ClInclude Include="Source\PlatformDetector.h" />
+    <ClInclude Include="Source\Platform.h" />
     <ClInclude Include="Source\Quaternion.h" />
     <ClInclude Include="Source\Ray.h" />
     <ClInclude Include="Source\Ref.h" />
@@ -102,13 +106,15 @@
     <ClCompile Include="Source\Assertion.cpp" />
     <ClCompile Include="Source\ConsoleLogger.cpp" />
     <ClCompile Include="Source\DebugLogger.cpp" />
+    <ClCompile Include="Source\Event.cpp" />
+    <ClCompile Include="Source\EventDispatcher.cpp" />
     <ClCompile Include="Source\FileReaderWriter.cpp" />
     <ClCompile Include="Source\FileError.cpp" />
     <ClCompile Include="Source\FileLogger.cpp" />
     <ClCompile Include="Source\CoreLogger.cpp" />
     <ClCompile Include="Source\GroupLogger.cpp" />
-    <ClCompile Include="Source\JsonReader.cpp" />
-    <ClCompile Include="Source\JsonWriter.cpp" />
+    <ClCompile Include="Source\JsonDeserializer.cpp" />
+    <ClCompile Include="Source\JsonSerializer.cpp" />
     <ClCompile Include="Source\Logger.cpp" />
     <ClCompile Include="Source\Memory.cpp" />
     <ClCompile Include="Source\MemoryHasher.cpp" />
@@ -178,6 +184,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>

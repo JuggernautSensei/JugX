@@ -1,12 +1,10 @@
 ﻿#pragma once
 #include <limits>
 #include <optional>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
-#include "Config.h"
-#include "Macros.h"   // NOLINT
+#include "Assertion.h"
 #include "Math.h"
 #include "StringHasher.h"
 
@@ -214,7 +212,7 @@ template<EnumT E>
 }
 
 template<EnumT E>
-[[nodiscard]] constexpr const auto& RangesOf()
+[[nodiscard]] constexpr const auto& RangeOf()
 {
     return enum_relf_detail::GetEnumMetadata<E>().values;
 }

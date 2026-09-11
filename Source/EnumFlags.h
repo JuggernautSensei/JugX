@@ -37,14 +37,14 @@ inline constexpr AllFlagType kAllFlag { AllFlagType::Tag {} };
 
 // ==========================================================
 //  EnumFlags
-//   kbBitmaskItSelf = true:  스스로 비트 마스킹을 표현할 수 있나?
-//                            enum eColor { Red = 1, Green = 2, Blue = 4 }; // 이런식으로 정의되어있으면 kbBitmaskItSelf = true
+//   kbBitmaskItself = true:  스스로 비트 마스킹을 표현할 수 있나?
+//                            enum eColor { Red = 1, Green = 2, Blue = 4 }; // 이런식으로 정의되어있으면 kbBitmaskItself = true
 //
-//   kbBitmaskItSelf = false: 비트 마스킹을 표현할 수 없고, 단순히 인덱스로만 사용하나?
-//                            enum eColor { Red, Green, Blue }; // 이런식으로 정의되어있으면 kbBitmaskItSelf = false
+//   kbBitmaskItself = false: 비트 마스킹을 표현할 수 없고, 단순히 인덱스로만 사용하나?
+//                            enum eColor { Red, Green, Blue }; // 이런식으로 정의되어있으면 kbBitmaskItself = false
 // ==========================================================
 
-template<EnumT E, bool kbBitmaskItSelf>
+template<EnumT E, bool kbBitmaskItself>
 class BaseFlags
 {
 public:
@@ -174,12 +174,12 @@ private:
     [[nodiscard]] static constexpr UnderlyingT MakeMask_(
         const E _value) noexcept
     {
-        if constexpr (!kbBitmaskItSelf && std::is_signed_v<UnderlyingT>)
+        if constexpr (!kbBitmaskItself && std::is_signed_v<UnderlyingT>)
         {
             JUG_ASSERT(ToUnderlying(_value) >= 0, "BaseFlags: enum value must be non-negative");
         }
 
-        if constexpr (kbBitmaskItSelf)
+        if constexpr (kbBitmaskItself)
         {
             return static_cast<UnderlyingT>(_value);
         }

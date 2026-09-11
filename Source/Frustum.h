@@ -164,7 +164,7 @@ struct FRUSTUM
 
     const static FRUSTUM kZero;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -180,8 +180,7 @@ struct FRUSTUM
     };
     JUG_MATH_DISABLE_ANON_WARNING_END
 };
-
-JUG_STATIC_ASSERT_POD(FRUSTUM);
+static_assert(PodT<FRUSTUM>, "FRUSTUM must be POD type.");
 
 // ========================================================
 //  Constants

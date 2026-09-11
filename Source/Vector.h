@@ -1,15 +1,14 @@
 ﻿#pragma once
-#include "Config.h"  
+#include "Config.h"
 #include "Math.h"
 #include "SIMD.h"
 //
-#include "MathMacros.h"
-#include "Vector2.h"   
-#include "Vector2I.h"  
-#include "Vector3.h"   
-#include "Vector3I.h"  
-#include "Vector4.h"   
-#include "Vector4I.h"  
+#include "Vector2.h"
+#include "Vector2I.h"
+#include "Vector3.h"
+#include "Vector3I.h"
+#include "Vector4.h"
+#include "Vector4I.h"
 
 namespace jug
 {
@@ -18,42 +17,45 @@ namespace jug
 //  Type Traits
 // =======================================================
 
-template<typename TVector>
-concept VectorT = std::is_same_v<TVector, VECTOR2> || std::is_same_v<TVector, VECTOR3> || std::is_same_v<TVector, VECTOR4>
-               || std::is_same_v<TVector, VECTOR2I> || std::is_same_v<TVector, VECTOR3I> || std::is_same_v<TVector, VECTOR4I>;
+template<typename T>
+concept VectorT = AnyTypeOfV<T, VECTOR2, VECTOR3, VECTOR4, VECTOR2I, VECTOR3I, VECTOR4I>;
 
-template<typename TVector>
-concept FloatVectorT = VectorT<TVector> && std::is_floating_point_v<typename TVector::ValueT>;
+template<typename T>
+concept IntegerVectorT = VectorT<T> && std::is_integral_v<typename T::ValueT>;
+
+template<typename T>
+concept FloatingVectorT = VectorT<T> && std::is_floating_point_v<typename T::ValueT>;
 
 // =======================================================
 //  Basic
 // =======================================================
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector operator*(
-    const typename TVector::ValueT _scalar,
-    const TVector                  _v)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V operator*(
+    const typename V::ValueT _scalar,
+    const V                  _v)
 {
     return _v * _scalar;
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector operator/(
-    const typename TVector::ValueT _scalar,
-    TVector                        _v)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V operator/(
+    const typename V::ValueT _scalar,
+    const V                  _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = _scalar / _v.e[i];
+        ret.e[i] = _scalar / _v.e[i];
     }
-    return _v;
+    return ret;
 }
 
-template<VectorT TVector>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(
-    const TVector _v)
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    for (size_t i = 0; i < V::kDim; ++i)
     {
         if (!IsZeroApprox(_v.e[i]))
         {
@@ -63,12 +65,12 @@ template<VectorT TVector>
     return true;
 }
 
-template<VectorT TVector>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(
-    const TVector _x,
-    const TVector _y)
+    const V _x,
+    const V _y)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    for (size_t i = 0; i < V::kDim; ++i)
     {
         if (!IsEqualApprox(_x.e[i], _y.e[i]))
         {
@@ -78,172 +80,149 @@ template<VectorT TVector>
     return true;
 }
 
-// IsZeroApprox 는 모든 성분이 0 에 가까워야 참이지만, 이건 성분 중 하나라도 0 에 가까우면 참이다.
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr bool IsAnyApproxZero(
-    const TVector _v)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Clamp(
+    const V _v,
+    const V _min,
+    const V _max)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        if (IsZeroApprox(_v.e[i]))
-        {
-            return true;
-        }
+        ret.e[i] = Clamp(_v.e[i], _min.e[i], _max.e[i]);
     }
-    return false;
+    return ret;
 }
 
-// IsEqualApprox 는 모든 성분이 같아야 참이지만, 이건 성분 중 하나라도 같으면 참이다.
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr bool IsAnyApproxEqual(
-    const TVector _x,
-    const TVector _y)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Abs(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        if (IsEqualApprox(_x.e[i], _y.e[i]))
-        {
-            return true;
-        }
+        ret.e[i] = Abs(_v.e[i]);
     }
-    return false;
+    return ret;
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Clamp(
-    TVector       _v,
-    const TVector _min,
-    const TVector _max)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Max(
+    const V _x,
+    const V _y)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _x;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = Clamp(_v.e[i], _min.e[i], _max.e[i]);
+        ret.e[i] = Max(_x.e[i], _y.e[i]);
     }
-    return _v;
+    return ret;
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Abs(
-    TVector _v)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Min(
+    const V _x,
+    const V _y)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _x;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = Abs(_v.e[i]);
+        ret.e[i] = Min(_x.e[i], _y.e[i]);
     }
-    return _v;
+    return ret;
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Max(
-    TVector       _x,
-    const TVector _y)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Rcp(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _x.e[i] = Max(_x.e[i], _y.e[i]);
+        ret.e[i] = 1.f / _v.e[i];
     }
-    return _x;
+    return ret;
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Min(
-    TVector       _x,
-    const TVector _y)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V RcpSafe(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _x.e[i] = Min(_x.e[i], _y.e[i]);
+        ret.e[i] = RcpSafe(_v.e[i]);
     }
-    return _x;
+    return ret;
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Rcp(
-    TVector _v)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V ToRad(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = 1.f / _v.e[i];
+        ret.e[i] = ToRad(_v.e[i]);
     }
-    return _v;
+    return ret;
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector RcpSafe(
-    TVector _v)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V ToDeg(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = RcpSafe(_v.e[i]);
+        ret.e[i] = ToDeg(_v.e[i]);
     }
-    return _v;
+    return ret;
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector ToRad(
-    TVector _v)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Saturate(
+    const V _v)
 {
-    for (size_t i = 0; i < TVector::kDim; ++i)
+    V ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
     {
-        _v.e[i] = ToRad(_v.e[i]);
+        ret.e[i] = Saturate(_v.e[i]);
     }
-    return _v;
-}
-
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector ToDeg(
-    TVector _v)
-{
-    for (size_t i = 0; i < TVector::kDim; ++i)
-    {
-        _v.e[i] = ToDeg(_v.e[i]);
-    }
-    return _v;
-}
-
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Saturate(
-    TVector _v)
-{
-    for (size_t i = 0; i < TVector::kDim; ++i)
-    {
-        _v.e[i] = Saturate(_v.e[i]);
-    }
-    return _v;
+    return ret;
 }
 
 // =======================================================
-//  Vector operators
+//  V operators
 // =======================================================
 
-template<VectorT TVector>
-    requires(TVector::kDim >= 2)
-[[nodiscard]] JUG_MATH_API constexpr typename TVector::ValueT Dot(
-    const TVector _x,
-    const TVector _y)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT Dot(
+    const V _x,
+    const V _y)
 {
-    typename TVector::ValueT ret = _x.e[0] * _y.e[0];
-    for (size_t i = 1; i < TVector::kDim; ++i)
+    typename V::ValueT ret = _x.e[0] * _y.e[0];
+    for (size_t i = 1; i < V::kDim; ++i)
     {
         ret += _x.e[i] * _y.e[i];
     }
     return ret;
 }
 
-template<VectorT TVector>
-    requires(TVector::kDim == 2)
-[[nodiscard]] JUG_MATH_API constexpr typename TVector::ValueT Cross(
-    const TVector _x,
-    const TVector _y)
+template<VectorT V>
+    requires(V::kDim == 2)
+[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT Cross(
+    const V _x,
+    const V _y)
 {
     return _x.e[0] * _y.e[1] - _x.e[1] * _y.e[0];
 }
 
-template<VectorT TVector>
-    requires(TVector::kDim == 3)
-[[nodiscard]] JUG_MATH_API constexpr TVector Cross(
-    const TVector _x,
-    const TVector _y)
+template<VectorT V>
+    requires(V::kDim == 3)
+[[nodiscard]] JUG_MATH_API constexpr V Cross(
+    const V _x,
+    const V _y)
 {
     return {
         _x.e[1] * _y.e[2] - _x.e[2] * _y.e[1],
@@ -252,52 +231,52 @@ template<VectorT TVector>
     };
 }
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr typename TVector::ValueT LengthSq(
-    const TVector _v)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT LengthSq(
+    const V _v)
 {
     return Dot(_v, _v);
 }
 
-template<FloatVectorT TVector>
+template<FloatingVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Length(
-    const TVector _v)
+    const V _v)
 {
     return Sqrt(LengthSq(_v));
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Normalize(
-    const TVector _v)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Normalize(
+    const V _v)
 {
     const float lenSq = LengthSq(_v);
     if (IsZeroApprox(lenSq))   // fallback. 영벡터에 대한 정규화는 영벡터로 정의한다.
     {
-        return Zero<TVector>();
+        return Zero<V>();
     }
     return _v * RSqrt(lenSq);
 }
 
-template<FloatVectorT TVector>
+template<FloatingVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsNormalized(
-    const TVector _v)
+    const V _v)
 {
     return IsEqualApprox(LengthSq(_v), 1.f);
 }
 
-template<FloatVectorT TVector>
+template<FloatingVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsOrthogonal(
-    const TVector _x,
-    const TVector _y)
+    const V _x,
+    const V _y)
 {
     return IsZeroApprox(Dot(_x, _y));
 }
 
-template<FloatVectorT TVector>
-    requires(TVector::kDim == 2 || TVector::kDim == 3)
+template<FloatingVectorT V>
+    requires(V::kDim == 2 || V::kDim == 3)
 [[nodiscard]] JUG_MATH_API constexpr bool IsParallel(
-    const TVector _x,
-    const TVector _y)
+    const V _x,
+    const V _y)
 {
     return IsZeroApprox(Cross(_x, _y));
 }
@@ -306,18 +285,18 @@ template<FloatVectorT TVector>
 //  Distance
 // =======================================================
 
-template<VectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr typename TVector::ValueT DistanceSq(
-    const TVector _x,
-    const TVector _y)
+template<VectorT V>
+[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT DistanceSq(
+    const V _x,
+    const V _y)
 {
     return LengthSq(_x - _y);
 }
 
-template<FloatVectorT TVector>
+template<FloatingVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Distance(
-    const TVector _x,
-    const TVector _y)
+    const V _x,
+    const V _y)
 {
     return Length(_x - _y);
 }
@@ -326,54 +305,54 @@ template<FloatVectorT TVector>
 //  Interpolation
 // =======================================================
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Lerp(
-    const TVector _x,
-    const TVector _y,
-    const float   _t)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Lerp(
+    const V     _x,
+    const V     _y,
+    const float _t)
 {
     return _x + (_y - _x) * _t;
 }
 
-template<FloatVectorT TVector>
+template<FloatingVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Angle(
-    const TVector _x,
-    const TVector _y)
+    const V _x,
+    const V _y)
 {
     return ACos(Clamp(Dot(Normalize(_x), Normalize(_y)), -1.f, 1.f));
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Reflect(
-    const TVector _v,
-    const TVector _normal)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Reflect(
+    const V _v,
+    const V _normal)
 {
     JUG_ASSERT(IsNormalized(_normal), "Normal must be normalized");
     return _v - 2.f * Dot(_v, _normal) * _normal;
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Refract(
-    const TVector _v,
-    const TVector _normal,
-    const float   _eta)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Refract(
+    const V     _v,
+    const V     _normal,
+    const float _eta)
 {
     JUG_ASSERT(IsNormalized(_normal), "Normal must be normalized");
-    const float   dot  = -Dot(_v, _normal);
-    const TVector perp = (_v + dot * _normal) * _eta;
-    const TVector para = _normal * -Sqrt(Abs(1.f - LengthSq(perp)));
+    const float dot  = -Dot(_v, _normal);
+    const V     perp = (_v + dot * _normal) * _eta;
+    const V     para = _normal * -Sqrt(Abs(1.f - LengthSq(perp)));
     return perp + para;
 }
 
-template<FloatVectorT TVector>
-[[nodiscard]] JUG_MATH_API constexpr TVector Project(
-    const TVector _v,
-    const TVector _onto)
+template<FloatingVectorT V>
+[[nodiscard]] JUG_MATH_API constexpr V Project(
+    const V _v,
+    const V _onto)
 {
     const float lenSq = LengthSq(_onto);
     if (IsZeroApprox(lenSq))   // fallback. 영벡터로의 투영은 영벡터로 정의한다.
     {
-        return Zero<TVector>();
+        return Zero<V>();
     }
     return _onto * (Dot(_v, _onto) * RcpSafe(lenSq));
 }

@@ -6,7 +6,7 @@
 
 #include "Config.h"
 #include "Align.h"
-#include "FixedBlockPool.h"
+#include "FixedBlockMemoryPool.h"
 
 namespace jug
 {
@@ -33,12 +33,12 @@ public:
     {
     }
 
-    template<typename... TArgs>
+    template<typename... Args>
     T* New(
-        TArgs&&... _args)
+        Args&&... _args)
     {
         T* pObj = static_cast<T*>(m_pool.Alloc());
-        return std::construct_at(pObj, std::forward<TArgs>(_args)...);
+        return std::construct_at(pObj, std::forward<Args>(_args)...);
     }
 
     void Delete(
@@ -52,7 +52,7 @@ public:
     }
 
 private:
-    FixedBlockPool m_pool;
+    FixedBlockMemoryPool m_pool;
 };
 
 }   // namespace jug

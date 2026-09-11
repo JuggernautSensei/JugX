@@ -66,8 +66,8 @@ concept RngT = requires(T _rng) {
     { _rng.Generate() } -> std::same_as<uint64_t>;
 };
 
-template<ArithmeticT T, RngT TRng>
-[[nodiscard]] T Random(TRng& _rng)
+template<ArithmeticT T, RngT R>
+[[nodiscard]] T Random(R& _rng)
 {
     if constexpr (std::is_floating_point_v<T>)   // [0, 1]
     {
@@ -79,8 +79,8 @@ template<ArithmeticT T, RngT TRng>
     }
 }
 
-template<ArithmeticT T, RngT TRng>
-[[nodiscard]] T Random(TRng& _rng, T _min, T _max)
+template<ArithmeticT T, RngT R>
+[[nodiscard]] T Random(R& _rng, T _min, T _max)
 {
     JUG_ASSERT(_min <= _max, "Invalid range: min > max.\n");
     if constexpr (std::is_floating_point_v<T>)   // [_min, _max]
@@ -95,9 +95,9 @@ template<ArithmeticT T, RngT TRng>
     }
 }
 
-template<RngT TRng>
+template<RngT R>
 [[nodiscard]] VECTOR3 RandomVector3InUnitSphere(
-    TRng&      _rng,
+    R&         _rng,
     const bool _onSurface = false)
 {
     while (true)
@@ -115,9 +115,9 @@ template<RngT TRng>
     }
 }
 
-template<RngT TRng>
+template<RngT R>
 [[nodiscard]] VECTOR3 RandomVector3InHemiSphere(
-    TRng&         _rng,
+    R&            _rng,
     const VECTOR3 _normal,
     const bool    _onSurface = false)
 {

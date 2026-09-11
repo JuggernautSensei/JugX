@@ -11,7 +11,7 @@ public:
 
 private:
     void WriteImpl(eLogLevel _level, StringView _msg, bool _bEnd) override;
-    void WriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEnd) override;
+    void VWriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEnd) override;
 
     String  m_utf8Buf  = {};
     WString m_utf16Buf = {};

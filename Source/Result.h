@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "Assertion.h"
 #include "Config.h"   // NOLINT
 
 namespace jug
@@ -22,11 +23,11 @@ namespace result_detail
 template<typename E>
 struct Failed
 {
-    template<typename... TArgs>
+    template<typename... Args>
     /* implicit */ Failed(
         std::in_place_t,
-        TArgs&&... _args)
-        : error(std::forward<TArgs>(_args)...)
+        Args&&... _args)
+        : error(std::forward<Args>(_args)...)
     {
     }
 
@@ -217,13 +218,13 @@ public:
         std::construct_at(std::addressof(m_value), std::move(_value));
     }
 
-    template<typename... TArgs>
+    template<typename... Args>
     /* implicit */ Result(
         const std::in_place_t,
-        TArgs&&... _args)
+        Args&&... _args)
         : m_state(result_detail::eState::Value)
     {
-        std::construct_at(std::addressof(m_value), std::forward<TArgs>(_args)...);
+        std::construct_at(std::addressof(m_value), std::forward<Args>(_args)...);
     }
 
     Result& operator=(
@@ -556,14 +557,6 @@ private:
     if (!(_result))                             \
     {                                           \
         return Failed { (_result).GetError() }; \
-    }                                           \
-    JUG_END_MACRO_BLOCK
-
-#define JUG_DISPATCH_FAILED_AS(_result, _error) \
-    JUG_BEGIN_MACRO_BLOCK                       \
-    if (!(_result))                             \
-    {                                           \
-        return Failed { (_error) };             \
     }                                           \
     JUG_END_MACRO_BLOCK
 

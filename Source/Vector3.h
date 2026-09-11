@@ -3,7 +3,7 @@
 #pragma once
 #include <array>
 
-#include "Macros.h"
+#include "Macro.h"
 #include "Math.h"
 #include "TypeTraits.h"
 #include "SIMD.h"
@@ -249,7 +249,7 @@ struct VECTOR3
 
     constexpr static size_t kDim = 3;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -260,10 +260,10 @@ struct VECTOR3
         };
         ARRAY<float, 3> e;
     };
-    JUG_MATH_DISABLE_ANON_WARNING_END
+    JUG_DISABLE_ANON_WARNING_END
 };
 
-JUG_STATIC_ASSERT_POD(VECTOR3);
+static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
 
 // =======================================================
 //  Constants

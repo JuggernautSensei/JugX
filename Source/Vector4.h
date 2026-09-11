@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <array>
 
-#include "Macros.h"
+#include "Macro.h"
 #include "Math.h"
 #include "TypeTraits.h"
 #include "SIMD.h"
@@ -291,7 +291,7 @@ struct alignas(16) VECTOR4
 
     constexpr static size_t kDim = 4;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -303,7 +303,7 @@ struct alignas(16) VECTOR4
         };
         ARRAY<float, 4> e;
     };
-    JUG_MATH_DISABLE_ANON_WARNING_END
+    JUG_DISABLE_ANON_WARNING_END
 };
 
 #else
@@ -539,7 +539,7 @@ struct alignas(16) VECTOR4
 
 static_assert(sizeof(VECTOR4) == 16, "VECTOR4 must be tightly packed");
 static_assert(alignof(VECTOR4) == 16, "VECTOR4 must be 16-byte aligned for SIMD");
-JUG_STATIC_ASSERT_POD(VECTOR4);
+static_assert(PodT<VECTOR4>, "VECTOR4 must be POD type.");
 
 // =======================================================
 //  Constants

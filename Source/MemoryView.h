@@ -1,23 +1,26 @@
 ﻿
 #pragma once
 #include <ranges>
+
+#include "Assertion.h"
 #include "Config.h"
 
 namespace jug
 {
 
-template<bool kbIsConst>
+template<bool kbConst>
 class BasicMemoryView;
 
-template<typename TContainer>
-concept MemoryViewConstructableContainerT = std::ranges::contiguous_range<TContainer>
-                                         && requires(TContainer& _cont) {typename TContainer::value_type; _cont.data(); _cont.size(); };
+template<typename Container>
+concept MemoryViewConstructableContainerT = std::ranges::contiguous_range<Container>
+                                         && requires(Container& _cont) {typename Container::value_type; _cont.data(); _cont.size(); };
 
-template<bool kbIsConst>
+template<bool kbConst>
 class BasicMemoryView
 {
+    using ValueT = std::conditional_t<kbConst, const std::byte, std::byte>;
+
 public:
-    using ValueT        = std::conditional_t<kbIsConst, const std::byte, std::byte>;
     using Iterator      = ValueT*;
     using ConstIterator = const ValueT*;
 
@@ -31,48 +34,48 @@ public:
     {
     }
 
-    template<MemoryViewConstructableContainerT TContainer, typename TValue = typename TContainer::value_type>
-        requires(kbIsConst || !std::is_const_v<TValue>)
+    template<MemoryViewConstructableContainerT Container, typename V = typename Container::value_type>
+        requires(kbConst || !std::is_const_v<V>)
     /* implicit */ BasicMemoryView(
-        TContainer& _container)
+        Container& _container)
         : m_pMem(reinterpret_cast<ValueT*>(_container.data()))
-        , m_size(_container.size() * sizeof(TValue))
+        , m_size(_container.size() * sizeof(V))
     {
     }
 
-    template<MemoryViewConstructableContainerT TContainer, typename TValue = typename TContainer::value_type>
-        requires(kbIsConst || !std::is_const_v<TValue>)
+    template<MemoryViewConstructableContainerT Container, typename V = typename Container::value_type>
+        requires(kbConst || !std::is_const_v<V>)
     /* implicit */ BasicMemoryView(
-        TContainer&  _container,
+        Container&   _container,
         const size_t _count)
         : m_pMem(reinterpret_cast<ValueT*>(_container.data()))
-        , m_size(_count * sizeof(TValue))
+        , m_size(_count * sizeof(V))
     {
         JUG_ASSERT(_count <= _container.size(), "Count exceeds _cont bounds.\n");
     }
 
-    template<typename T, size_t N>
-        requires(kbIsConst || !std::is_const_v<T>)
+    template<typename T, size_t kSize>
+        requires(kbConst || !std::is_const_v<T>)
     /* implicit */ BasicMemoryView(
-        T (&_data)[N])
+        T (&_data)[kSize])
         : m_pMem(reinterpret_cast<ValueT*>(_data))
-        , m_size(N * sizeof(T))
+        , m_size(kSize * sizeof(T))
     {
     }
 
-    template<typename T, size_t N>
-        requires(kbIsConst || !std::is_const_v<T>)
+    template<typename T, size_t kSize>
+        requires(kbConst || !std::is_const_v<T>)
     /* implicit */ BasicMemoryView(
-        T (&_data)[N],
+        T (&_data)[kSize],
         const size_t _count)
         : m_pMem(reinterpret_cast<ValueT*>(_data))
         , m_size(_count * sizeof(T))
     {
-        JUG_ASSERT(_count <= N, "Count exceeds array bounds.\n");
+        JUG_ASSERT(_count <= kSize, "Count exceeds array bounds.\n");
     }
 
     template<typename T>
-        requires(!MemoryViewConstructableContainerT<T> && (kbIsConst || !std::is_const_v<T>))
+        requires(!MemoryViewConstructableContainerT<T> && (kbConst || !std::is_const_v<T>))
     /* implicit */ BasicMemoryView(
         T& _data)
         : m_pMem(reinterpret_cast<ValueT*>(&_data))

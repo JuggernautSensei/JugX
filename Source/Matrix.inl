@@ -90,11 +90,11 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeViewLookTo(
 JUG_MATH_API constexpr void Decompose(
     const MATRIX& _mtx,
     VECTOR3*      _pOutScaleOrNull,
-    QUATERNION*   _pOutRotation,
+    QUATERNION*   _pOutRotationOrNull,
     VECTOR3*      _pOutTranslationOrNull)
 {
     // S
-    if (_pOutRotation || _pOutScaleOrNull)
+    if (_pOutRotationOrNull || _pOutScaleOrNull)
     {
         const float sx = Length(_mtx.r[0]);
         const float sy = Length(_mtx.r[1]);
@@ -105,11 +105,11 @@ JUG_MATH_API constexpr void Decompose(
         }
 
         // R
-        if (_pOutRotation)
+        if (_pOutRotationOrNull)
         {
             JUG_ASSERT(!IsZeroApprox(sx) && !IsZeroApprox(sy) && !IsZeroApprox(sz), "Scale components cannot be zero");
             MATRIX rotMtx { _mtx.r[0] / sx, _mtx.r[1] / sy, _mtx.r[2] / sz, MathConstants<VECTOR4>::kUnitW };
-            *_pOutRotation = QUATERNION::MakeFromMatrix(rotMtx);
+            *_pOutRotationOrNull = QUATERNION::MakeFromMatrix(rotMtx);
         }
     }
 

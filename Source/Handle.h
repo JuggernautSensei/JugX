@@ -1,17 +1,19 @@
 ﻿#pragma once
 #include <cstdint>
 #include <type_traits>
+
+#include "Assertion.h"
 #include "Config.h"
 
 namespace jug
 {
 
 // ================================================================
-//  Handle
+//  HandleT
 //   포인터 대신 쓸 수 있는 32bit 핸들 타입.
 //   24bit index + 8bit token으로 구성.
 //   struct ResourceTag {};
-//   using ResourceHandle = Handle<ResourceTag>;
+//   using ResourceHandle = HandleT<ResourceTag>;
 //   이런 식으로 사용하면 강타입의 핸들 타입을 만들 수 있음.
 // ================================================================
 
@@ -36,7 +38,7 @@ struct NullHandleType
 
 constexpr NullHandleType kNullHandle { NullHandleType::Tag {} };
 
-template<typename TTag>
+template<typename T>
 class Handle
 {
 public:
@@ -68,9 +70,8 @@ public:
 
     constexpr Handle(
         Handle&& _other) noexcept
-        : value(_other.value)
+        : value(std::exchange(_other.value, handle_detail::kNullValue))
     {
-        _other.value = handle_detail::kNullValue;
     }
 
     constexpr Handle& operator=(
@@ -85,51 +86,17 @@ public:
     {
         if (this != &_other)
         {
-            value        = _other.value;
-            _other.value = handle_detail::kNullValue;
+            value = std::exchange(_other.value, handle_detail::kNullValue);
         }
         return *this;
     }
 
-    constexpr ~Handle()                        = default;
     constexpr Handle(const Handle&)            = default;
     constexpr Handle& operator=(const Handle&) = default;
+    constexpr ~Handle()                        = default;
 
-    [[nodiscard]] constexpr bool operator==(
-        const Handle _other) const
-    {
-        return value == _other.value;
-    }
-
-    [[nodiscard]] constexpr bool operator!=(
-        const Handle _other) const
-    {
-        return value != _other.value;
-    }
-
-    [[nodiscard]] constexpr bool operator<(
-        const Handle _other) const
-    {
-        return index < _other.index || (index == _other.index && token < _other.token);
-    }
-
-    [[nodiscard]] constexpr bool operator>(
-        const Handle _other) const
-    {
-        return index > _other.index || (index == _other.index && token > _other.token);
-    }
-
-    [[nodiscard]] constexpr bool operator<=(
-        const Handle _other) const
-    {
-        return index < _other.index || (index == _other.index && token <= _other.token);
-    }
-
-    [[nodiscard]] constexpr bool operator>=(
-        const Handle _other) const
-    {
-        return index > _other.index || (index == _other.index && token >= _other.token);
-    }
+    [[nodiscard]] constexpr bool operator==(const Handle& _other) const  = default;
+    [[nodiscard]] constexpr auto operator<=>(const Handle& _other) const = default;
 
     [[nodiscard]] constexpr bool IsNull() const
     {
@@ -172,11 +139,11 @@ private:
 }   // namespace jug
 
 // std::hash specialization
-template<typename TTag>
-struct std::hash<jug::Handle<TTag>>
+template<typename T>
+struct std::hash<jug::Handle<T>>
 {
     size_t operator()(
-        const jug::Handle<TTag>& _handle) const
+        const jug::Handle<T>& _handle) const
     {
         return std::hash<uint32_t>()(_handle.GetValue());
     }

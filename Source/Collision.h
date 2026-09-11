@@ -1111,7 +1111,7 @@ namespace collision_detail
 
         bool bAnyFront  = false;
         bool bAnyBehind = false;
-        for (const eCorner e: RangesOf<eCorner>())
+        for (const eCorner e: RangeOf<eCorner>())
         {
             const float dist = Distance(_plane, corners[e]);
             bAnyFront        = bAnyFront || dist >= 0.f;
@@ -1152,11 +1152,11 @@ namespace collision_detail
     {
         const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> cornersX = _x.CalcCorners();
         const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> cornersY = _y.CalcCorners();
-        for (const eFrustumPlane e0: RangesOf<eFrustumPlane>())
+        for (const eFrustumPlane e0: RangeOf<eFrustumPlane>())
         {
             const PLANE plane   = _x.planes[e0];
             bool        bAllOut = true;
-            for (const eCorner e1: RangesOf<eCorner>())
+            for (const eCorner e1: RangeOf<eCorner>())
             {
                 if (Distance(plane, cornersY[e1]) >= 0.f)
                 {
@@ -1170,11 +1170,11 @@ namespace collision_detail
             }
         }
 
-        for (const eFrustumPlane e0: RangesOf<eFrustumPlane>())
+        for (const eFrustumPlane e0: RangeOf<eFrustumPlane>())
         {
             const PLANE plane   = _y.planes[e0];
             bool        bAllOut = true;
-            for (const eCorner e1: RangesOf<eCorner>())
+            for (const eCorner e1: RangeOf<eCorner>())
             {
                 if (Distance(plane, cornersX[e1]) >= 0.f)
                 {
@@ -1399,7 +1399,7 @@ template<typename T>
     const FRUSTUM& _frustum)
 {
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
-    for (const eCorner e: RangesOf<eCorner>())
+    for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::Intersect(_aabb, corners[e]))
         {
@@ -1457,7 +1457,7 @@ template<typename T>
 {
     const collision_detail::BOX               box     = collision_detail::MakeBox(_obb);
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
-    for (const eCorner e: RangesOf<eCorner>())
+    for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::ContainBoxLocalPoint(box, corners[e]))
         {
@@ -1521,7 +1521,7 @@ template<typename T>
 {
     const float                               rSq     = _sphere.radius * _sphere.radius;
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
-    for (const eCorner e: RangesOf<eCorner>())
+    for (const eCorner e: RangeOf<eCorner>())
     {
         if (DistanceSq(_sphere.center, corners[e]) > rSq)
         {
@@ -1621,7 +1621,7 @@ template<typename T>
     const FRUSTUM& _y)
 {
     const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _y.CalcCorners();
-    for (const eCorner e: RangesOf<eCorner>())
+    for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::Intersect(_x, corners[e]))
         {

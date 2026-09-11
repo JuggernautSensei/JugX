@@ -1,13 +1,13 @@
 ﻿#pragma once
-#include <vector>
-
+#include "Assertion.h"
 #include "Handle.h"
+#include "Math.h"
 
 namespace jug
 {
 
 // ===============================================================
-//  HandleAllocator
+//  HandleAllocatorT
 //   핸들을 할당해줄뿐 아니라, 유효성 검사도 가능.
 //   최대한 dense한 index를 유지하도록 설계됨.
 //   할당, 해제 모두 O(1).
@@ -20,10 +20,10 @@ namespace handle_allocator_detail
     constexpr size_t kMinSize    = 4;
 }   // namespace handle_allocator_detail
 
-template<typename TTag>
+template<typename T>
 class HandleAllocator
 {
-    using Handle = Handle<TTag>;
+    using HandleT = Handle<T>;
 
     struct Item
     {
@@ -33,7 +33,7 @@ class HandleAllocator
     };
 
 public:
-    [[nodiscard]] Handle Alloc()
+    [[nodiscard]] HandleT Alloc()
     {
         size_t index = 0;
         size_t token = 0;
@@ -45,7 +45,7 @@ public:
 
             if (m_sparse.size() <= index)
             {
-                const size_t size = std::max<size_t>(handle_allocator_detail::kMinSize, index * handle_allocator_detail::kGrowFactor);
+                const size_t size = Max(handle_allocator_detail::kMinSize, index * handle_allocator_detail::kGrowFactor);
                 m_sparse.resize(size);
             }
 
@@ -67,15 +67,15 @@ public:
         JUG_ASSERT(token <= handle_detail::kMaxToken, "Token out of range. Must be <= kMaxToken.\n");
         m_sparse[index].bAlloced = true;
         ++m_numAlloced;
-        return Handle { static_cast<uint32_t>(index), static_cast<uint8_t>(token) };
+        return HandleT { static_cast<uint32_t>(index), static_cast<uint8_t>(token) };
     }
 
     void Free(
-        const Handle _handle)
+        const HandleT _handle)
     {
         JUG_ASSERT(IsValid(_handle), "Invalid handle passed to Free().\n");
 
-        const uint32_t index = _handle.GetIndex();
+        const size_t index = _handle.GetIndex();
 
         Item& item    = m_sparse[index];
         item.bAlloced = false;
@@ -98,10 +98,10 @@ public:
     }
 
     [[nodiscard]] bool IsValid(
-        const Handle _handle) const
+        const HandleT _handle) const
     {
         // kNullHandle 인 경우도 여기서 false 분기로 처리됨.
-        const int index = _handle.GetIndex();
+        const size_t index = _handle.GetIndex();
         if (index >= m_sparse.size() || !m_sparse[index].bAlloced)
         {
             return false;
@@ -110,7 +110,7 @@ public:
         return m_sparse[index].token == _handle.GetToken();
     }
 
-    [[nodiscard]] int GetNumAlloced() const
+    [[nodiscard]] size_t GetNumAlloced() const
     {
         return m_numAlloced;
     }
@@ -130,13 +130,11 @@ public:
     }
 
 private:
-    constexpr static int kGrowFactor = 2;
-
     Vector<Item> m_sparse     = {};                                    // For Random Access. { next free index, token, alloced }
-    size_t            m_freeHead   = handle_allocator_detail::kNullIndex;   // free list의 첫 원소. 다음에 Alloc될 슬롯
-    size_t            m_freeTail   = handle_allocator_detail::kNullIndex;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
-    size_t            m_numAlloced = 0;
-    size_t            m_nextIndex  = 0;
+    size_t       m_freeHead   = handle_allocator_detail::kNullIndex;   // free list의 첫 원소. 다음에 Alloc될 슬롯
+    size_t       m_freeTail   = handle_allocator_detail::kNullIndex;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
+    size_t       m_numAlloced = 0;
+    size_t       m_nextIndex  = 0;
 };
 
 }   // namespace jug

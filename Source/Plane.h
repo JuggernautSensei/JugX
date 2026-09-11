@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "Macros.h"
 #include "Matrix.h"
 #include "TypeTraits.h"
 #include "Vector.h"
@@ -59,7 +58,7 @@ struct PLANE
 
     const static PLANE kZero;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -69,10 +68,10 @@ struct PLANE
         };
         VECTOR4 v;
     };
-    JUG_MATH_DISABLE_ANON_WARNING_END
+    JUG_DISABLE_ANON_WARNING_END
 };
 
-JUG_STATIC_ASSERT_POD(PLANE);
+static_assert(PodT<PLANE>, "PLANE must be POD type.");
 
 // =======================================================
 //  Constants

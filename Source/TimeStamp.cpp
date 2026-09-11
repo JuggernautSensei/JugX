@@ -1,5 +1,6 @@
 ﻿#include "TimeStamp.h"
 
+#include "Assertion.h"
 #include "Config.h"
 #include "EnumRefl.h"
 

@@ -1,5 +1,9 @@
 ﻿#pragma once
 
+// ===========================================
+//  OS
+// ===========================================
+
 #if defined(_WIN64) || defined(_WIN32)
 #    define JUG_OS_WINDOWS 1
 #    define JUG_OS_NAME    "Windows"
@@ -29,6 +33,9 @@
 #    define JUG_OS_NAME    "Unknown"
 #endif
 
+// ===========================================
+//  CPP
+// ===========================================
 
 #if defined(_MSC_VER) && defined(_MSVC_LANG)
 #    define JUG_CPP_STANDARD _MSVC_LANG
@@ -50,7 +57,9 @@
 #    define JUG_CPP_VERSION 3   // C++98/03
 #endif
 
-
+// ===========================================
+//  Compiler
+// ===========================================
 
 #ifdef __clang__
 #    define JUG_COMPILER_CLANG         1
@@ -84,6 +93,9 @@
 #    define JUG_COMPILER_VERSION_PATCH 0
 #endif
 
+// ===========================================
+//  Architecture
+// ===========================================
 
 #if defined(__x86_64__) || defined(_M_X64)
 #    define JUG_ARCH_X64  1
@@ -104,8 +116,24 @@
 #    define JUG_ARCH_RISCV32 1
 #    define JUG_ARCH_NAME    "RISC-V32"
 #elif defined(JUG_ERROR_ON_UNKNOWN_ARCH)
-#    error "Unknown architecture"   
+#    error "Unknown architecture"
 #else
 #    define JUG_ARCH_UNKNOWN 1
 #    define JUG_ARCH_NAME    "Unknown"
+#endif
+
+// ===========================================
+//  Endian
+// ===========================================
+
+#if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
+#    define JUG_BIG_ENDIAN 1
+#elif defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
+#    define JUG_LITTLE_ENDIAN 1
+#else
+#    if defined(_WIN32) || defined(_WIN64)
+#        define JUG_LITTLE_ENDIAN 1
+#    else
+#        error "Unknown endianness"
+#    endif
 #endif

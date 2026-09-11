@@ -16,3 +16,6 @@
 [submodule "Source/Vendor/parallel-hashmap"]
 	path = Source/Vendor/parallel-hashmap
 	url = https://github.com/greg7mdp/parallel-hashmap.git
+[submodule "Source/Vendor/EASTL"]
+	path = Source/Vendor/EASTL
+	url = https://github.com/electronicarts/EASTL.git

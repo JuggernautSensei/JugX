@@ -12,48 +12,47 @@ namespace jug
 //   키를 Enum의 값으로하여 간편하게 접근할 수 있음
 // ===========================================================================
 
-template<EnumT E, typename TValue>
-    requires std::is_object_v<TValue>
+template<EnumT E, typename V>
+    requires std::is_object_v<V>
 struct ENUM_ARRAY
 {
-    using Iterator      = TValue*;
-    using ConstIterator = const TValue*;
+    using Iterator      = V*;
+    using ConstIterator = const V*;
 
-    [[nodiscard]] constexpr TValue& operator[](
-        const E _i)
+    [[nodiscard]] constexpr V& operator[](
+        const E _value)
     {
         if constexpr (DirectIndexableEnumT<E>)
         {
-            return elems[static_cast<size_t>(_i)];   // fast access for contiguous enums starting at 0
+            return elems[static_cast<size_t>(_value)];   // fast access for contiguous enums starting at 0
         }
         else
         {
-            const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(_i);
-            return elems[index];
+            return elems[GetIndex(_value)];
         }
     }
 
-    [[nodiscard]] constexpr const TValue& operator[](
-        const E _e) const
+    [[nodiscard]] constexpr const V& operator[](
+        const E _value) const
     {
-        return const_cast<ENUM_ARRAY*>(this)->operator[](_e);
+        return const_cast<ENUM_ARRAY*>(this)->operator[](_value);
     }
 
-    [[nodiscard]] constexpr TValue& operator[](
-        const size_t _i)
+    [[nodiscard]] constexpr V& operator[](
+        const size_t _index)
     {
 
-        return elems[_i];
+        return elems[_index];
     }
 
-    [[nodiscard]] constexpr const TValue& operator[](
-        const size_t _i) const
+    [[nodiscard]] constexpr const V& operator[](
+        const size_t _index) const
     {
-        return const_cast<ENUM_ARRAY*>(this)->operator[](_i);
+        return const_cast<ENUM_ARRAY*>(this)->operator[](_index);
     }
 
     constexpr void Fill(
-        const TValue& _value)
+        const V& _value)
     {
         std::fill_n(elems, kSize, _value);
     }
@@ -69,32 +68,32 @@ struct ENUM_ARRAY
         return kSize;
     }
 
-    [[nodiscard]] constexpr TValue* GetPtr()
+    [[nodiscard]] constexpr V* GetPtr()
     {
         return elems;
     }
 
-    [[nodiscard]] constexpr const TValue* GetPtr() const
+    [[nodiscard]] constexpr const V* GetPtr() const
     {
         return elems;
     }
 
-    [[nodiscard]] constexpr TValue& Front()
+    [[nodiscard]] constexpr V& Front()
     {
         return elems[0];
     }
 
-    [[nodiscard]] constexpr const TValue& Front() const
+    [[nodiscard]] constexpr const V& Front() const
     {
         return elems[0];
     }
 
-    [[nodiscard]] constexpr TValue& Back()
+    [[nodiscard]] constexpr V& Back()
     {
         return elems[kSize - 1];
     }
 
-    [[nodiscard]] constexpr const TValue& Back() const
+    [[nodiscard]] constexpr const V& Back() const
     {
         return elems[kSize - 1];
     }
@@ -141,12 +140,12 @@ struct ENUM_ARRAY
         return kSize;
     }
 
-    [[nodiscard]] constexpr TValue* data()
+    [[nodiscard]] constexpr V* data()
     {
         return elems;
     }
 
-    [[nodiscard]] constexpr const TValue* data() const
+    [[nodiscard]] constexpr const V* data() const
     {
         return elems;
     }
@@ -187,7 +186,7 @@ struct ENUM_ARRAY
 
     constexpr static size_t kSize = CountOf<E>();
 
-    TValue elems[kSize];   // NOLINT
+    V elems[kSize];   // NOLINT
 };
 
 // =================================================================
@@ -197,8 +196,8 @@ struct ENUM_ARRAY
 //   이런 시나리오에서 ENUM_ARRAY를 사용하고 싶다면, 반드시 DirectIndexable해야함
 // =================================================================
 
-template<EnumT E, typename TValue>
-struct DIRECT_ENUM_ARRAY : public ENUM_ARRAY<E, TValue>
+template<EnumT E, typename V>
+struct DIRECT_ENUM_ARRAY : public ENUM_ARRAY<E, V>
 {
     static_assert(DirectIndexableEnumT<E>, "DIRECT_ENUM_ARRAY: E must be direct indexable");   // intellisense가 requires를 잘못 인식하는 경우가 있어 static_assert를 사용함.
 };

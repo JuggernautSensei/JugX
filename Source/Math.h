@@ -1,34 +1,23 @@
 ﻿#pragma once
 #include <numbers>
 
-#include "MathMacros.h"
 #include "TypeTraits.h"
 
 namespace jug
 {
 
-// ==========================================
-//  Float Constants
-// ==========================================
+// ===========================================
+//  Macro
+// ===========================================
 
-constexpr static float kPI        = std::numbers::pi_v<float>;
-constexpr static float k2PI       = 2.f * kPI;
-constexpr static float kHalfPI    = kPI * 0.5f;
-constexpr static float kInvPI     = 1.f / kPI;
-constexpr static float kInv2PI    = 1.f / k2PI;
-constexpr static float kInvHalfPI = 1.f / kHalfPI;
-
-constexpr static float kDeg2Rad   = kPI / 180.f;
-constexpr static float kRad2Deg   = 180.f / kPI;
-constexpr static float kEpsilon   = 1e-5f;
-constexpr static float kAlmostOne = 1.f - kEpsilon;
-
-constexpr static float kSqrt2      = 1.41421356237309504880f;
-constexpr static float kLogNat2    = 0.6931471805599453f;
-constexpr static float kInvLogNat2 = 1.4426950408889634f;
+#ifdef __CUDACC__
+#    define JUG_MATH_API __host__ __device__
+#else
+#    define JUG_MATH_API
+#endif
 
 // ==========================================
-//  Constants
+//   Constants
 // ==========================================
 
 template<typename T>
@@ -92,7 +81,7 @@ JUG_MATH_DEFINE_MATH_CONSTANTS_SHORTCUT(Unit);
 JUG_MATH_DEFINE_MATH_CONSTANTS_SHORTCUT(Universe);
 
 // ==========================================
-//  Type Safe Comparison
+//  Comparison
 // ==========================================
 
 template<std::integral T, std::integral U>
@@ -114,7 +103,7 @@ template<std::integral T, std::integral U>
 [[nodiscard]] JUG_MATH_API constexpr bool IsGreaterEqual(T _x, U _y);
 
 // =========================================
-//  Constexpr Math
+//  Basic
 // =========================================
 
 template<typename T, typename U = std::type_identity_t<T>>
@@ -157,30 +146,24 @@ template<ArithmeticT T>
 [[nodiscard]] JUG_MATH_API constexpr T Pulse(T _x, T _start, T _end);
 
 // =========================================
-//  Constexpr Integral Math
+//  Float
 // =========================================
 
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Ceil(T _value, T _multiple);
+constexpr static float kPI        = std::numbers::pi_v<float>;
+constexpr static float k2PI       = 2.f * kPI;
+constexpr static float kHalfPI    = kPI * 0.5f;
+constexpr static float kInvPI     = 1.f / kPI;
+constexpr static float kInv2PI    = 1.f / k2PI;
+constexpr static float kInvHalfPI = 1.f / kHalfPI;
 
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Floor(T _value, T _multiple);
+constexpr static float kDeg2Rad   = kPI / 180.f;
+constexpr static float kRad2Deg   = 180.f / kPI;
+constexpr static float kEpsilon   = 1e-5f;
+constexpr static float kAlmostOne = 1.f - kEpsilon;
 
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Round(T _value, T _multiple);
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr bool IsPowerOf2(T _value);
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T CeilPowerOf2(T _value);
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T FloorPowerOf2(T _value);
-
-// =========================================
-//  Constexpr Float Math
-// =========================================
+constexpr static float kSqrt2      = 1.41421356237309504880f;
+constexpr static float kLogNat2    = 0.6931471805599453f;
+constexpr static float kInvLogNat2 = 1.4426950408889634f;
 
 [[nodiscard]] JUG_MATH_API constexpr float ToDeg(float _rad);
 [[nodiscard]] JUG_MATH_API constexpr float ToRad(float _deg);
@@ -200,8 +183,10 @@ template<std::integral T>
 [[nodiscard]] JUG_MATH_API constexpr float SmoothStep(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Bias(float _time, float _bias);
 [[nodiscard]] JUG_MATH_API constexpr float Gain(float _time, float _gain);
-[[nodiscard]] JUG_MATH_API constexpr float LogCore(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float Log(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float Log2(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Exp(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float Exp2(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Pow(float _x, float _y);
 [[nodiscard]] JUG_MATH_API constexpr float Sqrt(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float RSqrt(float _x);

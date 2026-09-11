@@ -1,76 +1,71 @@
 ﻿#pragma once
-#include <iterator>
-#include <type_traits>
+#include <memory>
 
-#include "Alloc.h"
-#include "Allocator.h"
-#include "Config.h"
+#include "Assertion.h"
 #include "Math.h"
+#include "ResourcePool.h"
 
 namespace jug
 {
 
 namespace ring_buffer_detail
 {
-    constexpr size_t kMinCapacity = 8;
-    static_assert(IsPowerOf2(kMinCapacity), "kMinCapacity must be a power of 2.");
-}   // namespace ring_buffer_detail
+    constexpr size_t kDefaultCapacity = 8;
+}
 
-template<typename T>
+template<typename T, typename Alloc = std::allocator<T>>
 class RingBuffer
 {
+    static_assert(std::is_copy_constructible_v<T>, "RingBuffer requires copy constructible type.");
+    static_assert(std::is_move_constructible_v<T>, "RingBuffer requires move constructible type.");
+
 public:
     // ===========================================
     //  Iterator
     // ===========================================
 
-    template<bool kbIsConst>
+    template<bool kbConst>
     class BaseIterator
     {
         template<bool>
         friend class BaseIterator;
         friend class RingBuffer;
 
-        using ContainerT = std::conditional_t<kbIsConst, const RingBuffer, RingBuffer>;
-        using ValueT     = std::conditional_t<kbIsConst, const T, T>;
+        using ContainerT = std::conditional_t<kbConst, const RingBuffer, RingBuffer>;
+        using ValueT     = std::conditional_t<kbConst, const T, T>;
 
     public:
-        using iterator_concept  = std::random_access_iterator_tag;
-        using iterator_category = std::random_access_iterator_tag;
-        using value_type        = T;
-        using difference_type   = ptrdiff_t;
-        using pointer           = ValueT*;
-        using reference         = ValueT&;
-
         BaseIterator() = default;
 
-        [[nodiscard]] reference operator*() const
+        // ===========================================
+        //  Access
+        // ===========================================
+
+        [[nodiscard]] ValueT& operator*() const
         {
-            JUG_ASSERT(m_pBuffer && m_index < m_pBuffer->GetSize(), "Cannot dereference an out of range iterator.");
-            return *GetPtr_(m_index);
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            return m_pContainer->GetValue_(m_index);
         }
 
-        [[nodiscard]] pointer operator->() const
+        [[nodiscard]] ValueT* operator->() const
         {
-            JUG_ASSERT(m_pBuffer && m_index < m_pBuffer->GetSize(), "Cannot dereference an out of range iterator.");
-            return GetPtr_(m_index);
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            return std::addressof(m_pContainer->GetValue_(m_index));
         }
 
-        [[nodiscard]] reference operator[](
-            const difference_type _offset) const
-        {
-            return *(*this + _offset);
-        }
+        // ===========================================
+        //  Increment/Decrement
+        // ===========================================
 
         BaseIterator& operator++()
         {
-            JUG_ASSERT(m_pBuffer && m_index < m_pBuffer->GetSize(), "Iterator is already at the end. Cannot increment further.");
-            ++m_index;
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            m_index = Min(m_index + 1, m_pContainer->GetSize());
             return *this;
         }
 
-        BaseIterator operator++(
-            const int)
+        [[nodiscard]] BaseIterator operator++(
+            int)
         {
             BaseIterator tmp = *this;
             ++(*this);
@@ -79,117 +74,90 @@ public:
 
         BaseIterator& operator--()
         {
-            JUG_ASSERT(m_index > 0, "Iterator is already at the begin. Cannot decrement further.");
-            --m_index;
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            m_index = (m_index > 0) ? m_index - 1 : 0;
             return *this;
         }
 
-        BaseIterator operator--(
-            const int)
+        [[nodiscard]] BaseIterator operator--(
+            int)
         {
             BaseIterator tmp = *this;
             --(*this);
             return tmp;
         }
 
+        // ===========================================
+        //  Random Access
+        // ===========================================
+
         BaseIterator& operator+=(
-            const difference_type _offset)
+            const ptrdiff_t _offset)
         {
-            m_index = static_cast<size_t>(static_cast<difference_type>(m_index) + _offset);
-            JUG_ASSERT(m_pBuffer && m_index <= m_pBuffer->GetSize(), "Iterator is out of range.");
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            m_index = static_cast<size_t>(Clamp<ptrdiff_t>(static_cast<ptrdiff_t>(m_index) + _offset, 0, static_cast<ptrdiff_t>(m_pContainer->GetSize())));
             return *this;
         }
 
-        BaseIterator& operator-=(
-            const difference_type _offset)
-        {
-            return *this += -_offset;
-        }
-
         [[nodiscard]] BaseIterator operator+(
-            const difference_type _offset) const
+            const ptrdiff_t _offset) const
         {
             BaseIterator tmp = *this;
-            return tmp += _offset;
+            tmp += _offset;
+            return tmp;
         }
 
-        [[nodiscard]] friend BaseIterator operator+(
-            const difference_type _offset,
-            const BaseIterator&   _it)
+        BaseIterator& operator-=(
+            const ptrdiff_t _offset)
         {
-            return _it + _offset;
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            m_index = static_cast<size_t>(Clamp<ptrdiff_t>(static_cast<ptrdiff_t>(m_index) - _offset, 0, static_cast<ptrdiff_t>(m_pContainer->GetSize())));
+            return *this;
         }
 
         [[nodiscard]] BaseIterator operator-(
-            const difference_type _offset) const
+            const ptrdiff_t _offset) const
         {
             BaseIterator tmp = *this;
-            return tmp -= _offset;
+            tmp -= _offset;
+            return tmp;
         }
 
-        [[nodiscard]] difference_type operator-(
-            const BaseIterator& _other) const
+        [[nodiscard]] ValueT& operator[](
+            const ptrdiff_t _offset) const
         {
-            JUG_ASSERT(m_pBuffer == _other.m_pBuffer, "Cannot compare iterators from different RingBuffers.");
-            return static_cast<difference_type>(m_index) - static_cast<difference_type>(_other.m_index);
+            JUG_ASSERT(m_pContainer, "RingBuffer must not be null.\n");
+            return m_pContainer->GetValue_(static_cast<size_t>(Clamp<ptrdiff_t>(static_cast<ptrdiff_t>(m_index) + _offset, 0, static_cast<ptrdiff_t>(m_pContainer->GetSize()))));
         }
 
-        [[nodiscard]] bool operator==(
-            const BaseIterator& _other) const
-        {
-            JUG_ASSERT(m_pBuffer == _other.m_pBuffer, "Cannot compare iterators from different RingBuffers.");
-            return m_index == _other.m_index;
-        }
+        // ===========================================
+        //  Comparison
+        // ===========================================
 
-        [[nodiscard]] bool operator<(
-            const BaseIterator& _other) const
-        {
-            JUG_ASSERT(m_pBuffer == _other.m_pBuffer, "Cannot compare iterators from different RingBuffers.");
-            return m_index < _other.m_index;
-        }
+        [[nodiscard]] bool operator==(const BaseIterator& _other) const  = default;
+        [[nodiscard]] auto operator<=>(const BaseIterator& _other) const = default;
 
-        [[nodiscard]] bool operator>(
-            const BaseIterator& _other) const
-        {
-            return _other < *this;
-        }
+        // ===========================================
+        //  Conversion
+        // ===========================================
 
-        [[nodiscard]] bool operator<=(
-            const BaseIterator& _other) const
+        operator BaseIterator<true>() const
         {
-            return !(_other < *this);
-        }
-
-        [[nodiscard]] bool operator>=(
-            const BaseIterator& _other) const
-        {
-            return !(*this < _other);
-        }
-
-        [[nodiscard]] operator BaseIterator<true>() const
-            requires(!kbIsConst)
-        {
-            return BaseIterator<true> { m_pBuffer, m_index };
+            return BaseIterator<true>(m_pContainer, m_index);
         }
 
     private:
-        constexpr BaseIterator(
-            ContainerT*  _pBuffer,
+        BaseIterator(
+            ContainerT*  _pContainer,
             const size_t _index)
-            : m_pBuffer(_pBuffer)
+            : m_pContainer(_pContainer)
             , m_index(_index)
         {
-            JUG_ASSERT(_pBuffer, "RingBuffer must not be null.");
+            JUG_ASSERT(_pContainer, "RingBuffer must not be null.\n");
         }
 
-        [[nodiscard]] pointer GetPtr_(
-            const size_t _index) const
-        {
-            return m_pBuffer->m_pBegin + ((m_pBuffer->m_front + _index) & m_pBuffer->Mask_());
-        }
-
-        ContainerT* m_pBuffer = nullptr;
-        size_t      m_index   = 0;
+        ContainerT* m_pContainer = nullptr;
+        size_t      m_index      = 0;
     };
 
     using Iterator      = BaseIterator<false>;
@@ -197,20 +165,23 @@ public:
 
 public:
     RingBuffer()
+        : m_capacity(ring_buffer_detail::kDefaultCapacity)
     {
-        Reserve(ring_buffer_detail::kMinCapacity);
     }
 
     explicit RingBuffer(
-        const size_t _initCap)
+        const size_t _capacity)
+        : m_capacity(_capacity)
     {
-        Reserve(_initCap);
+        JUG_ASSERT(_capacity > 0, "RingBuffer capacity must be greater than 0.\n");
     }
 
-    RingBuffer(const RingBuffer& _other)
+    RingBuffer(
+        const RingBuffer& _other)
+        : m_capacity(_other.m_capacity)
+        , m_allocator(_other.m_allocator)
     {
-        Reserve(_other.m_capacity);
-        CopyFrom_(_other);
+        CopyConstructFrom_(_other);
     }
 
     RingBuffer& operator=(
@@ -218,63 +189,42 @@ public:
     {
         if (this != &_other)
         {
-            Clear();
-            Reserve(_other.m_capacity);
-            CopyFrom_(_other);
+            Destroy_();
+            m_capacity  = _other.m_capacity;
+            m_allocator = _other.m_allocator;
+            CopyConstructFrom_(_other);
         }
         return *this;
     }
 
-    RingBuffer(RingBuffer&& _other) noexcept
-        : m_pBegin(std::exchange(_other.m_pBegin, nullptr))
-        , m_capacity(std::exchange(_other.m_capacity, 0))
-        , m_front(std::exchange(_other.m_front, 0))
+    RingBuffer(
+        RingBuffer&& _other) noexcept(std::is_nothrow_move_constructible_v<Alloc>)
+        : m_pData(std::exchange(_other.m_pData, nullptr))
+        , m_head(std::exchange(_other.m_head, 0))
         , m_size(std::exchange(_other.m_size, 0))
+        , m_capacity(std::exchange(_other.m_capacity, 0))
+        , m_allocator(std::move(_other.m_allocator))
     {
     }
 
     RingBuffer& operator=(
-        RingBuffer&& _other) noexcept
+        RingBuffer&& _other) noexcept(std::is_nothrow_move_assignable_v<Alloc>)
     {
         if (this != &_other)
         {
-            DestroyAll_();
-            m_allocator.Free(m_pBegin, m_capacity);
-
-            m_pBegin   = std::exchange(_other.m_pBegin, nullptr);
-            m_capacity = std::exchange(_other.m_capacity, 0);
-            m_front    = std::exchange(_other.m_front, 0);
-            m_size     = std::exchange(_other.m_size, 0);
+            Destroy_();
+            m_pData     = std::exchange(_other.m_pData, nullptr);
+            m_head      = std::exchange(_other.m_head, 0);
+            m_size      = std::exchange(_other.m_size, 0);
+            m_capacity  = std::exchange(_other.m_capacity, 0);
+            m_allocator = std::move(_other.m_allocator);
         }
         return *this;
     }
 
     ~RingBuffer()
     {
-        DestroyAll_();
-        m_allocator.Free(m_pBegin, m_capacity);
-    }
-
-    template<typename... TArgs>
-        requires std::is_constructible_v<T, TArgs...>
-    T& Emplace(
-        TArgs&&... _args)
-    {
-        if (m_size == m_capacity)
-        {
-            if (m_capacity == 0)
-            {
-                Reserve(ring_buffer_detail::kMinCapacity);
-            }
-            else
-            {
-                Pop();
-            }
-        }
-
-        T* pObj = std::construct_at(GetValue_(m_size), std::forward<TArgs>(_args)...);
-        ++m_size;
-        return *pObj;
+        Destroy_();
     }
 
     void Push(
@@ -289,124 +239,91 @@ public:
         Emplace(std::move(_value));
     }
 
+    template<typename... Args>
+    void Emplace(
+        Args&&... _args)
+    {
+        Ensure_();
+
+        if (IsFull())
+        {
+            Pop();
+        }
+
+        std::construct_at(m_pData + ToRealIndex_(m_size), std::forward<Args>(_args)...);
+        ++m_size;
+    }
+
     void Pop()
     {
-        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.");
-        std::destroy_at(m_pBegin + m_front);
-        m_front = (m_front + 1) & Mask_();
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        std::destroy_at(m_pData + m_head);
+        m_head = ToRealIndex_(1);
         --m_size;
+    }
+
+    void SetCapacity(
+        const size_t _capacity)
+    {
+        Reserve_(_capacity);
     }
 
     void Clear()
     {
-        DestroyAll_();
-        m_front = 0;
-        m_size  = 0;
+        while (!IsEmpty())
+        {
+            Pop();
+        }
     }
 
     [[nodiscard]] T& Front()
     {
-        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.");
-        return m_pBegin[m_front];
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        return m_pData[m_head];
     }
 
     [[nodiscard]] const T& Front() const
     {
-        return const_cast<RingBuffer*>(this)->Front();
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        return m_pData[m_head];
     }
 
     [[nodiscard]] T& Back()
     {
-        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.");
-        return *GetValue_(m_size - 1);
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        return GetValue_(m_size - 1);
     }
 
     [[nodiscard]] const T& Back() const
     {
-        return const_cast<RingBuffer*>(this)->Back();
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        return GetValue_(m_size - 1);
     }
 
     [[nodiscard]] T& operator[](
         const size_t _index)
     {
-        JUG_ASSERT(_index < m_size, "RingBuffer index out of range.");
-        return *GetValue_(_index);
+        return GetValue_(_index);
     }
 
     [[nodiscard]] const T& operator[](
         const size_t _index) const
     {
-        return const_cast<RingBuffer*>(this)->operator[](_index);
+        return GetValue_(_index);
     }
 
-    [[nodiscard]] T* GetPtr()
+    [[nodiscard]] T& At(
+        const size_t _index)
     {
-        return m_pBegin;
+        JUG_ASSERT(_index < m_size, "RingBuffer index out of range.\n");
+        return GetValue_(_index);
     }
 
-    [[nodiscard]] const T* GetPtr() const
+    [[nodiscard]] const T& At(
+        const size_t _index) const
     {
-        return m_pBegin;
-    }
-
-    void Reserve(
-        const size_t _cap)
-    {
-        if (_cap <= m_capacity)
-        {
-            return;
-        }
-
-        Reallocate_(ClacIdealCapacity_(_cap));
-    }
-
-    void SetCapacity(
-        const size_t _cap)
-    {
-        const size_t cap = ClacIdealCapacity_(_cap);
-        if (cap == m_capacity)
-        {
-            return;
-        }
-
-        Reallocate_(cap);
-    }
-
-    void Resize(
-        const size_t _size)
-        requires std::is_default_constructible_v<T>
-    {
-        JUG_ASSERT(_size <= m_capacity, "Resize does not change the capacity. Call Reserve or SetCapacity first.");
-
-        while (m_size > _size)
-        {
-            Pop();
-        }
-
-        while (m_size < _size)
-        {
-            std::construct_at(GetValue_(m_size));
-            ++m_size;
-        }
-    }
-
-    void Resize(
-        const size_t _size,
-        const T&     _value)
-        requires std::is_copy_constructible_v<T>
-    {
-        JUG_ASSERT(_size <= m_capacity, "Resize does not change the capacity. Call Reserve or SetCapacity first.");
-
-        while (m_size > _size)
-        {
-            Pop();
-        }
-
-        while (m_size < _size)
-        {
-            std::construct_at(GetValue_(m_size), _value);
-            ++m_size;
-        }
+        JUG_ASSERT(_index < m_size, "RingBuffer index out of range.\n");
+        return GetValue_(_index);
     }
 
     [[nodiscard]] size_t GetSize() const
@@ -419,6 +336,16 @@ public:
         return m_capacity;
     }
 
+    [[nodiscard]] size_t GetAvailSize() const
+    {
+        return GetMaxSize() - m_size;
+    }
+
+    [[nodiscard]] size_t GetMaxSize() const
+    {
+        return m_capacity - 1;
+    }
+
     [[nodiscard]] bool IsEmpty() const
     {
         return m_size == 0;
@@ -426,7 +353,7 @@ public:
 
     [[nodiscard]] bool IsFull() const
     {
-        return m_size == m_capacity;
+        return m_size + 1 == m_capacity;
     }
 
     [[nodiscard]] Iterator Begin()
@@ -451,35 +378,20 @@ public:
 
     [[nodiscard]] ConstIterator CBegin() const
     {
-        return ConstIterator { this, 0 };
+        return Begin();
     }
 
     [[nodiscard]] ConstIterator CEnd() const
     {
-        return ConstIterator { this, m_size };
+        return End();
     }
 
-    // ==========================================
-    //  STL like
-    // ==========================================
+    // ===========================================
+    //  STL Like
+    // ===========================================
 
     using iterator       = Iterator;
     using const_iterator = ConstIterator;
-
-    [[nodiscard]] size_t size() const
-    {
-        return GetSize();
-    }
-
-    [[nodiscard]] size_t capacity() const
-    {
-        return GetCapacity();
-    }
-
-    [[nodiscard]] bool empty() const
-    {
-        return IsEmpty();
-    }
 
     [[nodiscard]] iterator begin()
     {
@@ -512,79 +424,113 @@ public:
     }
 
 private:
-    [[nodiscard]] size_t Mask_() const
+    void Ensure_()   // 메모리를 보장
     {
-        JUG_ASSERT(m_capacity > 0, "RingBuffer has no storage.");
-        return m_capacity - 1;
+        Reserve_(m_capacity);
     }
 
-    [[nodiscard]] T* GetValue_(
-        const size_t _index) const
+    void Reserve_(
+        const size_t _capacity)
     {
-        return m_pBegin + ((m_front + _index) & Mask_());
-    }
-
-    [[nodiscard]] static size_t ClacIdealCapacity_(
-        const size_t _cap)
-    {
-        return _cap == 0 ? 0 : CeilPowerOf2(Max(_cap, ring_buffer_detail::kMinCapacity));
-    }
-
-    void DestroyAll_()
-    {
-        if constexpr (!std::is_trivially_destructible_v<T>)
+        if (_capacity == m_capacity && m_pData)
         {
-            for (size_t i = 0; i < m_size; ++i)
-            {
-                std::destroy_at(GetValue_(i));
-            }
+            return;
         }
+
+        DoReserve_(_capacity);
     }
 
-    void CopyFrom_(
+    void DoReserve_(
+        const size_t _capacity)
+    {
+        JUG_ASSERT(_capacity > 0, "RingBuffer capacity must be greater than 0.\n");
+
+        T*           pMem = m_allocator.allocate(_capacity);
+        const size_t size = Min(m_size, _capacity - 1);   // 슬롯 하나는 항상 비워 둬야함.
+
+        if (m_pData)
+        {
+            size_t i = 0;
+            for (; i < size; ++i)
+            {
+                T* pSrc = m_pData + ToRealIndex_(i);
+                std::construct_at(pMem + i, std::move(*pSrc));
+                std::destroy_at(pSrc);
+            }
+
+            // 남은 원소는 파괴만
+            for (; i < m_size; ++i)
+            {
+                std::destroy_at(m_pData + ToRealIndex_(i));
+            }
+
+            m_allocator.deallocate(m_pData, m_capacity);
+        }
+
+        m_pData    = pMem;
+        m_head     = 0;
+        m_capacity = _capacity;
+        m_size     = size;
+    }
+
+    void Destroy_()
+    {
+        if (m_pData)
+        {
+            Clear();
+            m_allocator.deallocate(m_pData, m_capacity);
+        }
+
+        m_pData = nullptr;
+        m_head  = 0;
+        m_size  = 0;
+    }
+
+    void CopyConstructFrom_(
         const RingBuffer& _other)
     {
-        JUG_ASSERT(IsEmpty(), "Destination must be empty before copying.");
-        JUG_ASSERT(_other.m_size <= m_capacity, "Destination buffer is not large enough for source data.");
+        JUG_ASSERT(m_pData == nullptr, "RingBuffer must be empty before copying.\n");
+
+        if (!_other.m_pData)
+        {
+            return;
+        }
+
+        m_pData = m_allocator.allocate(m_capacity);
+        m_head  = 0;
 
         for (size_t i = 0; i < _other.m_size; ++i)
         {
-            std::construct_at(m_pBegin + i, _other[i]);
+            std::construct_at(m_pData + i, _other.GetValue_(i));
         }
-
-        m_front = 0;
-        m_size  = _other.m_size;
+        m_size = _other.m_size;
     }
 
-    void Reallocate_(
-        const size_t _cap)
+    [[nodiscard]] size_t ToRealIndex_(
+        const size_t _logicalIndex) const
     {
-        JUG_ASSERT(_cap == 0 || IsPowerOf2(_cap), "capacity must be a power of 2.");
-
-        T* pMem = _cap > 0 ? m_allocator.Alloc(_cap) : nullptr;
-
-        const size_t numDropped = m_size > _cap ? m_size - _cap : 0;
-        const size_t numMoved   = m_size - numDropped;
-        for (size_t i = 0; i < numMoved; ++i)
-        {
-            std::construct_at(pMem + i, std::move(*GetValue_(numDropped + i)));
-        }
-
-        DestroyAll_();
-        m_allocator.Free(m_pBegin, m_capacity);
-
-        m_pBegin   = pMem;
-        m_capacity = _cap;
-        m_front    = 0;
-        m_size     = numMoved;
+        const size_t index = m_head + _logicalIndex;
+        return (index < m_capacity) ? index : (index - m_capacity);
     }
 
-    T*     m_pBegin   = nullptr;
-    size_t m_capacity = 0;   // 항상 2의 거듭제곱 또는 0
-    size_t m_front    = 0;
-    size_t m_size     = 0;
+    [[nodiscard]] T& GetValue_(
+        const size_t _logicalIndex)
+    {
+        return m_pData[ToRealIndex_(_logicalIndex)];
+    }
 
-    [[no_unique_address]] Allocator<T> m_allocator = {};
+    [[nodiscard]] const T& GetValue_(
+        const size_t _logicalIndex) const
+    {
+        return m_pData[ToRealIndex_(_logicalIndex)];
+    }
+
+    T*     m_pData    = nullptr;
+    size_t m_head     = 0;
+    size_t m_size     = 0;
+    size_t m_capacity = 0;
+
+    [[no_unique_address]] Alloc m_allocator = {};
 };
 
 }   // namespace jug

@@ -29,7 +29,7 @@ struct SPHERE
     float   radius;
 };
 
-JUG_STATIC_ASSERT_POD(SPHERE);
+static_assert(PodT<SPHERE>, "SPHERE must be POD type.");
 
 // ========================================================
 //  Constants

@@ -15,7 +15,7 @@ namespace math_detail
 }   // namespace math_detail
 
 // ==========================================
-//  Type Safe Comparison
+//  Comparison
 // ==========================================
 
 template<std::integral T, std::integral U>
@@ -91,7 +91,7 @@ template<std::integral T, std::integral U>
 }
 
 // =========================================
-//  Basic Constexpr Math
+//  Basic
 // =========================================
 
 template<typename T, typename U>
@@ -214,54 +214,7 @@ template<ArithmeticT T>
 }
 
 // =========================================
-//  Constexpr Integral Math
-// =========================================
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Ceil(T _value, T _multiple)
-{
-    return ((_value + _multiple - 1) / _multiple) * _multiple;
-}
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Floor(T _value, T _multiple)
-{
-    if constexpr (IsPowerOf2(_multiple))
-    {
-        return _value & ~(_multiple - 1);
-    }
-    else
-    {
-        return (_value / _multiple) * _multiple;
-    }
-}
-
-template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Round(T _value, T _multiple)
-{
-    return Ceil(_value + _multiple / 2, _multiple);
-}
-
-template<std::integral T>
-constexpr bool IsPowerOf2(T _value)
-{
-    return _value > 0 && std::has_single_bit(static_cast<std::make_unsigned_t<T>>(_value));
-}
-
-template<std::integral T>
-constexpr T CeilPowerOf2(T _value)
-{
-    return _value <= 1 ? 1 : static_cast<T>(std::bit_ceil(static_cast<std::make_unsigned_t<T>>(_value)));
-}
-
-template<std::integral T>
-constexpr T FloorPowerOf2(T _value)
-{
-    return _value <= 1 ? 0 : static_cast<T>(std::bit_floor(static_cast<std::make_unsigned_t<T>>(_value)));
-}
-
-// =========================================
-//  Constexpr Float Math
+//  Float
 // =========================================
 
 [[nodiscard]] JUG_MATH_API constexpr float ToDeg(const float _rad)
@@ -461,7 +414,7 @@ namespace math_detail
 
 }   // namespace math_detail
 
-[[nodiscard]] JUG_MATH_API constexpr float LogCore(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Log(const float _x)
 {
     if (std::is_constant_evaluated())
     {
@@ -469,6 +422,28 @@ namespace math_detail
     }
 
     return ::logf(_x);
+}
+
+constexpr float Log2(
+    const float _x)
+{
+    if (std::is_constant_evaluated())
+    {
+        return math_detail::Log(_x) * kInvLogNat2;
+    }
+
+    return ::log2f(_x);
+}
+
+constexpr float Exp2(
+    const float _x)
+{
+    if (std::is_constant_evaluated())
+    {
+        return Pow(2.f, _x);
+    }
+
+    return ::exp2f(_x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Exp(const float _x)

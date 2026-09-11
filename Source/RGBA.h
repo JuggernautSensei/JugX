@@ -2,6 +2,7 @@
 #include <cstdint>
 
 #include "Math.h"
+#include "Platform.h"
 #include "TypeTraits.h"
 #include "Vector4.h"
 
@@ -10,17 +11,17 @@ namespace jug
 
 struct RGBA
 {
-    JUG_MATH_API  RGBA() = default;
+    JUG_MATH_API RGBA() = default;
 
     JUG_MATH_API constexpr RGBA(
         const uint8_t _r,
         const uint8_t _g,
         const uint8_t _b,
         const uint8_t _a = 255)
-        : r(_r)
-        , g(_g)
+        : a(_a)
         , b(_b)
-        , a(_a)
+        , g(_g)
+        , r(_r)
     {
     }
 
@@ -52,23 +53,6 @@ struct RGBA
             static_cast<float>(a) / 255.f
         };
     }
-
-    [[nodiscard]] JUG_MATH_API uint32_t ToRGBA() const
-    {
-        return (static_cast<uint32_t>(r) << 24)
-             | (static_cast<uint32_t>(g) << 16)
-             | (static_cast<uint32_t>(b) << 8)
-             | static_cast<uint32_t>(a);
-    }
-
-    [[nodiscard]] JUG_MATH_API uint32_t ToABGR() const
-    {
-        return (static_cast<uint32_t>(a) << 24)
-             | (static_cast<uint32_t>(b) << 16)
-             | (static_cast<uint32_t>(g) << 8)
-             | static_cast<uint32_t>(r);
-    }
-
     // ======================================================
     //  Fields
     // ======================================================
@@ -83,13 +67,29 @@ struct RGBA
     const static RGBA kCyan;
     const static RGBA kMagenta;
 
-    uint8_t r;
-    uint8_t g;
-    uint8_t b;
-    uint8_t a;
+    JUG_DISABLE_ANON_WARNING_BEGIN
+    union
+    {
+        struct
+        {
+#ifdef JUG_LITTLE_ENDIAN
+            uint8_t a;
+            uint8_t b;
+            uint8_t g;
+            uint8_t r;
+#else
+            uint8_t r;
+            uint8_t g;
+            uint8_t b;
+            uint8_t a;
+#endif
+        };
+        uint64_t rgba;
+    };
+    JUG_DISABLE_ANON_WARNING_END
 };
 
-JUG_STATIC_ASSERT_POD(RGBA);
+static_assert(PodT<RGBA>, "RGBA must be POD type.");
 
 // ======================================================
 //  Constants

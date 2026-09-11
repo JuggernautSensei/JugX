@@ -1,5 +1,6 @@
 ﻿#include "Timer.h"
 
+#include "Assertion.h"
 #include "Config.h"
 
 namespace jug

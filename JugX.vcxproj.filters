@@ -28,9 +28,6 @@
     <ClInclude Include="Source\HandleAllocator.h">
       <Filter>Handle</Filter>
     </ClInclude>
-    <ClInclude Include="Source\HandleMap.h">
-      <Filter>Handle</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Interval.h">
       <Filter>Math\Geomtry</Filter>
     </ClInclude>
@@ -109,15 +106,6 @@
     <ClInclude Include="Source\Config.h">
       <Filter>Base</Filter>
     </ClInclude>
-    <ClInclude Include="Source\PlatformDetector.h">
-      <Filter>PlatformDetector</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Macros.h">
-      <Filter>Base</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\MathMacros.h">
-      <Filter>Math\Base</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Ref.h">
       <Filter>Memroy\SmartPointer</Filter>
     </ClInclude>
@@ -154,20 +142,11 @@
     <ClInclude Include="Source\StringEncoder.h">
       <Filter>String</Filter>
     </ClInclude>
-    <ClInclude Include="Source\FixedBlockPool.h">
-      <Filter>Memroy\MemoryPool</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\JsonReader.h">
-      <Filter>Serializer\Json</Filter>
-    </ClInclude>
     <ClInclude Include="Source\MemoryView.h">
       <Filter>Memroy\Memory</Filter>
     </ClInclude>
     <ClInclude Include="Source\Memory.h">
       <Filter>Memroy\Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\JsonWriter.h">
-      <Filter>Serializer\Json</Filter>
     </ClInclude>
     <ClInclude Include="Source\ConsoleLogger.h">
       <Filter>Log</Filter>
@@ -189,9 +168,6 @@
     </ClInclude>
     <ClInclude Include="Source\GroupLogger.h">
       <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\SerializerError.h">
-      <Filter>Serializer</Filter>
     </ClInclude>
     <ClInclude Include="Source\StringFormatter.h">
       <Filter>String</Filter>
@@ -232,6 +208,18 @@
     <ClInclude Include="Source\StringHasher.h">
       <Filter>Hasher</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Event.h" />
+    <ClInclude Include="Source\EventDispatcher.h" />
+    <ClInclude Include="Source\JsonAdlSerializer.h" />
+    <ClInclude Include="Source\LruCache.h" />
+    <ClInclude Include="Source\StringParser.h" />
+    <ClInclude Include="Source\FixedBlockMemoryPool.h" />
+    <ClInclude Include="Source\JsonSerializer.h" />
+    <ClInclude Include="Source\SerializeError.h" />
+    <ClInclude Include="Source\HandleStorage.h" />
+    <ClInclude Include="Source\JsonDeserializer.h" />
+    <ClInclude Include="Source\Macro.h" />
+    <ClInclude Include="Source\Platform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\MemoryHasher.cpp">
@@ -243,14 +231,8 @@
     <ClCompile Include="Source\StringEncoder.cpp">
       <Filter>String</Filter>
     </ClCompile>
-    <ClCompile Include="Source\JsonReader.cpp">
-      <Filter>Serializer\Json</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Memory.cpp">
       <Filter>Memroy\Memory</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\JsonWriter.cpp">
-      <Filter>Serializer\Json</Filter>
     </ClCompile>
     <ClCompile Include="Source\ConsoleLogger.cpp">
       <Filter>Log</Filter>
@@ -294,6 +276,10 @@
     <ClCompile Include="Source\Random.cpp">
       <Filter>Random</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Event.cpp" />
+    <ClCompile Include="Source\EventDispatcher.cpp" />
+    <ClCompile Include="Source\JsonDeserializer.cpp" />
+    <ClCompile Include="Source\JsonSerializer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Source\Matrix.inl">
@@ -361,9 +347,6 @@
     <Filter Include="Memroy\MemoryPool">
       <UniqueIdentifier>{da9d66ec-3e16-4056-9cfc-2467fe9523c2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="PlatformDetector">
-      <UniqueIdentifier>{5334e8dc-fd3c-4269-8fec-c05fcd6647f9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Vendor">
       <UniqueIdentifier>{383d26d3-3c9f-4119-b5a2-9d925e0e220a}</UniqueIdentifier>
     </Filter>
@@ -414,6 +397,9 @@
     </Filter>
     <Filter Include="File\FileReaderWriter">
       <UniqueIdentifier>{5231be14-ce62-4dc5-8998-5b31f4917df9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Platform">
+      <UniqueIdentifier>{5334e8dc-fd3c-4269-8fec-c05fcd6647f9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

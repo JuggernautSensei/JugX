@@ -45,21 +45,21 @@ concept MemoryHasherT = requires(T _hasher, MemoryView _mem) {
     { _hasher.Finalize() } -> std::same_as<uint64_t>;
 };
 
-template<MemoryHasherT THasher>
+template<MemoryHasherT H>
 [[nodiscard]] uint64_t Hash(
     const MemoryView _mem)
 {
-    THasher hasher {};
+    H hasher {};
     hasher.Mix(_mem);
     return hasher.Finalize();
 }
 
-template<MemoryHasherT THasher>
+template<MemoryHasherT H>
 [[nodiscard]] uint64_t Hash(
     const MemoryView _mem,
     const uint64_t   _seed)
 {
-    THasher hasher { _seed };
+    H hasher { _seed };
     hasher.Mix(_mem);
     return hasher.Finalize();
 }

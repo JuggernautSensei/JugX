@@ -13,13 +13,10 @@ namespace jug
 template<typename T, typename Delete = std::default_delete<T>>
 class Scoped
 {
-    template<typename U, typename E>
+    template<typename U, typename V>
     friend class Scoped;
 
 public:
-    using ValueT   = T;
-    using DeleterT = Delete;
-
     Scoped() noexcept
         : m_pObj(nullptr)
         , m_delete()
@@ -65,12 +62,12 @@ public:
     {
     }
 
-    template<typename U, typename E>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<E, Delete>)
+    template<typename U, typename V>
+        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
     /* implicit */ Scoped(
-        Scoped<U, E>&& _other) noexcept
+        Scoped<U, V>&& _other) noexcept
         : m_pObj(static_cast<T*>(_other.Release()))
-        , m_delete(std::forward<E>(_other.GetDeleter()))
+        , m_delete(std::forward<V>(_other.GetDeleter()))
     {
     }
 
@@ -85,13 +82,13 @@ public:
         return *this;
     }
 
-    template<typename U, typename E>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<E, Delete>)
+    template<typename U, typename V>
+        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
     Scoped& operator=(
-        Scoped<U, E>&& _other) noexcept
+        Scoped<U, V>&& _other) noexcept
     {
         Reset(static_cast<T*>(_other.Release()));
-        m_delete = std::forward<E>(_other.GetDeleter());
+        m_delete = std::forward<V>(_other.GetDeleter());
         return *this;
     }
 
@@ -216,11 +213,11 @@ public:
     // 다운 캐스팅. 최소한의 제약만 체크하기 때문에 위험.
     // 커스텀 Delete가 필요하면 매개변수로 직접 주입.
     // 캐스팅 후 기존 Scoped는 무효화 됨.
-    template<typename U, typename E = std::default_delete<U>>
+    template<typename U, typename V = std::default_delete<U>>
         requires std::is_base_of_v<T, U>
-    [[nodiscard]] Scoped<U, E> As(E&& _deleter = E {})
+    [[nodiscard]] Scoped<U, V> As(V&& _deleter = V {})
     {
-        return Scoped<U, E> { static_cast<U*>(Release()), std::forward<E>(_deleter) };
+        return Scoped<U, V> { static_cast<U*>(Release()), std::forward<V>(_deleter) };
     }
 
 private:
@@ -232,9 +229,6 @@ template<typename T, typename Delete>
 class Scoped<T[], Delete>
 {
 public:
-    using ValueT   = T;
-    using DeleterT = Delete;
-
     Scoped() noexcept
         : m_pObj(nullptr)
         , m_delete()
@@ -284,12 +278,12 @@ public:
     {
     }
 
-    template<typename U, typename E>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<E, Delete>)
+    template<typename U, typename V>
+        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
     /* implicit */ Scoped(
-        Scoped<U[], E>&& _other) noexcept
+        Scoped<U[], V>&& _other) noexcept
         : m_pObj(static_cast<T*>(_other.Release()))
-        , m_delete(std::forward<E>(_other.GetDeleter()))
+        , m_delete(std::forward<V>(_other.GetDeleter()))
     {
     }
 
@@ -306,13 +300,13 @@ public:
         return *this;
     }
 
-    template<typename U, typename E>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<E, Delete>)
+    template<typename U, typename V>
+        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
     Scoped& operator=(
-        Scoped<U[], E>&& _other) noexcept
+        Scoped<U[], V>&& _other) noexcept
     {
         Reset(static_cast<T*>(_other.Release()));
-        m_delete = std::forward<E>(_other.GetDeleter());
+        m_delete = std::forward<V>(_other.GetDeleter());
         return *this;
     }
 

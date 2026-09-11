@@ -34,7 +34,7 @@ void ConsoleLogger::WriteImpl(
     }
 }
 
-void ConsoleLogger::WriteImpl(
+void ConsoleLogger::VWriteImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const std::format_args _args,

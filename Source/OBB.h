@@ -91,7 +91,7 @@ struct OBB
     AFFINE_TRANSFORM transform;
 };
 
-JUG_STATIC_ASSERT_POD(OBB);
+static_assert(PodT<OBB>, "OBB must be POD type.");
 
 // ========================================================
 //  Constants

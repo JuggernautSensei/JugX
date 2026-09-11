@@ -5,7 +5,6 @@ namespace jug
 
 namespace
 {
-
     [[nodiscard]] uint32_t Rotl32_(
         const uint32_t x,
         const int8_t   r)
@@ -19,7 +18,6 @@ namespace
     {
         return (x << r) | (x >> (64 - r));
     }
-
 }   // namespace
 
 Fnv1a::Fnv1a(

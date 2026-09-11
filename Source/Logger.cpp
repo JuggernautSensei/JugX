@@ -19,7 +19,7 @@ void Logger::Log(
     WriteImpl(_level, _msg, true);
 }
 
-void Logger::LogV(
+void Logger::VLog(
     const eLogLevel        _level,
     const StringView       _msg,
     const std::format_args _args)
@@ -30,7 +30,7 @@ void Logger::LogV(
     }
 
     WritePrefix_(_level);
-    WriteImpl(_level, _msg, _args, true);
+    VWriteImpl(_level, _msg, _args, true);
 }
 
 void Logger::SetName(
@@ -63,15 +63,15 @@ void Logger::WritePrefix_(
 
         if (m_pattern.HasAll({ eLogPattern::YearMonthDay, eLogPattern::HourMinSec }))
         {
-            WriteImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
+            VWriteImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
         }
         else if (m_pattern.Has(eLogPattern::YearMonthDay))
         {
-            WriteImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
+            VWriteImpl(_level, "[{:04d}-{:02d}-{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth), false);
         }
         else
         {
-            WriteImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
+            VWriteImpl(_level, "[{:02d}:{:02d}:{:02d}]", std::make_format_args(ts.hour, ts.min, ts.sec), false);
         }
 
         bAnyLogged = true;
@@ -94,7 +94,7 @@ void Logger::WritePrefix_(
             "FATAL"
         };
 
-        WriteImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
+        VWriteImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
         bAnyLogged = true;
     }
 
@@ -106,7 +106,7 @@ void Logger::WritePrefix_(
             WriteImpl(_level, " ", false);
         }
 
-        WriteImpl(_level, "[{}]", std::make_format_args(m_name), false);
+        VWriteImpl(_level, "[{}]", std::make_format_args(m_name), false);
         bAnyLogged = true;
     }
 

@@ -42,7 +42,7 @@ struct INTERVAL
     float max;
 };
 
-JUG_STATIC_ASSERT_POD(INTERVAL);
+static_assert(PodT<INTERVAL>, "INTERVAL must be POD type.");
 
 // =========================================================
 //  Constants

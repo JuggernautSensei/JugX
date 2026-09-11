@@ -21,6 +21,8 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="JsonSerializerTest.cpp" />
+    <ClCompile Include="LruCacheTest.cpp" />
+    <ClCompile Include="RingBufferTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\JugX.vcxproj">

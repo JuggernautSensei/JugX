@@ -17,19 +17,19 @@ enum class eSeekOrigin
 };
 
 // ==========================================================
-//  FileIO
+//  FileReaderWriter
 // ==========================================================
 
-class FileIO
+class FileReaderWriter
 {
 public:
-    FileIO() = default;
-    ~FileIO();
+    FileReaderWriter() = default;
+    ~FileReaderWriter();
 
-    FileIO(const FileIO&)            = delete;
-    FileIO& operator=(const FileIO&) = delete;
-    FileIO(FileIO&& _other) noexcept;
-    FileIO& operator=(FileIO&& _other) noexcept;
+    FileReaderWriter(const FileReaderWriter&)            = delete;
+    FileReaderWriter& operator=(const FileReaderWriter&) = delete;
+    FileReaderWriter(FileReaderWriter&& _other) noexcept;
+    FileReaderWriter& operator=(FileReaderWriter&& _other) noexcept;
 
     void                  Seek(int64_t _offset, eSeekOrigin _origin) const;
     int64_t               Tell() const;
@@ -51,7 +51,7 @@ protected:
 //  File Reader
 // ===========================================================
 
-class FileReader : public FileIO
+class FileReader : public FileReaderWriter
 {
 public:
     [[nodiscard]] static FileResult<FileReader> Open(const FilePath& _path);
@@ -71,7 +71,7 @@ private:
 //  File Writer
 // ===========================================================
 
-class FileWriter : public FileIO
+class FileWriter : public FileReaderWriter
 {
 public:
     [[nodiscard]] static FileResult<FileWriter> Open(const FilePath& _path, bool _bAppend = false);
@@ -79,14 +79,14 @@ public:
     FileResult<size_t> Write(MemoryView _mem) const;
     FileResult<size_t> Write(const char* _str) const;
 
-    FileResult<size_t> WriteV(StringView _format, std::format_args _args) const;
+    FileResult<size_t> VWrite(StringView _format, std::format_args _args) const;
 
-    template<typename... TArgs>
+    template<typename... Args>
     FileResult<size_t> Write(
-        std::format_string<TArgs...> _format,
-        TArgs&&... _args) const
+        std::format_string<Args...> _format,
+        Args&&... _args) const
     {
-        return WriteV(_format.get(), std::make_format_args(_args...));
+        return VWrite(_format.get(), std::make_format_args(_args...));
     }
 
     eFileError Flush() const;

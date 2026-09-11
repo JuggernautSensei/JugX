@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include <array>
 
+#include "Assertion.h"
 #include "Config.h"   // NOLINT
-#include "MathMacros.h"
+#include "MathMacro.h"
 #include "Math.h"
 #include "TypeTraits.h"
 #include "SIMD.h"
@@ -624,7 +625,7 @@ struct alignas(16) MATRIX
     constexpr static size_t kRow = 4;
     constexpr static size_t kCol = 4;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -652,7 +653,7 @@ struct alignas(16) MATRIX
 
 static_assert(sizeof(MATRIX) == 64, "MATRIX must be tightly packed");
 static_assert(alignof(MATRIX) == 16, "MATRIX must be 16-byte aligned for SIMD");
-JUG_STATIC_ASSERT_POD(MATRIX);
+static_assert(PodT<MATRIX>, "MATRIX must be POD type.");
 
 // =======================================================
 //  Constants
@@ -779,7 +780,7 @@ namespace matrix_detail
 
 [[nodiscard]] JUG_MATH_API JUG_FORCEINLINE constexpr MATRIX Inverse(
     const MATRIX& _mtx,
-    float*        _outDet = nullptr)
+    float*        _outDetOrNull = nullptr)
 {
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
@@ -893,10 +894,11 @@ namespace matrix_detail
 
         const simd::M128 detV = simd::Dot4V(c0, mt0);
         const float      det  = simd::GetX(detV);
-        if (_outDet)
+        if (_outDetOrNull)
         {
-            *_outDet = det;
+            *_outDetOrNull = det;
         }
+
         if (IsZeroApprox(det))
         {
             return MathConstants<MATRIX>::kZero;
@@ -918,9 +920,9 @@ namespace matrix_detail
     const matrix_detail::MATRIX_COFACTORS k = matrix_detail::MakeMatrixCofactors(_mtx);
 
     const float det = k.s0 * k.c5 - k.s1 * k.c4 + k.s2 * k.c3 + k.s3 * k.c2 - k.s4 * k.c1 + k.s5 * k.c0;
-    if (_outDet)
+    if (_outDetOrNull)
     {
-        *_outDet = det;
+        *_outDetOrNull = det;
     }
 
     // det == 0: 역행렬이 존재하지 않음.
@@ -958,7 +960,7 @@ namespace matrix_detail
 JUG_MATH_API constexpr void Decompose(
     const MATRIX& _mtx,
     VECTOR3*      _pOutScaleOrNull,
-    QUATERNION*   _pOutRotation,
+    QUATERNION*   _pOutRotationOrNull,
     VECTOR3*      _pOutTranslationOrNull);
 
 // =======================================================

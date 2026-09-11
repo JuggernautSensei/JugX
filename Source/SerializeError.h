@@ -1,7 +1,5 @@
 ﻿// C++20 unified serialization library providing serialization/deserialization in various formats
 #pragma once
-#include <string_view>
-
 #include "Result.h"
 
 namespace jug
@@ -21,6 +19,6 @@ enum class eSerializerError
 };
 
 template<typename T>
-using SerializerResult = Result<T, eSerializerError>;
+using SerializeResult = Result<T, eSerializerError>;
 
 }   // namespace jug

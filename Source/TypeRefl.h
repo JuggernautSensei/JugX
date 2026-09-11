@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include "Macros.h"
+#include "Macro.h"
 #include "StringHasher.h"
 #include "Typedef.h"
 
@@ -79,7 +79,7 @@ namespace type_refl_detail
     constexpr StringView kName = ExtractName(kFullName<T>);
 
     template<typename T>
-    constexpr uint64_t kHash = HashString64(kFullName<T>);
+    constexpr uint64_t kHash = HashString(kFullName<T>);
 }   // namespace type_refl_detail
 
 // =========================================================

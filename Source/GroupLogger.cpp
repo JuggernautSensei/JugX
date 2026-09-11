@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "Assertion.h"
+
 namespace jug
 {
 
@@ -44,7 +46,7 @@ void GroupLogger::WriteImpl(
     }
 }
 
-void GroupLogger::WriteImpl(
+void GroupLogger::VWriteImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const std::format_args _args,
@@ -52,7 +54,7 @@ void GroupLogger::WriteImpl(
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->WriteImpl(_level, _msg, _args, _bEndLog);
+        pLogger->VWriteImpl(_level, _msg, _args, _bEndLog);
     }
 }
 

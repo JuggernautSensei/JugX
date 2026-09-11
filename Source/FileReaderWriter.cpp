@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <utility>
 
+#include "Assertion.h"
 #include "Config.h"
 
 namespace jug
@@ -38,8 +39,8 @@ namespace
             }
         }
 
-        FILE*        pFile   = nullptr;
-        size_t       written = 0;
+        FILE*      pFile   = nullptr;
+        size_t     written = 0;
         eFileError error   = eFileError::None;
     };
 }   // namespace
@@ -48,19 +49,19 @@ namespace
 //  File IO
 // ===============================================
 
-FileIO::~FileIO()
+FileReaderWriter::~FileReaderWriter()
 {
     Close();
 }
 
-FileIO::FileIO(
-    FileIO&& _other) noexcept
+FileReaderWriter::FileReaderWriter(
+    FileReaderWriter&& _other) noexcept
     : m_pFile(std::exchange(_other.m_pFile, nullptr))
 {
 }
 
-FileIO& FileIO::operator=(
-    FileIO&& _other) noexcept
+FileReaderWriter& FileReaderWriter::operator=(
+    FileReaderWriter&& _other) noexcept
 {
     if (this != &_other)
     {
@@ -70,7 +71,7 @@ FileIO& FileIO::operator=(
     return *this;
 }
 
-void FileIO::Seek(
+void FileReaderWriter::Seek(
     const int64_t     _offset,
     const eSeekOrigin _origin) const
 {
@@ -96,7 +97,7 @@ void FileIO::Seek(
     JUG_ASSERT(err == 0, "Failed to seek file position.\n");
 }
 
-int64_t FileIO::Tell() const
+int64_t FileReaderWriter::Tell() const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
 
@@ -105,7 +106,7 @@ int64_t FileIO::Tell() const
     return n;
 }
 
-int64_t FileIO::GetSize() const
+int64_t FileReaderWriter::GetSize() const
 {
     const int64_t cur = Tell();
     Seek(0, eSeekOrigin::End);
@@ -114,29 +115,29 @@ int64_t FileIO::GetSize() const
     return size;
 }
 
-int64_t FileIO::GetRemain() const
+int64_t FileReaderWriter::GetRemain() const
 {
     const int64_t cur  = Tell();
     const int64_t size = GetSize();
     return size - cur;
 }
 
-void FileIO::Rewind() const
+void FileReaderWriter::Rewind() const
 {
     Seek(0, eSeekOrigin::Set);
 }
 
-FILE* FileIO::GetFile() const
+FILE* FileReaderWriter::GetFile() const
 {
     return m_pFile;
 }
 
-bool FileIO::IsOpened() const
+bool FileReaderWriter::IsOpened() const
 {
     return m_pFile != nullptr;
 }
 
-void FileIO::Close()
+void FileReaderWriter::Close()
 {
     if (m_pFile)
     {
@@ -149,7 +150,7 @@ void FileIO::Close()
     }
 }
 
-FileIO::operator bool() const
+FileReaderWriter::operator bool() const
 {
     return IsOpened();
 }
@@ -157,7 +158,7 @@ FileIO::operator bool() const
 FileResult<FileReader> FileReader::Open(
     const FilePath& _path)
 {
-    FileReader         reader = {};
+    FileReader       reader = {};
     const eFileError err    = reader.Open_(_path);
     if (err != eFileError::None)
     {
@@ -239,9 +240,9 @@ eFileError FileReader::Open_(
 
 FileResult<FileWriter> FileWriter::Open(
     const FilePath& _path,
-    const bool                   _bAppend)
+    const bool      _bAppend)
 {
-    FileWriter         writer = {};
+    FileWriter       writer = {};
     const eFileError err    = writer.Open_(_path, _bAppend);
     if (err != eFileError::None)
     {
@@ -279,7 +280,7 @@ FileResult<size_t> FileWriter::Write(
     return written;
 }
 
-FileResult<size_t> FileWriter::WriteV(
+FileResult<size_t> FileWriter::VWrite(
     const StringView       _format,
     const std::format_args _args) const
 {
@@ -304,7 +305,7 @@ eFileError FileWriter::Flush() const
 
 eFileError FileWriter::Open_(
     const FilePath& _path,
-    const bool                   _bAppend)
+    const bool      _bAppend)
 {
     const wchar_t* mode = _bAppend ? L"ab" : L"wb";
     const errno_t  err  = ::_wfopen_s(&m_pFile, _path.c_str(), mode);

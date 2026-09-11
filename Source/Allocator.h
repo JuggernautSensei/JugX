@@ -14,9 +14,9 @@ struct Allocator
 public:
     constexpr Allocator() noexcept = default;
 
-    template<class Other>
+    template<typename U>
     /* implicit */ constexpr Allocator(
-        const Allocator<Other>&) noexcept
+        const Allocator<U>&) noexcept
     {
     }
 

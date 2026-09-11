@@ -10,27 +10,24 @@ namespace jug
 
 namespace
 {
-
-    template<typename TChar>
+    template<typename T>
     struct Encoder
     {
-        using value_type = TChar;
+        using value_type = T;
 
         void push_back(
-            const TChar _ch)
+            const T _ch)
         {
             if (buffer.size() > result.written)
             {
                 buffer[result.written++] = _ch;
             }
-
             ++result.totalSize;
         }
 
-        Span<TChar>  buffer = {};
+        Span<T>  buffer = {};
         EncodeResult result = {};
     };
-
 }   // namespace
 
 EncodeResult ToUtf8(
@@ -38,15 +35,15 @@ EncodeResult ToUtf8(
     const StringView _utf16,
     const bool       _bNullTerminated)
 {
+    // guarantee null-termination if requested
+    if (_bNullTerminated)
+    {
+        JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");   // 널 문자를 보장해야하기 때문에 최소 1 이상의 크기가 필요함
+        _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
+    }
+
     try
     {
-        // guarantee null-termination if requested
-        if (_bNullTerminated)
-        {
-            JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");   // 널 문자를 보장해야하기 때문에 최소 1 이상의 크기가 필요함
-            _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
-        }
-
         // encode
         Encoder<char> encoder { _outBuffer };
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(encoder));
@@ -58,13 +55,15 @@ EncodeResult ToUtf8(
         }
         return encoder.result;
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
+        // invalidate
         if (!_outBuffer.empty())
         {
-            _outBuffer[0] = '\0';   // ensure null-termination on error
+            _outBuffer[0] = '\0';
         }
 
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-16 to UTF-8. Error: {}", e.what());
         return {};
     }
 }
@@ -74,15 +73,15 @@ EncodeResult ToUtf16(
     const StringView _utf8,
     const bool       _bNullTerminated)
 {
+    // guarantee null-termination if requested
+    if (_bNullTerminated)
+    {
+        JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");   // 널 문자를 보장해야하기 때문에 최소 1 이상의 크기가 필요함
+        _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
+    }
+
     try
     {
-        // guarantee null-termination if requested
-        if (_bNullTerminated)
-        {
-            JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");   // 널 문자를 보장해야하기 때문에 최소 1 이상의 크기가 필요함
-            _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
-        }
-
         // encode
         Encoder<wchar_t> encoder { _outBuffer };
         utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(encoder));
@@ -94,18 +93,20 @@ EncodeResult ToUtf16(
         }
         return encoder.result;
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
+        // invalidate
         if (!_outBuffer.empty())
         {
-            _outBuffer[0] = L'\0';   // ensure null-termination on error
+            _outBuffer[0] = L'\0';
         }
 
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-8 to UTF-16. Error: {}", e.what());
         return {};
     }
 }
 
-std::string ToUtf8(
+String ToUtf8(
     const StringView _utf16)
 {
     try
@@ -117,18 +118,19 @@ std::string ToUtf8(
             return {};
         }
 
-        std::string str = {};
+        String str = {};
         str.reserve(encoder.result.totalSize);
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(str));
         return str;
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-16 to UTF-8. Error: {}", e.what());
         return {};
     }
 }
 
-std::wstring ToUtf16(
+WString ToUtf16(
     const StringView _utf8)
 {
     try
@@ -140,19 +142,20 @@ std::wstring ToUtf16(
             return {};
         }
 
-        std::wstring str = {};
+        WString str = {};
         str.reserve(encoder.result.totalSize);
         utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(str));
         return str;
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-8 to UTF-16. Error: {}", e.what());
         return {};
     }
 }
 
 void AppendUtf16(
-    std::string& _outStr,
+    String& _outStr,
     WStringView  _utf16)
 {
     const size_t oldSize = _outStr.size();
@@ -161,14 +164,16 @@ void AppendUtf16(
     {
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(_outStr));
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
-        _outStr.erase(_outStr.begin() + static_cast<ptrdiff_t>(oldSize), _outStr.end());   // revert to old size on error
+        // invalidate
+        _outStr.erase(_outStr.begin() + static_cast<ptrdiff_t>(oldSize), _outStr.end());
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-16 to UTF-8. Error: {}", e.what());
     }
 }
 
 void AppendUtf8(
-    std::wstring&    _outStr,
+    WString&    _outStr,
     const StringView _utf8)
 {
     const size_t oldSize = _outStr.size();
@@ -177,9 +182,11 @@ void AppendUtf8(
     {
         utf8 ::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(_outStr));
     }
-    catch (const utf8::exception&)
+    catch (const utf8::exception& e)
     {
-        _outStr.erase(_outStr.begin() + static_cast<ptrdiff_t>(oldSize), _outStr.end());   // revert to old size on error
+        // invalidate
+        _outStr.erase(_outStr.begin() + static_cast<ptrdiff_t>(oldSize), _outStr.end());
+        JUG_CORE_LOG_ERROR("Failed to convert UTF-8 to UTF-16. Error: {}", e.what());
     }
 }
 

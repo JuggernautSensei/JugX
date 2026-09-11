@@ -12,15 +12,15 @@ struct EncodeResult
 };
 
 // 버퍼 용량이 부족하면 잘린 문자열이 생성됨
-// 유니코드 오류 발생시 _outBuffer는 빈 문자열이 생성됨.
+// 에러 발생시 EncodeResult { 0, 0 } 반환. _outBuffer는 빈 상태가 됨
 
 EncodeResult ToUtf8(Span<char> _outBuffer, StringView _utf16, bool _bNullTerminated);
 EncodeResult ToUtf16(Span<wchar_t> _outBuffer, StringView _utf8, bool _bNullTerminated);
 
-[[nodiscard]] std::string  ToUtf8(StringView _utf16);
-[[nodiscard]] std::wstring ToUtf16(StringView _utf8);
+[[nodiscard]] String ToUtf8(StringView _utf16);
+[[nodiscard]] WString ToUtf16(StringView _utf8);
 
-void AppendUtf16(std::string& _outStr, WStringView _utf16);   // Append
-void AppendUtf8(std::wstring& _outStr, StringView _utf8);     // Append
+void AppendUtf16(String& _outStr, WStringView _utf16);   // Append
+void AppendUtf8(WString& _outStr, StringView _utf8);     // Append
 
 }   // namespace jug

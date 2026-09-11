@@ -10,18 +10,23 @@
 
 #include "Vendor/parallel-hashmap/parallel_hashmap/phmap.h"
 
+namespace jug
+{
+
 // ===========================================
-//  Shortcut
+//  FileSystem
 // ===========================================
 
-// filesystem
 using FilePath         = std::filesystem::path;
 using DirIter          = std::filesystem::directory_iterator;
 using RecursiveDirIter = std::filesystem::recursive_directory_iterator;
 using DirEntry         = std::filesystem::directory_entry;
 using FileStatus       = std::filesystem::file_status;
 
-// chrono
+// ===========================================
+//  Chrono
+// ===========================================
+
 using SteadyClock = std::chrono::steady_clock;
 using SystemClock = std::chrono::system_clock;
 
@@ -38,31 +43,45 @@ using Ns  = std::chrono::nanoseconds;
 //  Container
 // ===========================================
 
-template<typename T, typename TAlloc = std::allocator<T>>
-using Vector = std::vector<T, TAlloc>;
+template<typename T, typename Alloc = std::allocator<T>>
+using Vector = std::vector<T, Alloc>;
 
-template<typename T, size_t N>
-using ARRAY = std::array<T, N>;
+template<typename T, size_t kSize>
+using ARRAY = std::array<T, kSize>;
 
-template<typename T, typename TAlloc = std::allocator<T>>
-using List = std::list<T, TAlloc>;
+template<typename T, typename Alloc = std::allocator<T>>
+using List = std::list<T, Alloc>;
 
-template<typename T, typename TComp = std::less<T>, typename TAlloc = std::allocator<T>>
-using RbSet = std::set<T, TComp, TAlloc>;
+template<typename T, typename Cmp = std::less<T>, typename Alloc = std::allocator<T>>
+using RbSet = std::set<T, Cmp, Alloc>;
 
-template<typename TKey, typename TValue, typename TComp = std::less<TKey>, typename TAlloc = std::allocator<std::pair<const TKey, TValue>>>
-using RbMap = std::map<TKey, TValue, TComp, TAlloc>;
+template<typename K, typename V, typename Cmp = std::less<K>, typename Alloc = std::allocator<std::pair<const K, V>>>
+using RbMap = std::map<K, V, Cmp, Alloc>;
 
-template<typename TKey, typename TValue, typename THasher = phmap::priv::hash_default_hash<TKey>, typename TEqual = phmap::priv::hash_default_eq<TKey>, typename TAlloc = std::allocator<std::pair<const TKey, TValue>>>
-using HashMap = phmap::parallel_flat_hash_map<TKey, TValue, THasher, TEqual, TAlloc>;
+template<typename T>
+using Hasher = phmap::priv::hash_default_hash<T>;
 
-template<typename TKey, typename TValue, typename THasher = phmap::priv::hash_default_hash<TKey>, typename TEqual = phmap::priv::hash_default_eq<TKey>, typename TAlloc = std::allocator<std::pair<const TKey, TValue>>>
-using HashSet = phmap::parallel_flat_hash_set<TKey, THasher, TEqual, TAlloc>;
+template<typename T>
+using Equal = phmap::priv::hash_default_eq<T>;
+
+template<typename K, typename V, typename H = Hasher<K>, typename E = Equal<K>, typename Alloc = std::allocator<std::pair<const K, V>>>
+using HashMap = phmap::parallel_flat_hash_map<K, V, H, E, Alloc>;
+
+template<typename K, typename V, typename H = Hasher<K>, typename E = Equal<K>, typename Alloc = std::allocator<std::pair<const K, V>>>
+using HashSet = phmap::parallel_flat_hash_set<K, H, E, Alloc>;
 
 template<typename T, size_t kExtent = std::dynamic_extent>
 using Span = std::span<T, kExtent>;
 
-using String      = std::string;
-using StringView  = std::string_view;
-using WString     = std::wstring;
-using WStringView = std::wstring_view;
+template<typename T>
+using BasicString = std::basic_string<T>;
+
+template<typename T>
+using BasicStringView = std::basic_string_view<T>;
+
+using String      = BasicString<char>;
+using StringView  = BasicStringView<char>;
+using WString     = BasicString<wchar_t>;
+using WStringView = BasicStringView<wchar_t>;
+
+}   // namespace jug

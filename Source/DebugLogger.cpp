@@ -26,7 +26,7 @@ void DebugLogger::WriteImpl(
     }
 }
 
-void DebugLogger::WriteImpl(
+void DebugLogger::VWriteImpl(
     const eLogLevel,
     const StringView _msg,
     const std::format_args _args,

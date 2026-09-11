@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <format>
 
+#include "EASTL/vector.h"
 #include "EnumFlags.h"
 #include "TimeStamp.h"
 #include "Typedef.h"
@@ -20,11 +21,11 @@ enum class eLogLevel
 
 enum class eLogPattern : uint32_t
 {
-    None,
-    YearMonthDay,
-    HourMinSec,
-    Level,
-    Name
+    None         = 0,
+    YearMonthDay = 1 << 0,
+    HourMinSec   = 1 << 1,
+    Level        = 1 << 2,
+    Name         = 1 << 3
 };
 
 // [YYYY-MM-DD HH:MM:SS] [LEVEL] [LoggerName]: Message
@@ -42,16 +43,24 @@ public:
 
     virtual ~Logger() = default;
 
-    void Log(eLogLevel _level, StringView _msg);
-    void LogV(eLogLevel _level, StringView _msg, std::format_args _args);
+    // ===========================================
+    //  Log
+    // ===========================================
 
-    template<typename... TArgs>
+    // log string
+    void Log(eLogLevel _level, StringView _msg);
+
+    // log runtime formatted string
+    void VLog(eLogLevel _level, StringView _msg, std::format_args _args);
+
+    // log compile-time formatted string
+    template<typename... Args>
     void Log(
         const eLogLevel              _level,
-        std::format_string<TArgs...> _format,
-        TArgs&&... _args)
+        std::format_string<Args...> _format,
+        Args&&... _args)
     {
-        LogV(_level, _format.get(), std::make_format_args(_args...));
+        VLog(_level, _format.get(), std::make_format_args(_args...));
     }
 
     virtual void Flush() = 0;
@@ -61,8 +70,8 @@ public:
     void SetFilter(IndexedFlags<eLogLevel> _filter);
 
 private:
-    virtual void WriteImpl(eLogLevel _level, StringView _msg, bool _bEnd)                         = 0;
-    virtual void WriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEnd) = 0;   // for formatted message
+    virtual void WriteImpl(eLogLevel _level, StringView _msg, bool _bEndOfLog)                          = 0;
+    virtual void VWriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndOfLog) = 0;   // for formatted message
 
     void WritePrefix_(eLogLevel _level);
 

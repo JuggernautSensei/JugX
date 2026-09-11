@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <array>
 
-#include "Macros.h"
+#include "Macro.h"
 #include "Math.h"
 #include "TypeTraits.h"
 
@@ -201,7 +201,7 @@ struct VECTOR2I
 
     constexpr static size_t kDim = 2;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -211,10 +211,10 @@ struct VECTOR2I
         };
         ARRAY<int, 2> e;
     };
-    JUG_MATH_DISABLE_ANON_WARNING_END
+    JUG_DISABLE_ANON_WARNING_END
 };
 
-JUG_STATIC_ASSERT_POD(VECTOR2I);
+static_assert(PodT<VECTOR2I>, "VECTOR2I must be POD type.");
 
 // =======================================================
 //  Constants

@@ -8,7 +8,7 @@ class ConsoleLogger : public Logger
 {
 private:
     void WriteImpl(eLogLevel _level, StringView _msg, bool _bEndLog) override;
-    void WriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndLog) override;
+    void VWriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndLog) override;
     void Flush() override;
 };
 

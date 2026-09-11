@@ -17,7 +17,7 @@ namespace jug
 //   -> 전부 사용자가 책임져야함
 // =========================================================
 
-class FixedBlockPool
+class FixedBlockMemoryPool
 {
     struct LINK
     {
@@ -25,7 +25,7 @@ class FixedBlockPool
     };
 
 public:
-    FixedBlockPool(
+    FixedBlockMemoryPool(
         const size_t _blockSize,
         const size_t _numBlocksPerPool,
         const size_t _blockAlign = alignof(std::max_align_t))
@@ -38,14 +38,14 @@ public:
         JUG_ASSERT(m_alignedBlockSize > 0, "_blockSize must be greater than 0");
     }
 
-    ~FixedBlockPool()
+    ~FixedBlockMemoryPool()
     {
         Reset();
     }
 
-    FixedBlockPool(const FixedBlockPool&) = delete;
+    FixedBlockMemoryPool(const FixedBlockMemoryPool&) = delete;
 
-    FixedBlockPool(FixedBlockPool&& _other) noexcept
+    FixedBlockMemoryPool(FixedBlockMemoryPool&& _other) noexcept
         : m_pPoolList(_other.m_pPoolList)
         , m_pFreeList(_other.m_pFreeList)
         , m_pEnd(_other.m_pEnd)
@@ -60,9 +60,9 @@ public:
         _other.m_pCur      = nullptr;
     }
 
-    FixedBlockPool& operator=(const FixedBlockPool&) = delete;
+    FixedBlockMemoryPool& operator=(const FixedBlockMemoryPool&) = delete;
 
-    FixedBlockPool& operator=(FixedBlockPool&& _other) noexcept
+    FixedBlockMemoryPool& operator=(FixedBlockMemoryPool&& _other) noexcept
     {
         if (this != &_other)
         {

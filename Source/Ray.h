@@ -64,7 +64,7 @@ struct RAY
     VECTOR3 dir;
 };
 
-JUG_STATIC_ASSERT_POD(RAY);
+static_assert(PodT<RAY>, "RAY must be POD type.");
 
 // ========================================================
 //  Constants

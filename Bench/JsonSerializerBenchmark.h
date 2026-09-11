@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <cstdint>
 #include <format>
 #include <string>
@@ -11,18 +11,27 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include "../Source/JsonReader.h"
-#include "../Source/JsonWriter.h"
+#include "../Source/JsonDeserializer.h"
+#include "../Source/JsonSerializer.h"
 
 // jug::JsonReader/JsonWriter vs rapidjson vs nlohmann::json 벤치마크.
-// 셋 다 같은 데이터(BenchItem 배열)를 Write/Parse 함.
-// Parse 쪽은 세 라이브러리가 다 똑같은 문자열(BuildCanonicalJson)을 파싱해야 공정해서,
-// 어느 라이브러리 Writer 결과물도 안 쓰고 직접 문자열을 만듦.
+//
+//   Write/Parse    : BenchItem 배열 전체 직렬화/역직렬화. ->Arg(N)으로 원소 개수를 바꿔가며
+//                     측정해서 스케일링(선형인지)까지 같이 봄. 세 라이브러리 다 같은 데이터
+//                     (BuildCanonicalJson)를 파싱해야 공정해서, Parse 쪽은 어느 라이브러리
+//                     Writer 결과물도 안 쓰고 직접 문자열을 만듦.
+//   FindField      : 필드 하나 조회하는 비용만 격리해서 잼(파싱은 루프 밖에서 한 번만) -
+//                     yyjson/rapidjson은 오브젝트 키를 선형 탐색하고 nlohmann은 기본적으로
+//                     std::map(정렬 트리) 기반이라, 필드 개수가 많을 때 이 셋의 차이가 큼.
+//   IterateOnly    : 원소를 구조체로 변환하지 않고 그냥 훑기만 하는 비용 - Parse 시간 중
+//                     "트리 순회" 몫과 "필드별 Read<T>/타입 변환" 몫을 나눠서 보려는 용도.
+//
+// SetItemsProcessed/SetBytesProcessed로 ns/op 말고 items/sec, bytes/sec도 같이 리포트함.
 
 namespace bench
 {
 
-constexpr size_t kItemCount = 2000;
+using jug::Failed;   // JUG_DISPATCH_FAILED expands to unqualified `Failed{...}` - needs this in scope outside namespace jug.
 
 struct BenchItem
 {
@@ -32,41 +41,47 @@ struct BenchItem
     bool                     active = false;
     std::vector<std::string> tags;
 
-    // ----- jug -----
     void Serialize(
         jug::JsonWriter& _writer) const
     {
-        _writer.BeginObject();
+        _writer.SetObject();
         _writer.WriteField("id", id);
         _writer.WriteField("name", name);
         _writer.WriteField("score", score);
         _writer.WriteField("active", active);
-        _writer.BeginArray("tags");
+
+        jug::JsonWriter tagArray = _writer.BeginArrayField("tags");
         for (const std::string& tag: tags)
         {
-            _writer.Write(tag);
+            tagArray.PushBack(tag);
         }
-        _writer.EndArray();
-        _writer.EndObject();
     }
 
-    void Deserialize(
-        jug::JsonReader& _reader)
+    [[nodiscard]] static jug::SerializeResult<BenchItem> Deserialize(
+        const jug::JsonReader& _reader)
     {
-        _reader.BeginObject();
-        _reader.ReadFieldTo("id", id);
-        _reader.ReadFieldTo("name", name);
-        _reader.ReadFieldTo("score", score);
-        _reader.ReadFieldTo("active", active);
+        jug::SerializeResult<int64_t> id = _reader.ReadField<int64_t>("id");
+        JUG_DISPATCH_FAILED(id);
+        jug::SerializeResult<std::string> name = _reader.ReadField<std::string>("name");
+        JUG_DISPATCH_FAILED(name);
+        jug::SerializeResult<double> score = _reader.ReadField<double>("score");
+        JUG_DISPATCH_FAILED(score);
+        jug::SerializeResult<bool> active = _reader.ReadField<bool>("active");
+        JUG_DISPATCH_FAILED(active);
 
-        _reader.BeginArray("tags");
-        tags.clear();
-        while (_reader.HasNext())
+        jug::SerializeResult<jug::JsonReader> tagArray = _reader.FindField("tags");
+        JUG_DISPATCH_FAILED(tagArray);
+
+        std::vector<std::string> tags;
+        tags.reserve(tagArray.GetValue().GetSize());
+        for (const jug::JsonReader& element: tagArray.GetValue().GetArray())
         {
-            tags.push_back(_reader.Read<std::string>());
+            jug::SerializeResult<std::string> tag = element.Read<std::string>();
+            JUG_DISPATCH_FAILED(tag);
+            tags.push_back(tag.Take());
         }
-        _reader.EndArray();
-        _reader.EndObject();
+
+        return BenchItem { id.GetValue(), name.Take(), score.GetValue(), active.GetValue(), std::move(tags) };
     }
 };
 
@@ -131,11 +146,12 @@ inline BenchItem FromRapidJson(
 }
 
 // ----- 테스트 데이터 -----
-inline std::vector<BenchItem> MakeItems()
+inline std::vector<BenchItem> MakeItems(
+    const size_t _count)
 {
     std::vector<BenchItem> items;
-    items.reserve(kItemCount);
-    for (size_t i = 0; i < kItemCount; ++i)
+    items.reserve(_count);
+    for (size_t i = 0; i < _count; ++i)
     {
         BenchItem item;
         item.id     = static_cast<int64_t>(i);
@@ -186,6 +202,22 @@ inline std::string BuildCanonicalJson(
     return out;
 }
 
+inline std::string BuildWideObjectJson(
+    const size_t _fieldCount)
+{
+    std::string out = "{";
+    for (size_t i = 0; i < _fieldCount; ++i)
+    {
+        if (i != 0)
+        {
+            out += ',';
+        }
+        out += std::format(R"("field_{}":{})", i, i);
+    }
+    out += '}';
+    return out;
+}
+
 // ==========================================================
 //  Write
 // ==========================================================
@@ -193,28 +225,37 @@ inline std::string BuildCanonicalJson(
 inline void BM_Jug_Write(
     benchmark::State& _state)
 {
-    const std::vector<BenchItem> items = MakeItems();
+    const size_t                  count = static_cast<size_t>(_state.range(0));
+    const std::vector<BenchItem>  items = MakeItems(count);
+    const int64_t                 bytesPerOp = static_cast<int64_t>(BuildCanonicalJson(items).size());
+
     for (auto _: _state)
     {
-        jug::JsonWriter writer;
-        writer.BeginArray();
+        jug::JsonSerializer serializer;
+        jug::JsonWriter     writer = serializer.GetWriter();
+        writer.SetArray();
         for (const BenchItem& item: items)
         {
-            writer.Write(item);
+            writer.PushBack(item);
         }
-        writer.EndArray();
 
-        jug::SerializerResult<std::string> result = writer.SaveToString();
+        jug::SerializeResult<std::string> result = serializer.SaveToString();
         benchmark::DoNotOptimize(result);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * bytesPerOp);
 }
 
-BENCHMARK(BM_Jug_Write);
+BENCHMARK(BM_Jug_Write)->Arg(100)->Arg(1000)->Arg(10000);
 
 inline void BM_RapidJson_Write(
     benchmark::State& _state)
 {
-    const std::vector<BenchItem> items = MakeItems();
+    const size_t                 count      = static_cast<size_t>(_state.range(0));
+    const std::vector<BenchItem> items      = MakeItems(count);
+    const int64_t                bytesPerOp = static_cast<int64_t>(BuildCanonicalJson(items).size());
+
     for (auto _: _state)
     {
         rapidjson::Document doc(rapidjson::kArrayType);
@@ -231,23 +272,32 @@ inline void BM_RapidJson_Write(
         std::string result = buffer.GetString();
         benchmark::DoNotOptimize(result);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * bytesPerOp);
 }
 
-BENCHMARK(BM_RapidJson_Write);
+BENCHMARK(BM_RapidJson_Write)->Arg(100)->Arg(1000)->Arg(10000);
 
 inline void BM_Nlohmann_Write(
     benchmark::State& _state)
 {
-    const std::vector<BenchItem> items = MakeItems();
+    const size_t                 count      = static_cast<size_t>(_state.range(0));
+    const std::vector<BenchItem> items      = MakeItems(count);
+    const int64_t                bytesPerOp = static_cast<int64_t>(BuildCanonicalJson(items).size());
+
     for (auto _: _state)
     {
         nlohmann::json j      = items;
         std::string    result = j.dump();
         benchmark::DoNotOptimize(result);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * bytesPerOp);
 }
 
-BENCHMARK(BM_Nlohmann_Write);
+BENCHMARK(BM_Nlohmann_Write)->Arg(100)->Arg(1000)->Arg(10000);
 
 // ==========================================================
 //  Parse
@@ -256,29 +306,38 @@ BENCHMARK(BM_Nlohmann_Write);
 inline void BM_Jug_Parse(
     benchmark::State& _state)
 {
-    const std::string json = BuildCanonicalJson(MakeItems());
+    const size_t      count = static_cast<size_t>(_state.range(0));
+    const std::string json  = BuildCanonicalJson(MakeItems(count));
+
     for (auto _: _state)
     {
-        jug::SerializerResult<jug::JsonReader> readerResult = jug::JsonReader::LoadFromString(json);
-        jug::JsonReader&                       reader       = readerResult.GetValue();
+        jug::SerializeResult<jug::JsonDeserializer> result = jug::JsonDeserializer::LoadFromString(json);
+        const jug::JsonReader                       reader = result.GetValue().GetReader();
 
         std::vector<BenchItem> items;
-        reader.BeginArray();
-        while (reader.HasNext())
+        items.reserve(count);
+        for (const jug::JsonReader& element: reader.GetArray())
         {
-            items.push_back(reader.Read<BenchItem>());
+            if (jug::SerializeResult<BenchItem> item = element.Read<BenchItem>())
+            {
+                items.push_back(item.Take());
+            }
         }
-        reader.EndArray();
         benchmark::DoNotOptimize(items);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * static_cast<int64_t>(json.size()));
 }
 
-BENCHMARK(BM_Jug_Parse);
+BENCHMARK(BM_Jug_Parse)->Arg(100)->Arg(1000)->Arg(10000);
 
 inline void BM_RapidJson_Parse(
     benchmark::State& _state)
 {
-    const std::string json = BuildCanonicalJson(MakeItems());
+    const size_t      count = static_cast<size_t>(_state.range(0));
+    const std::string json  = BuildCanonicalJson(MakeItems(count));
+
     for (auto _: _state)
     {
         rapidjson::Document doc;
@@ -292,22 +351,169 @@ inline void BM_RapidJson_Parse(
         }
         benchmark::DoNotOptimize(items);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * static_cast<int64_t>(json.size()));
 }
 
-BENCHMARK(BM_RapidJson_Parse);
+BENCHMARK(BM_RapidJson_Parse)->Arg(100)->Arg(1000)->Arg(10000);
 
 inline void BM_Nlohmann_Parse(
     benchmark::State& _state)
 {
-    const std::string json = BuildCanonicalJson(MakeItems());
+    const size_t      count = static_cast<size_t>(_state.range(0));
+    const std::string json  = BuildCanonicalJson(MakeItems(count));
+
     for (auto _: _state)
     {
         nlohmann::json         j     = nlohmann::json::parse(json);
         std::vector<BenchItem> items = j.get<std::vector<BenchItem>>();
         benchmark::DoNotOptimize(items);
     }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(count));
+    _state.SetBytesProcessed(_state.iterations() * static_cast<int64_t>(json.size()));
 }
 
-BENCHMARK(BM_Nlohmann_Parse);
+BENCHMARK(BM_Nlohmann_Parse)->Arg(100)->Arg(1000)->Arg(10000);
+
+// ==========================================================
+//  IterateOnly - 구조체 변환 없이 그냥 훑기만(Parse 시간 중 "트리 순회" 몫만 격리)
+// ==========================================================
+
+inline void BM_Jug_IterateOnly(
+    benchmark::State& _state)
+{
+    constexpr size_t  kCount = 10000;
+    const std::string json   = BuildCanonicalJson(MakeItems(kCount));
+
+    for (auto _: _state)
+    {
+        jug::SerializeResult<jug::JsonDeserializer> result = jug::JsonDeserializer::LoadFromString(json);
+        const jug::JsonReader                       reader = result.GetValue().GetReader();
+
+        size_t count = 0;
+        for (const jug::JsonReader& element: reader.GetArray())
+        {
+            benchmark::DoNotOptimize(element);
+            ++count;
+        }
+        benchmark::DoNotOptimize(count);
+    }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(kCount));
+}
+
+BENCHMARK(BM_Jug_IterateOnly);
+
+inline void BM_RapidJson_IterateOnly(
+    benchmark::State& _state)
+{
+    constexpr size_t  kCount = 10000;
+    const std::string json   = BuildCanonicalJson(MakeItems(kCount));
+
+    for (auto _: _state)
+    {
+        rapidjson::Document doc;
+        doc.Parse(json.c_str());
+
+        size_t count = 0;
+        for (const auto& v: doc.GetArray())
+        {
+            benchmark::DoNotOptimize(v);
+            ++count;
+        }
+        benchmark::DoNotOptimize(count);
+    }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(kCount));
+}
+
+BENCHMARK(BM_RapidJson_IterateOnly);
+
+inline void BM_Nlohmann_IterateOnly(
+    benchmark::State& _state)
+{
+    constexpr size_t  kCount = 10000;
+    const std::string json   = BuildCanonicalJson(MakeItems(kCount));
+
+    for (auto _: _state)
+    {
+        nlohmann::json j = nlohmann::json::parse(json);
+
+        size_t count = 0;
+        for (const auto& v: j)
+        {
+            benchmark::DoNotOptimize(v);
+            ++count;
+        }
+        benchmark::DoNotOptimize(count);
+    }
+
+    _state.SetItemsProcessed(_state.iterations() * static_cast<int64_t>(kCount));
+}
+
+BENCHMARK(BM_Nlohmann_IterateOnly);
+
+// ==========================================================
+//  FindField - 필드 하나 조회하는 비용만 격리(파싱은 루프 밖에서 한 번만)
+// ==========================================================
+
+inline void BM_Jug_FindField(
+    benchmark::State& _state)
+{
+    constexpr size_t  kFieldCount = 1000;
+    const std::string json        = BuildWideObjectJson(kFieldCount);
+    const std::string key         = std::format("field_{}", kFieldCount / 2);   // 중간 키 - 선형 탐색 시 최악에 가까움
+
+    jug::SerializeResult<jug::JsonDeserializer> docResult = jug::JsonDeserializer::LoadFromString(json);
+    const jug::JsonReader                       reader    = docResult.GetValue().GetReader();
+
+    for (auto _: _state)
+    {
+        jug::SerializeResult<int> value = reader.ReadField<int>(key);
+        benchmark::DoNotOptimize(value);
+    }
+}
+
+BENCHMARK(BM_Jug_FindField);
+
+inline void BM_RapidJson_FindField(
+    benchmark::State& _state)
+{
+    constexpr size_t  kFieldCount = 1000;
+    const std::string json        = BuildWideObjectJson(kFieldCount);
+    const std::string key         = std::format("field_{}", kFieldCount / 2);
+
+    rapidjson::Document doc;
+    doc.Parse(json.c_str());
+
+    for (auto _: _state)
+    {
+        auto it    = doc.FindMember(key.c_str());
+        int  value = (it != doc.MemberEnd()) ? it->value.GetInt() : 0;
+        benchmark::DoNotOptimize(value);
+    }
+}
+
+BENCHMARK(BM_RapidJson_FindField);
+
+inline void BM_Nlohmann_FindField(
+    benchmark::State& _state)
+{
+    constexpr size_t  kFieldCount = 1000;
+    const std::string json        = BuildWideObjectJson(kFieldCount);
+    const std::string key         = std::format("field_{}", kFieldCount / 2);
+
+    const nlohmann::json j = nlohmann::json::parse(json);
+
+    for (auto _: _state)
+    {
+        int value = j.at(key).get<int>();
+        benchmark::DoNotOptimize(value);
+    }
+}
+
+BENCHMARK(BM_Nlohmann_FindField);
 
 }   // namespace bench

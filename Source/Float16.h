@@ -2,7 +2,7 @@
 #pragma once
 #include <cstdint>
 
-#include "MathMacros.h"
+#include "MathMacro.h"
 
 namespace jug
 {

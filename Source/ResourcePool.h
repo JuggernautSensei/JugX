@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "HandleAllocator.h"
-#include "HandleMap.h"
+#include "HandleStorage.h"
+#include "Typedef.h"
 
 namespace jug
 {
@@ -10,96 +11,109 @@ namespace jug
 //   Handle의 발급과 Resource 관리를 동시에 하는 컨테이너.
 // ================================================
 
-template<typename TTag, typename TResource>
+template<typename T, typename V>
 class ResourcePool
 {
-    using Handle          = Handle<TTag>;
-    using HandleAllocator = HandleAllocator<TTag>;
-    using HandleMap       = HandleMap<TTag, TResource>;
+    using HandleT          = Handle<T>;
+    using HandleAllocatorT = HandleAllocator<T>;
+    using HandleStorageT   = HandleStorage<T, V>;
 
 public:
-    using Iterator      = typename HandleMap::Iterator;
-    using ConstIterator = typename HandleMap::ConstIterator;
+    using Iterator      = typename HandleStorageT::Iterator;
+    using ConstIterator = typename HandleStorageT::ConstIterator;
 
-    ResourcePool() = default;
-
-    [[nodiscard]] Handle Insert(
-        const TResource& _resource)
+    [[nodiscard]] HandleT Insert(
+        const V& _resource)
     {
-        return Emplace(_resource);
+        return Emplace(_resource).first;
     }
 
-    [[nodiscard]] Handle Insert(
-        TResource&& _resource)
+    [[nodiscard]] HandleT Insert(
+        V&& _resource)
     {
-        return Emplace(std::move(_resource));
+        return Emplace(std::move(_resource)).first;
     }
 
-    template<typename... TArgs>
-    [[nodiscard]] Handle Emplace(
-        TArgs&&... _args)
+    template<typename... Args>
+    [[nodiscard]] std::pair<HandleT, V&> Emplace(
+        Args&&... _args)
     {
-        const Handle handle = m_allocator.Alloc();
-        m_storage.Emplace(handle, std::forward<TArgs>(_args)...);
-        return handle;
+        const HandleT handle   = m_handleAllocator.Alloc();
+        V&            resource = m_storage.Emplace(handle, std::forward<Args>(_args)...);
+        return { handle, resource };
     }
 
     void Erase(
-        const Handle _handle)
+        const HandleT _handle)
     {
         m_storage.Erase(_handle);
-        m_allocator.Free(_handle);
+        m_handleAllocator.Free(_handle);
     }
 
     [[nodiscard]] bool IsValid(
-        const Handle _handle) const
+        const HandleT _handle) const
     {
-        return m_allocator.IsValid(_handle);
+        return m_handleAllocator.IsValid(_handle);
     }
 
     void Clear()
     {
         m_storage.Clear();
-        m_allocator.Clear();
+        m_handleAllocator.Clear();
     }
 
-    [[nodiscard]] TResource& Get(
-        const Handle _handle)
+    [[nodiscard]] V& Get(
+        const HandleT _handle)
     {
         return m_storage.Get(_handle);
     }
 
-    [[nodiscard]] const TResource& Get(
-        const Handle _handle) const
+    [[nodiscard]] const V& Get(
+        const HandleT _handle) const
     {
         return m_storage.Get(_handle);
     }
 
-    [[nodiscard]] TResource* GetOrNull(
-        const Handle _handle)
+    [[nodiscard]] V* GetOrNull(
+        const HandleT _handle)
     {
         return m_storage.GetOrNull(_handle);
     }
 
-    [[nodiscard]] const TResource* GetOrNull(
-        const Handle _handle) const
+    [[nodiscard]] const V* GetOrNull(
+        const HandleT _handle) const
     {
         return m_storage.GetOrNull(_handle);
     }
 
-    [[nodiscard]] TResource& operator[](
-        const Handle _handle)
+    [[nodiscard]] V& operator[](
+        const HandleT _handle)
     {
         return Get(_handle);
     }
 
-    [[nodiscard]] const TResource& operator[](
-        const Handle _handle) const
+    [[nodiscard]] const V& operator[](
+        const HandleT _handle) const
     {
         return Get(_handle);
     }
 
-    [[nodiscard]] int GetSize() const
+    [[nodiscard]] Span<V> GetResources()
+    {
+        return m_storage.GetValues();
+    }
+
+    [[nodiscard]] Span<const V> GetResources() const
+    {
+        return m_storage.GetValues();
+    }
+
+    [[nodiscard]] Span<const HandleT> GetHandles() const
+    {
+        return m_storage.GetHandles();
+    }
+
+    [[nodiscard]] size_t GetSize() const
     {
         return m_storage.GetSize();
     }
@@ -109,35 +123,19 @@ public:
         return m_storage.IsEmpty();
     }
 
-    [[nodiscard]] Span<Handle> GetHandles()
-    {
-        return m_storage.GetHandles();
-    }
-
-    [[nodiscard]] Span<const Handle> GetHandles() const
-    {
-        return m_storage.GetHandles();
-    }
-
-    [[nodiscard]] Span<TResource> GetValues()
-    {
-        return m_storage.GetValues();
-    }
-
-    [[nodiscard]] Span<const TResource> GetValues() const
-    {
-        return m_storage.GetValues();
-    }
-
-    [[nodiscard]] TResource* GetPtr()
+    [[nodiscard]] V* GetPtr()
     {
         return m_storage.GetPtr();
     }
 
-    [[nodiscard]] const TResource* GetPtr() const
+    [[nodiscard]] const V* GetPtr() const
     {
         return m_storage.GetPtr();
     }
+
+    // ===========================================
+    //  Iterator
+    // ===========================================
 
     [[nodiscard]] Iterator Begin()
     {
@@ -170,31 +168,11 @@ public:
     }
 
     // ==========================================
-    //  STL like
+    //  STL Like
     // ==========================================
 
     using iterator       = Iterator;
     using const_iterator = ConstIterator;
-
-    [[nodiscard]] size_t size() const
-    {
-        return m_storage.GetSize();
-    }
-
-    [[nodiscard]] bool empty() const
-    {
-        return m_storage.IsEmpty();
-    }
-
-    [[nodiscard]] TResource* data()
-    {
-        return m_storage.GetPtr();
-    }
-
-    [[nodiscard]] const TResource* data() const
-    {
-        return m_storage.GetPtr();
-    }
 
     [[nodiscard]] iterator begin()
     {
@@ -227,8 +205,8 @@ public:
     }
 
 private:
-    HandleAllocator m_allocator = {};
-    HandleMap       m_storage   = {};
+    HandleAllocatorT m_handleAllocator = {};
+    HandleStorageT   m_storage         = {};
 };
 
 }   // namespace jug

@@ -3,12 +3,21 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="JsonSerializerTest.cpp">
-      <Filter>JsonSerializer</Filter>
+      <Filter>Serializer</Filter>
+    </ClCompile>
+    <ClCompile Include="LruCacheTest.cpp">
+      <Filter>Container</Filter>
+    </ClCompile>
+    <ClCompile Include="RingBufferTest.cpp">
+      <Filter>Container</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="JsonSerializer">
+    <Filter Include="Serializer">
       <UniqueIdentifier>{ceda8d45-761c-4409-bae4-812d9265ec9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Container">
+      <UniqueIdentifier>{c049eea1-09db-47be-b03e-7665ab99de97}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

@@ -45,7 +45,7 @@ struct TRIANGLE
     VECTOR3 p2;
 };
 
-JUG_STATIC_ASSERT_POD(TRIANGLE);
+static_assert(PodT<TRIANGLE>, "TRIANGLE must be POD type.");
 
 // ========================================================
 //  Constants

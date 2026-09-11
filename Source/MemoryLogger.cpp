@@ -31,7 +31,7 @@ void MemoryLogger::WriteImpl(
     }
 }
 
-void MemoryLogger::WriteImpl(
+void MemoryLogger::VWriteImpl(
     const eLogLevel,
     const StringView _msg,
     const std::format_args _args,

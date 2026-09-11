@@ -327,7 +327,7 @@ struct alignas(16) QUATERNION
 
     constexpr static size_t kDim = 4;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -352,7 +352,7 @@ struct alignas(16) QUATERNION
 
 static_assert(sizeof(QUATERNION) == 16, "QUATERNION must be tightly packed");
 static_assert(alignof(QUATERNION) == 16, "QUATERNION must be 16-byte aligned for SIMD");
-JUG_STATIC_ASSERT_POD(QUATERNION);
+static_assert(PodT<QUATERNION>, "QUATERNION must be POD type.");
 
 // =======================================================
 //  Constants
