@@ -1,20 +1,7 @@
 ﻿#pragma once
-#include <compare>
-#include <concepts>
-#include <cstddef>
-#include <cstdint>
-#include <type_traits>
-#include <utility>
-
-#include "Assertion.h"
 #include "EnumFlags.h"
-#include "EnumRefl.h"
 #include "JsonAdlSerializer.h"
-#include "Macro.h"
 #include "Result.h"
-#include "SerializeError.h"
-#include "Typedef.h"
-#include "TypeTraits.h"
 
 struct yyjson_doc;
 struct yyjson_val;
@@ -61,10 +48,10 @@ public:
         [[nodiscard]] std::strong_ordering operator<=>(const ArrayIterator& _other) const;
 
     private:
-        constexpr ArrayIterator(const yyjson_val* _pValue, size_t _remain);
+        constexpr ArrayIterator(yyjson_val* _pValue, size_t _remain);
 
-        const yyjson_val* m_pValue = nullptr;
-        size_t            m_remain = 0;
+        yyjson_val* m_pValue = nullptr;
+        size_t      m_remain = 0;
     };
 
     class ArrayRange
@@ -99,10 +86,10 @@ public:
         [[nodiscard]] std::strong_ordering              operator<=>(const ObjectIterator& _other) const;
 
     private:
-        constexpr ObjectIterator(const yyjson_val* _pKey, size_t _remain);
+        constexpr ObjectIterator(yyjson_val* _pKey, size_t _remain);
 
-        const yyjson_val* m_pKey   = nullptr;
-        size_t            m_remain = 0;
+        yyjson_val* m_pKey   = nullptr;
+        size_t      m_remain = 0;
     };
 
     class ObjectRange
@@ -182,7 +169,7 @@ public:
     [[nodiscard]] bool IsContainer() const;
 
 private:
-    explicit JsonReader(const yyjson_val* _pValue);
+    explicit JsonReader(yyjson_val* _pValue);
 
     [[nodiscard]] Result<bool>        Read_(std::type_identity<bool>) const;
     [[nodiscard]] Result<int64_t>     Read_(std::type_identity<int64_t>) const;
@@ -229,20 +216,20 @@ private:
         return static_cast<T>(result.GetValue());
     }
 
-    const yyjson_val* m_pValue = nullptr;
+    yyjson_val* m_pValue = nullptr;
 };
 
 constexpr JsonReader::ArrayIterator::ArrayIterator(
-    const yyjson_val* const _pValue,
-    const size_t            _remain)
+    yyjson_val*  _pValue,
+    const size_t _remain)
     : m_pValue(_pValue)
     , m_remain(_remain)
 {
 }
 
 constexpr JsonReader::ObjectIterator::ObjectIterator(
-    const yyjson_val* const _pKey,
-    const size_t            _remain)
+    yyjson_val*  _pKey,
+    const size_t _remain)
     : m_pKey(_pKey)
     , m_remain(_remain)
 {

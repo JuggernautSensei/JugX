@@ -1,9 +1,6 @@
 ﻿#pragma once
-#include <format>
-
 #include "EnumFlags.h"
 #include "TimeStamp.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -18,6 +15,7 @@ enum class eLogLevel
     Fatal
 };
 
+// [YYYY-MM-DD HH:MM:SS] [LEVEL] [LoggerName]: Message
 enum class eLogPattern : uint32_t
 {
     None         = 0,
@@ -26,8 +24,6 @@ enum class eLogPattern : uint32_t
     Level        = 1 << 2,
     Name         = 1 << 3
 };
-
-// [YYYY-MM-DD HH:MM:SS] [LEVEL] [LoggerName]: Message
 
 class Logger
 {
@@ -47,8 +43,8 @@ public:
 
     template<typename... Args>
     void Log(
-        const eLogLevel             _level,
-        std::format_string<Args...> _format,
+        const eLogLevel                   _level,
+        const std::format_string<Args...> _format,
         Args&&... _args)
     {
         VLog(_level, _format.get(), std::make_format_args(_args...));
@@ -58,13 +54,13 @@ public:
 
     void SetName(StringView _name);
     void SetFilter(IndexedFlags<eLogLevel> _flags);
-    void SetLogPattern(Flags<eLogPattern> _flags);
+    void SetPattern(Flags<eLogPattern> _flags);
 
 private:
-    virtual void WriteImpl(eLogLevel _level, StringView _msg, bool _bEndOfLog)                          = 0;
-    virtual void VWriteImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndOfLog) = 0;   // for formatted message
+    virtual void LogImpl(eLogLevel _level, StringView _msg, bool _bEndOfLog)                          = 0;
+    virtual void VLogImpl(eLogLevel _level, StringView _msg, std::format_args _args, bool _bEndOfLog) = 0;   // for formatted message
 
-    void WritePrefix_(eLogLevel _level);
+    void LogPrefix_(eLogLevel _level);
 
     String                  m_name             = "Logger";
     Flags<eLogPattern>      m_patternFlags     = kAllFlag;

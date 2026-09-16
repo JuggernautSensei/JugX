@@ -1,7 +1,5 @@
 ﻿#pragma once
 #include "Matrix.h"
-#include "TypeTraits.h"
-#include "Vector.h"
 
 namespace jug
 {

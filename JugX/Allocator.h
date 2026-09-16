@@ -5,18 +5,18 @@ namespace jug
 {
 
 template<typename T>
-struct Allocator
+struct CustomAllocator
 {
     static_assert(!std::is_const_v<T>, "The C++ Standard forbids containers of const elements because allocator<const T> is ill-formed.");
     static_assert(!std::is_function_v<T>, "The C++ Standard forbids allocators for function elements because of [allocator.requirements].");
     static_assert(!std::is_reference_v<T>, "The C++ Standard forbids allocators for reference elements because of [allocator.requirements].");
 
 public:
-    constexpr Allocator() noexcept = default;
+    constexpr CustomAllocator() noexcept = default;
 
     template<typename U>
-    /* implicit */ constexpr Allocator(
-        const Allocator<U>&) noexcept
+    /* implicit */ constexpr CustomAllocator(
+        const CustomAllocator<U>&) noexcept
     {
     }
 

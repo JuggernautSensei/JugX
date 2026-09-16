@@ -1,11 +1,4 @@
 ﻿#pragma once
-#include <array>
-#include <cstddef>
-#include <memory>
-
-#include "Assertion.h"
-#include "Config.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -16,7 +9,7 @@ namespace callable_detail
     using Storage = ARRAY<std::byte, kSize> alignas(alignof(void*));
 
     template<typename Fn, size_t kSize, typename DecayedFn = std::decay_t<Fn>>
-    concept SmallFuncT = sizeof(DecayedFn) <= kSize && alignof(DecayedFn) <= alignof(void*);
+    concept SmallFnT = sizeof(DecayedFn) <= kSize && alignof(DecayedFn) <= alignof(void*);
 
     enum class eOperation
     {
@@ -41,7 +34,7 @@ namespace callable_detail
             case eOperation::Destroy:
             {
                 Storage* pDst = static_cast<Storage*>(_pDst);
-                if constexpr (SmallFuncT<DecayedFn, kSize>)
+                if constexpr (SmallFnT<DecayedFn, kSize>)
                 {
                     DecayedFn* pObj = reinterpret_cast<DecayedFn*>(pDst->data());
                     std::destroy_at(pObj);   // 객체 소멸자 호출. 메모리는 Callable 객체가 소멸하면서 공멸
@@ -58,7 +51,7 @@ namespace callable_detail
             {
                 Storage* pDst = static_cast<Storage*>(_pDst);
                 Storage* pSrc = static_cast<Storage*>(_pSrc);
-                if constexpr (SmallFuncT<DecayedFn, kSize>)
+                if constexpr (SmallFnT<DecayedFn, kSize>)
                 {
                     // pSrc에 객체가 직접 저장되어 있기에, pDst측에 복사 생성.
                     DecayedFn* pSrcObj = reinterpret_cast<DecayedFn*>(pSrc->data());
@@ -78,7 +71,7 @@ namespace callable_detail
             {
                 Storage* pDst = static_cast<Storage*>(_pDst);
                 Storage* pSrc = static_cast<Storage*>(_pSrc);
-                if constexpr (SmallFuncT<DecayedFn, kSize>)
+                if constexpr (SmallFnT<DecayedFn, kSize>)
                 {
                     // pSrc에 객체가 직접 저장되어 있기에, pDst측에 이동 생성.
                     DecayedFn* pSrcObj = reinterpret_cast<DecayedFn*>(pSrc->data());
@@ -99,7 +92,6 @@ namespace callable_detail
                 JUG_ASSERT(false, "Unknown eOperation type");
         }
     }
-
 }   // namespace callable_detail
 
 // ===========================================================================
@@ -205,7 +197,7 @@ public:
 
     // 비캡쳐 + 캡쳐 람다. 함수자.
     template<typename Fn>
-        requires std::is_invocable_r_v<R, Fn, Args...> && (kbOverflow || callable_detail::SmallFuncT<Fn, kSize>)
+        requires std::is_invocable_r_v<R, Fn, Args...> && (kbOverflow || callable_detail::SmallFnT<Fn, kSize>)
     void Connect(
         Fn&& _fn)
     {
@@ -223,7 +215,7 @@ public:
         {
             using DecayedFn = std::decay_t<Fn>;
 
-            if constexpr (callable_detail::SmallFuncT<Fn, kSize>)
+            if constexpr (callable_detail::SmallFnT<Fn, kSize>)
             {
                 // SBO. storage에 직접 객체를 생성
                 std::construct_at(reinterpret_cast<DecayedFn*>(m_storage.data()), std::forward<Fn>(_fn));

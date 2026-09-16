@@ -1,10 +1,4 @@
 ﻿#pragma once
-#include <memory>
-#include <utility>
-
-#include "Assertion.h"
-#include "Math.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -100,13 +94,13 @@ public:
         const auto it = m_hashMap.find(_key);
         if (it != m_hashMap.end())
         {
-            it->second->second = std::forward<Args>(_value);
+            it->second->second = V(std::forward<Args>(_value)...);
             Touch_(it->second);
             return it->second;
         }
 
         MakeSpace_();
-        m_list.emplace_front(std::piecewise_construct, std::forward_as_tuple(_key), std::forward_as_tuple(std::forward<Args>(_value)));
+        m_list.emplace_front(std::piecewise_construct, std::forward_as_tuple(_key), std::forward_as_tuple(std::forward<Args>(_value)...));
 
         const Iterator listIt = m_list.begin();
         m_hashMap.insert_or_assign(_key, listIt);

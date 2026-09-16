@@ -1,11 +1,6 @@
 ﻿
 #pragma once
-#include <algorithm>
-#include <cstdint>
-#include <type_traits>
 
-#include "Config.h"
-#include "Align.h"
 #include "FixedBlockMemoryPool.h"
 
 namespace jug

@@ -1,11 +1,4 @@
 ﻿#pragma once
-#include <array>
-
-#include "Assertion.h"
-#include "Config.h"   // NOLINT
-#include "Math.h"
-#include "TypeTraits.h"
-#include "SIMD.h"
 #include "Vector.h"
 
 namespace jug
@@ -1024,3 +1017,4 @@ JUG_MATH_API constexpr void Decompose(
 }   // namespace jug
 
 #include "Matrix.inl"
+

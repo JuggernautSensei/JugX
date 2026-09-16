@@ -1,4 +1,6 @@
-﻿#include "Result.h"
+﻿#include "pch.h"
+#include "Result.h"
+
 #include "Error.h"
 
 namespace jug

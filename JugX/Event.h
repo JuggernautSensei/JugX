@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include "Macro.h"
-#include "Typedef.h"
 
 namespace jug
 {

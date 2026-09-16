@@ -1,16 +1,7 @@
 ﻿#pragma once
-#include "Assertion.h"
-#include "Scoped.h"
-#include "Config.h"
-#include "Scoped.h"   // NOLINT
 
 namespace jug
 {
-
-// ==========================================================
-//  RefCounted
-//   reference counting base class
-// ==========================================================
 
 class RefCounted
 {

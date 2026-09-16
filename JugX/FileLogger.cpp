@@ -1,11 +1,13 @@
-﻿#include "FileLogger.h"
+﻿#include "pch.h"
+#include "FileLogger.h"
+
+#include <format>
+#include <utility>
 
 #include "FileWriter.h"
 #include "Logger.h"
-#include <utility>
 #include "Result.h"
 #include "Typedef.h"
-#include <format>
 
 namespace jug
 {
@@ -30,7 +32,7 @@ void FileLogger::Flush()
     m_writer.Flush();
 }
 
-void FileLogger::WriteImpl(
+void FileLogger::LogImpl(
     const eLogLevel,
     const StringView _msg,
     const bool       _bEndLog)
@@ -43,7 +45,7 @@ void FileLogger::WriteImpl(
     }
 }
 
-void FileLogger::VWriteImpl(
+void FileLogger::VLogImpl(
     const eLogLevel,
     const StringView       _msg,
     const std::format_args _args,

@@ -1,11 +1,5 @@
 ﻿#pragma once
 
-#include <format>
-#include <concepts>
-
-#include "Config.h"
-#include "CoreLogger.h"
-
 namespace jug
 {
 
@@ -24,7 +18,7 @@ FormatResult VFormat(Span<wchar_t> _out, WStringView _format, std::wformat_args 
 
 template<typename... Args>
 FormatResult Format(
-    const Span<char>                              _out,
+    const Span<char>                  _out,
     const std::format_string<Args...> _format,
     Args&&... _args)
 {
@@ -33,7 +27,7 @@ FormatResult Format(
 
 template<typename... Args>
 FormatResult WFormat(
-    const Span<wchar_t>                              _out,
+    const Span<wchar_t>                _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {
@@ -49,7 +43,7 @@ FormatResult ZVFormat(Span<wchar_t> _out, WStringView _format, std::wformat_args
 
 template<typename... Args>
 [[nodiscard]] FormatResult ZFormat(
-    Span<char>                                    _out,
+    const Span<char>                  _out,
     const std::format_string<Args...> _format,
     Args&&... _args)
 {
@@ -58,7 +52,7 @@ template<typename... Args>
 
 template<typename... Args>
 [[nodiscard]] FormatResult ZWFormat(
-    Span<wchar_t>                                    _out,
+    const Span<wchar_t>                _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {
@@ -97,7 +91,7 @@ void AppendVFormat(WString& _out, WStringView _format, std::wformat_args _args);
 
 template<typename... Args>
 void AppendFormat(
-    String&                                       _out,
+    String&                           _out,
     const std::format_string<Args...> _format,
     Args&&... _args)
 {
@@ -106,7 +100,7 @@ void AppendFormat(
 
 template<typename... Args>
 void AppendWFormat(
-    WString&                                         _out,
+    WString&                           _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {

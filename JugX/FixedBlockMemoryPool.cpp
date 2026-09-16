@@ -1,9 +1,13 @@
-﻿#include "FixedBlockMemoryPool.h"
+﻿#include "pch.h"
+#include "FixedBlockMemoryPool.h"
 
 namespace jug
 {
 
-FixedBlockMemoryPool::FixedBlockMemoryPool(const size_t _blockSize, const size_t _numBlocksPerPool, const size_t _blockAlign)
+FixedBlockMemoryPool::FixedBlockMemoryPool(
+    const size_t _blockSize,
+    const size_t _numBlocksPerPool,
+    const size_t _blockAlign)
     : m_alignedBlockSize(AlignUp(_blockSize, _blockAlign))
     , m_blockAlign(_blockAlign)
     , m_numBlocksPerPool(_numBlocksPerPool)
@@ -13,7 +17,8 @@ FixedBlockMemoryPool::FixedBlockMemoryPool(const size_t _blockSize, const size_t
     JUG_ASSERT(m_alignedBlockSize > 0, "_blockSize must be greater than 0");
 }
 
-FixedBlockMemoryPool::FixedBlockMemoryPool(FixedBlockMemoryPool&& _other) noexcept
+FixedBlockMemoryPool::FixedBlockMemoryPool(
+    FixedBlockMemoryPool&& _other) noexcept
     : m_pPoolList(_other.m_pPoolList)
     , m_pFreeList(_other.m_pFreeList)
     , m_pEnd(_other.m_pEnd)
@@ -28,7 +33,8 @@ FixedBlockMemoryPool::FixedBlockMemoryPool(FixedBlockMemoryPool&& _other) noexce
     _other.m_pCur      = nullptr;
 }
 
-FixedBlockMemoryPool& FixedBlockMemoryPool::operator=(FixedBlockMemoryPool&& _other) noexcept
+FixedBlockMemoryPool& FixedBlockMemoryPool::operator=(
+    FixedBlockMemoryPool&& _other) noexcept
 {
     if (this != &_other)
     {
@@ -85,7 +91,8 @@ void* FixedBlockMemoryPool::Alloc()
     return pMem;
 }
 
-void FixedBlockMemoryPool::Free(void* _pMem)
+void FixedBlockMemoryPool::Free(
+    void* _pMem)
 {
     if (_pMem)
     {

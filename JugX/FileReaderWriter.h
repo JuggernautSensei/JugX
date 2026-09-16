@@ -1,10 +1,4 @@
 ﻿#pragma once
-#include <filesystem>
-
-#include "Macro.h"
-#include "Typedef.h"
-#include "Memory.h"
-#include "MemoryView.h"
 
 namespace jug
 {

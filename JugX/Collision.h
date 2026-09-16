@@ -1,13 +1,10 @@
 ﻿#pragma once
-#include "AABB.h"
 #include "Frustum.h"
 #include "Interval.h"
 #include "OBB.h"
-#include "Plane.h"
 #include "Ray.h"
 #include "Sphere.h"
 #include "Triangle.h"
-#include "Vector.h"
 
 namespace jug
 {

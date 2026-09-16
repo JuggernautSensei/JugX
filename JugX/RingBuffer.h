@@ -1,9 +1,5 @@
 ﻿#pragma once
-#include <memory>
-
-#include "Assertion.h"
 #include "Math.h"
-#include "ResourcePool.h"
 
 namespace jug
 {
@@ -525,11 +521,10 @@ private:
         return m_pData[ToRealIndex_(_logicalIndex)];
     }
 
-    T*     m_pData    = nullptr;
-    size_t m_head     = 0;
-    size_t m_size     = 0;
-    size_t m_capacity = 0;
-
+    T*                          m_pData     = nullptr;
+    size_t                      m_head      = 0;
+    size_t                      m_size      = 0;
+    size_t                      m_capacity  = 0;
     [[no_unique_address]] Alloc m_allocator = {};
 };
 

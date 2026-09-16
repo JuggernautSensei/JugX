@@ -1,9 +1,6 @@
 ﻿#pragma once
-#include <system_error>
-
-#include "Macro.h"
 #include "StringFormat.h"
-#include "Typedef.h"
+#include "Tag.h"
 
 namespace jug
 {
@@ -35,86 +32,40 @@ public:
     IErrorCategory()          = default;
     virtual ~IErrorCategory() = default;
 
-    [[nodiscard]] virtual StringView GetName() const noexcept         = 0;
-    [[nodiscard]] virtual String     MakeErrorMessage(int _err) const = 0;
+    [[nodiscard]] virtual StringView GetName() const noexcept    = 0;
+    [[nodiscard]] virtual String     MakeMessage(int _err) const = 0;
 };
 
 // ===========================================
 //  Error
 // ===========================================
 
+JUG_DEFINE_TAG(OkType, kOK);
+
 class Error
 {
 public:
-    constexpr Error() = default;
-
-    constexpr Error(
-        const int       _errorCode,
-        IErrorCategory& _category)
-        : m_errorCode(_errorCode)
-        , m_pCategory(&_category)
-    {
-    }
+    Error() = default;
+    /* implicit */ Error(OkType);
+    Error(int _errorCode, IErrorCategory& _category);
 
     template<ErrorCodeT T>
-    /* implicit */ constexpr Error(T _errorCode)
+    /* implicit */ Error(T _errorCode)
         : m_errorCode(ErrorCodeTraits<T>::GetErrorCode(_errorCode))
         , m_pCategory(ErrorCodeTraits<T>::GetCategory())
     {
     }
 
-    constexpr void Reset()
-    {
-        m_errorCode = 0;
-        m_pCategory = nullptr;
-    }
+    void Reset();
 
-    [[nodiscard]] constexpr bool IsError() const
-    {
-        return m_errorCode != 0;
-    }
+    [[nodiscard]] bool            IsError() const;
+    [[nodiscard]] bool            IsOK() const;
+    [[nodiscard]] IErrorCategory* GetCategory() const;
+    [[nodiscard]] int             GetErrorCode() const;
+    [[nodiscard]] String          MakeMessage() const;
 
-    [[nodiscard]] constexpr bool IsOK() const
-    {
-        return !IsError();
-    }
-
-    [[nodiscard]] constexpr IErrorCategory* GetCategory() const
-    {
-        return m_pCategory;
-    }
-
-    [[nodiscard]] constexpr int GetErrorCode() const
-    {
-        return m_errorCode;
-    }
-
-    [[nodiscard]] constexpr String MakeErrorMessage() const
-    {
-        if (m_pCategory)
-        {
-            return m_pCategory->MakeErrorMessage(m_errorCode);
-        }
-        else if (m_errorCode != 0)
-        {
-            return Format("Unknown error code: {}", m_errorCode);
-        }
-        else
-        {
-            return "No error";
-        }
-    }
-
-    constexpr explicit operator bool() const
-    {
-        return IsError();
-    }
-
-    [[nodiscard]] constexpr bool operator==(
-        const Error _other) const
-    {
-        return m_errorCode == _other.m_errorCode && m_pCategory == _other.m_pCategory;
-    }
+    explicit           operator bool() const;
+    [[nodiscard]] bool operator==(Error _other) const;
 
 private:
     int             m_errorCode = 0;
@@ -124,8 +75,6 @@ private:
 // ===========================================
 //  Utils
 // ===========================================
-
-constexpr Error kOK = Error {};
 
 template<typename T>
 [[nodiscard]] T& GetErrorCategory()
@@ -144,6 +93,7 @@ template<typename T>
         {                                         \
             return static_cast<int>(_value);      \
         }                                         \
+                                                  \
         static jug::IErrorCategory* GetCategory() \
         {                                         \
             static _category s_category;          \

@@ -1,18 +1,7 @@
 ﻿#pragma once
-#include <concepts>
-#include <cstddef>
-#include <cstdint>
-#include <type_traits>
-
-#include "Assertion.h"
 #include "EnumFlags.h"
-#include "EnumRefl.h"
 #include "JsonAdlSerializer.h"
-#include "Macro.h"
 #include "Result.h"
-#include "SerializeError.h"
-#include "Typedef.h"
-#include "TypeTraits.h"
 
 struct yyjson_mut_doc;
 struct yyjson_mut_val;

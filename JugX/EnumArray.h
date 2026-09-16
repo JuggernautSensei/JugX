@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <algorithm>
-
 #include "EnumRefl.h"
 
 namespace jug

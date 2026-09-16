@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "HandleAllocator.h"
 #include "HandleStorage.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -34,12 +33,12 @@ public:
     }
 
     template<typename... Args>
-    [[nodiscard]] std::pair<H, V&> Emplace(
+    [[nodiscard]] H Emplace(
         Args&&... _args)
     {
-        const H handle   = m_handleAllocator.Alloc();
-        V&      resource = m_handleStorage.Emplace(handle, std::forward<Args>(_args)...);
-        return { handle, resource };
+        const H handle = m_handleAllocator.Alloc();
+        m_handleStorage.Emplace(handle, std::forward<Args>(_args)...);
+        return handle;
     }
 
     void Erase(

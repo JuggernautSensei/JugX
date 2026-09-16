@@ -58,17 +58,11 @@
     <ClInclude Include="JugX\Vector4.h">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\HashUtils.h">
-      <Filter>Hasher</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Triangle.h">
       <Filter>Math\Geomtry</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Sphere.h">
       <Filter>Math\Geomtry</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\MemoryHasher.h">
-      <Filter>Hasher</Filter>
     </ClInclude>
     <ClInclude Include="JugX\OBB.h">
       <Filter>Math\Geomtry</Filter>
@@ -117,9 +111,6 @@
     </ClInclude>
     <ClInclude Include="JugX\Align.h">
       <Filter>Memroy\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Vendor\yyjson\src\yyjson.h">
-      <Filter>Vendor\yyjson</Filter>
     </ClInclude>
     <ClInclude Include="JugX\TypeTraits.h">
       <Filter>Type</Filter>
@@ -175,13 +166,10 @@
     <ClInclude Include="JugX\Alloc.h">
       <Filter>Memroy\Alloc</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Assertion.h">
+    <ClInclude Include="JugX\Assert.h">
       <Filter>Base</Filter>
     </ClInclude>
     <ClInclude Include="JugX\CoreLogger.h">
-      <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\DebugLogger.h">
       <Filter>Log</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Allocator.h">
@@ -190,17 +178,11 @@
     <ClInclude Include="JugX\Typedef.h">
       <Filter>Base</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\NoopHasher.h">
-      <Filter>Hasher</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\FileReaderWriter.h">
       <Filter>File\FileReaderWriter</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Random.h">
       <Filter>Random</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\StringHasher.h">
-      <Filter>Hasher</Filter>
     </ClInclude>
     <ClInclude Include="JugX\JsonSerializer.h">
       <Filter>Serializer\Json</Filter>
@@ -238,9 +220,6 @@
     <ClInclude Include="JugX\Event.h">
       <Filter>Event</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\StringFormatSpecialization.h">
-      <Filter>String</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Result.h">
       <Filter>Error</Filter>
     </ClInclude>
@@ -259,14 +238,32 @@
     <ClInclude Include="JugX\pch.h">
       <Filter>Base</Filter>
     </ClInclude>
+    <ClInclude Include="JugX\Tag.h">
+      <Filter>Type</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Fatal.h">
+      <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\OS.h">
+      <Filter>OS</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\OsAPI.h">
+      <Filter>OS</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\MemoryHasher.h">
+      <Filter>Hash\Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\NoopHasher.h">
+      <Filter>Hash\Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\StringHasher.h">
+      <Filter>Hash\Hasher</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Hash.h">
+      <Filter>Hash\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="JugX\MemoryHasher.cpp">
-      <Filter>Hasher</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\Vendor\yyjson\src\yyjson.c">
-      <Filter>Vendor\yyjson</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\StringEncoder.cpp">
       <Filter>String</Filter>
     </ClCompile>
@@ -294,13 +291,10 @@
     <ClCompile Include="JugX\Alloc.cpp">
       <Filter>Memroy\Alloc</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Assertion.cpp">
+    <ClCompile Include="JugX\Assert.cpp">
       <Filter>Base</Filter>
     </ClCompile>
     <ClCompile Include="JugX\CoreLogger.cpp">
-      <Filter>Log</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\DebugLogger.cpp">
       <Filter>Log</Filter>
     </ClCompile>
     <ClCompile Include="JugX\FileReaderWriter.cpp">
@@ -354,6 +348,183 @@
     <ClCompile Include="JugX\pch.cpp">
       <Filter>Base</Filter>
     </ClCompile>
+    <ClCompile Include="JugX\AABB.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\AffineTransform.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Align.cpp">
+      <Filter>Memroy\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Allocator.cpp">
+      <Filter>Memroy\Alloc</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\AxisAngle.cpp">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Callable.cpp">
+      <Filter>Callable</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Collision.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Config.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Corner.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\EnumArray.cpp">
+      <Filter>Enum</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\EnumFlags.cpp">
+      <Filter>Enum</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\EnumRefl.cpp">
+      <Filter>Enum</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Error.cpp">
+      <Filter>Error</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Float16.cpp">
+      <Filter>Math\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Frustum.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Handle.cpp">
+      <Filter>Handle</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\HandleAllocator.cpp">
+      <Filter>Handle</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\HandleStorage.cpp">
+      <Filter>Handle</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Interval.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\JsonAdlSerializer.cpp">
+      <Filter>Serializer\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\LruCache.cpp">
+      <Filter>Container\LruCache</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Macro.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Math.cpp">
+      <Filter>Math\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Matrix.cpp">
+      <Filter>Math\LinearAlgebra\Matrix</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\MemoryView.cpp">
+      <Filter>Memroy\Memory</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\OBB.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\ObjectPool.cpp">
+      <Filter>Memroy\MemoryPool</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Octree.cpp">
+      <Filter>Math\AccelatorStructure</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Plane.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Platform.cpp">
+      <Filter>Platform</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Quaternion.cpp">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\RGBA.cpp">
+      <Filter>Math\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Ray.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Ref.cpp">
+      <Filter>Memroy\SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\ResourcePool.cpp">
+      <Filter>Handle</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\RingBuffer.cpp">
+      <Filter>Container\RingBuffer</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\SIMD.cpp">
+      <Filter>Math\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Scoped.cpp">
+      <Filter>Memroy\SmartPointer</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Sphere.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\StringParser.cpp">
+      <Filter>String</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Triangle.cpp">
+      <Filter>Math\Geomtry</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\TypeRefl.cpp">
+      <Filter>Type</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\TypeTraits.cpp">
+      <Filter>Type</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Typedef.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector2.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector2I.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector3.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector3I.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector4.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Vector4I.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Tag.cpp">
+      <Filter>Type</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Fatal.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\OS.cpp">
+      <Filter>OS</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\OsAPI.cpp">
+      <Filter>OS</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\MemoryHasher.cpp">
+      <Filter>Hash\Hasher</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\NoopHasher.cpp">
+      <Filter>Hash\Hasher</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\StringHasher.cpp">
+      <Filter>Hash\Hasher</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Hash.cpp">
+      <Filter>Hash\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="JugX\Matrix.inl">
@@ -403,9 +574,6 @@
     <Filter Include="Math\LinearAlgebra\Vector">
       <UniqueIdentifier>{4683edf6-90d7-41d0-9a49-c5476473c5e7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Hasher">
-      <UniqueIdentifier>{82e296ce-906c-43ac-9117-e4937c0c7f55}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Math\AccelatorStructure">
       <UniqueIdentifier>{9c9ab120-eb54-4a8b-b8f0-addb134b50ea}</UniqueIdentifier>
     </Filter>
@@ -417,12 +585,6 @@
     </Filter>
     <Filter Include="Memroy\MemoryPool">
       <UniqueIdentifier>{da9d66ec-3e16-4056-9cfc-2467fe9523c2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Vendor">
-      <UniqueIdentifier>{383d26d3-3c9f-4119-b5a2-9d925e0e220a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Vendor\yyjson">
-      <UniqueIdentifier>{cb5122c1-4967-402a-974c-25d1662ce844}</UniqueIdentifier>
     </Filter>
     <Filter Include="Type">
       <UniqueIdentifier>{1303bc83-8dce-491a-a53d-863476cd5bc8}</UniqueIdentifier>
@@ -480,6 +642,18 @@
     </Filter>
     <Filter Include="Enum">
       <UniqueIdentifier>{d700385b-22bf-4fe2-9c97-4c257729b4e6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OS">
+      <UniqueIdentifier>{1a62ea88-ff7e-434e-b1d5-aff7f57da21b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hash">
+      <UniqueIdentifier>{82e296ce-906c-43ac-9117-e4937c0c7f55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hash\Hasher">
+      <UniqueIdentifier>{6ce4f2f0-3eb7-4132-b9f7-be877e7efb9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Hash\Utils">
+      <UniqueIdentifier>{fcb604ef-7a09-4ad9-b837-b60333ae03ee}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

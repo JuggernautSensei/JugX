@@ -32,20 +32,17 @@
 #    define JUG_FORCEINLINE inline
 #endif
 
-#ifndef JUG_PRETTY_FUNCTION
-#    if defined(__GNUC__) || defined(__clang__)
-#        define JUG_PRETTY_FUNCTION __PRETTY_FUNCTION__
-#    elif defined(_MSC_VER)
-#        define JUG_PRETTY_FUNCTION __FUNCSIG__
-#    else
-#        error "Unsupported compiler for JUG_PRETTY_FUNCTION"
-#    endif
+#if defined(__GNUC__) || defined(__clang__)
+#    define JUG_FUNCSIG __PRETTY_FUNCTION__
+#elif defined(_MSC_VER)
+#    define JUG_FUNCSIG __FUNCSIG__
+#else
+#    error "Unsupported compiler for JUG_FUNCSIG"
 #endif
 
 #if defined(_MSC_VER)
 #    include <intrin.h>
 #    define JUG_DEBUG_BREAK() __debugbreak()
-
 #elif defined(__clang__) || defined(__GNUC__)
 #    if defined(__has_builtin)
 #        if __has_builtin(__builtin_debugtrap)

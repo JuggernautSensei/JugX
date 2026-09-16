@@ -1,8 +1,7 @@
 ﻿// ReSharper disable CppClangTidyClangDiagnosticImplicitIntConversion
 #pragma once
-#include <cstdint>
 
-#include "MathMacro.h"
+#include "Math.h"
 
 namespace jug
 {

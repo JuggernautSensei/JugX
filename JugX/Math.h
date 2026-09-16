@@ -1,7 +1,4 @@
 ﻿#pragma once
-#include <cmath>
-#include <cstdint>
-#include <limits>
 #include <numbers>
 
 #include "TypeTraits.h"
@@ -205,3 +202,4 @@ constexpr static float kInvLogNat2 = 1.4426950408889634f;
 }   // namespace jug
 
 #include "Math.inl"
+

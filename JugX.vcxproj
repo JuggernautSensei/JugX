@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -23,27 +23,29 @@
     <ClInclude Include="JugX\AffineTransform.h" />
     <ClInclude Include="JugX\Align.h" />
     <ClInclude Include="JugX\Allocator.h" />
-    <ClInclude Include="JugX\Assertion.h" />
+    <ClInclude Include="JugX\Assert.h" />
     <ClInclude Include="JugX\Config.h" />
     <ClInclude Include="JugX\Error.h" />
     <ClInclude Include="JugX\Event.h" />
     <ClInclude Include="JugX\EventDispatcher.h" />
+    <ClInclude Include="JugX\Fatal.h" />
     <ClInclude Include="JugX\FileReader.h" />
     <ClInclude Include="JugX\FileWriter.h" />
     <ClInclude Include="JugX\JsonAdlSerializer.h" />
     <ClInclude Include="JugX\LruCache.h" />
     <ClInclude Include="JugX\NoopHasher.h" />
+    <ClInclude Include="JugX\OS.h" />
+    <ClInclude Include="JugX\OsAPI.h" />
     <ClInclude Include="JugX\pch.h" />
     <ClInclude Include="JugX\Random.h" />
     <ClInclude Include="JugX\RingBuffer.h" />
-    <ClInclude Include="JugX\StringFormatSpecialization.h" />
     <ClInclude Include="JugX\StringHasher.h" />
     <ClInclude Include="JugX\StringParser.h" />
     <ClInclude Include="JugX\SystemError.h" />
+    <ClInclude Include="JugX\Tag.h" />
     <ClInclude Include="JugX\Typedef.h" />
     <ClInclude Include="JugX\AxisAngle.h" />
     <ClInclude Include="JugX\ConsoleLogger.h" />
-    <ClInclude Include="JugX\DebugLogger.h" />
     <ClInclude Include="JugX\FileLogger.h" />
     <ClInclude Include="JugX\FixedBlockMemoryPool.h" />
     <ClInclude Include="JugX\Callable.h" />
@@ -95,7 +97,7 @@
     <ClInclude Include="JugX\SIMD.h" />
     <ClInclude Include="JugX\Sphere.h" />
     <ClInclude Include="JugX\Triangle.h" />
-    <ClInclude Include="JugX\HashUtils.h" />
+    <ClInclude Include="JugX\Hash.h" />
     <ClInclude Include="JugX\TypeTraits.h" />
     <ClInclude Include="JugX\Vector.h" />
     <ClInclude Include="JugX\Vector2.h" />
@@ -104,15 +106,14 @@
     <ClInclude Include="JugX\Vector3I.h" />
     <ClInclude Include="JugX\Vector4.h" />
     <ClInclude Include="JugX\Vector4I.h" />
-    <ClInclude Include="JugX\Vendor\yyjson\src\yyjson.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="JugX\Alloc.cpp" />
-    <ClCompile Include="JugX\Assertion.cpp" />
+    <ClCompile Include="JugX\Assert.cpp" />
     <ClCompile Include="JugX\ConsoleLogger.cpp" />
-    <ClCompile Include="JugX\DebugLogger.cpp" />
     <ClCompile Include="JugX\Event.cpp" />
     <ClCompile Include="JugX\EventDispatcher.cpp" />
+    <ClCompile Include="JugX\Fatal.cpp" />
     <ClCompile Include="JugX\FileReader.cpp" />
     <ClCompile Include="JugX\FileReaderWriter.cpp" />
     <ClCompile Include="JugX\FileLogger.cpp" />
@@ -127,6 +128,8 @@
     <ClCompile Include="JugX\MemoryArena.cpp" />
     <ClCompile Include="JugX\MemoryHasher.cpp" />
     <ClCompile Include="JugX\MemoryLogger.cpp" />
+    <ClCompile Include="JugX\OS.cpp" />
+    <ClCompile Include="JugX\OsAPI.cpp" />
     <ClCompile Include="JugX\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -140,12 +143,63 @@
     </ClCompile>
     <ClCompile Include="JugX\StringFormat.cpp" />
     <ClCompile Include="JugX\SystemError.cpp" />
+    <ClCompile Include="JugX\Tag.cpp" />
     <ClCompile Include="JugX\Timer.cpp" />
     <ClCompile Include="JugX\TimeStamp.cpp" />
-    <ClCompile Include="JugX\Vendor\yyjson\src\yyjson.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="JugX\AABB.cpp" />
+    <ClCompile Include="JugX\AffineTransform.cpp" />
+    <ClCompile Include="JugX\Align.cpp" />
+    <ClCompile Include="JugX\Allocator.cpp" />
+    <ClCompile Include="JugX\AxisAngle.cpp" />
+    <ClCompile Include="JugX\Callable.cpp" />
+    <ClCompile Include="JugX\Collision.cpp" />
+    <ClCompile Include="JugX\Config.cpp" />
+    <ClCompile Include="JugX\Corner.cpp" />
+    <ClCompile Include="JugX\EnumArray.cpp" />
+    <ClCompile Include="JugX\EnumFlags.cpp" />
+    <ClCompile Include="JugX\EnumRefl.cpp" />
+    <ClCompile Include="JugX\Error.cpp" />
+    <ClCompile Include="JugX\Float16.cpp" />
+    <ClCompile Include="JugX\Frustum.cpp" />
+    <ClCompile Include="JugX\Handle.cpp" />
+    <ClCompile Include="JugX\HandleAllocator.cpp" />
+    <ClCompile Include="JugX\HandleStorage.cpp" />
+    <ClCompile Include="JugX\Hash.cpp" />
+    <ClCompile Include="JugX\Interval.cpp" />
+    <ClCompile Include="JugX\JsonAdlSerializer.cpp" />
+    <ClCompile Include="JugX\LruCache.cpp" />
+    <ClCompile Include="JugX\Macro.cpp" />
+    <ClCompile Include="JugX\Math.cpp" />
+    <ClCompile Include="JugX\Matrix.cpp" />
+    <ClCompile Include="JugX\MemoryView.cpp" />
+    <ClCompile Include="JugX\NoopHasher.cpp" />
+    <ClCompile Include="JugX\OBB.cpp" />
+    <ClCompile Include="JugX\ObjectPool.cpp" />
+    <ClCompile Include="JugX\Octree.cpp" />
+    <ClCompile Include="JugX\Plane.cpp" />
+    <ClCompile Include="JugX\Platform.cpp" />
+    <ClCompile Include="JugX\Quaternion.cpp" />
+    <ClCompile Include="JugX\RGBA.cpp" />
+    <ClCompile Include="JugX\Ray.cpp" />
+    <ClCompile Include="JugX\Ref.cpp" />
+    <ClCompile Include="JugX\ResourcePool.cpp" />
+    <ClCompile Include="JugX\RingBuffer.cpp" />
+    <ClCompile Include="JugX\SIMD.cpp" />
+    <ClCompile Include="JugX\Scoped.cpp" />
+    <ClCompile Include="JugX\Sphere.cpp" />
+    <ClCompile Include="JugX\StringHasher.cpp" />
+    <ClCompile Include="JugX\StringParser.cpp" />
+    <ClCompile Include="JugX\Triangle.cpp" />
+    <ClCompile Include="JugX\TypeRefl.cpp" />
+    <ClCompile Include="JugX\TypeTraits.cpp" />
+    <ClCompile Include="JugX\Typedef.cpp" />
+    <ClCompile Include="JugX\Vector.cpp" />
+    <ClCompile Include="JugX\Vector2.cpp" />
+    <ClCompile Include="JugX\Vector2I.cpp" />
+    <ClCompile Include="JugX\Vector3.cpp" />
+    <ClCompile Include="JugX\Vector3I.cpp" />
+    <ClCompile Include="JugX\Vector4.cpp" />
+    <ClCompile Include="JugX\Vector4I.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="JugX\Matrix.inl" />
@@ -209,6 +263,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>true</VcpkgEnabled>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

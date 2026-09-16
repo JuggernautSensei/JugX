@@ -1,8 +1,5 @@
 ﻿#pragma once
-#include <array>
-
 #include "AxisAngle.h"
-#include "Math.h"
 #include "Vector.h"
 
 namespace jug
@@ -529,3 +526,4 @@ struct MathConstants<QUATERNION>
 }   // namespace jug
 
 #include "Quaternion.inl"
+

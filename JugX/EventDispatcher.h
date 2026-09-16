@@ -1,7 +1,5 @@
 ﻿#pragma once
 #include "Event.h"
-#include "TypeRefl.h"
-#include "Assertion.h"
 
 namespace jug
 {

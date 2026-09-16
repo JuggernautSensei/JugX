@@ -1,14 +1,16 @@
-﻿#include "SystemError.h"
-#include <system_error>
-#include <cstddef>
-#include <Windows.h>
+﻿#include "pch.h"
+#include "SystemError.h"
 
-#include "Assertion.h"
+#include <cstddef>
+#include <system_error>
+
+#include "Assert.h"
 #include "Error.h"
 #include "Macro.h"
+#include "OsAPI.h"
 #include "StringEncoder.h"
-#include "Typedef.h"
 #include "StringFormat.h"
+#include "Typedef.h"
 
 namespace jug
 {
@@ -18,7 +20,7 @@ StringView ErrnoErrorCategory::GetName() const noexcept
     return "Errno";
 }
 
-String ErrnoErrorCategory::MakeErrorMessage(
+String ErrnoErrorCategory::MakeMessage(
     const int _err) const
 {
     switch (static_cast<std::errc>(_err))
@@ -183,38 +185,12 @@ String ErrnoErrorCategory::MakeErrorMessage(
     }
 }
 
-StringView Win32ErrorCategory::GetName() const noexcept
+StringView OsErrorCategory::GetName() const noexcept
 {
-    return "Win32";
+    return "OS";
 }
 
-String Win32ErrorCategory::MakeErrorMessage(
-    const int _err) const
-{
-    ARRAY<wchar_t, 512> buf;
-    const DWORD         written = FormatMessage(
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        nullptr,
-        static_cast<DWORD>(_err),
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        buf.data(),
-        static_cast<DWORD>(buf.size()),
-        nullptr);
-
-    if (written == 0)
-    {
-        return Format("Unknown Win32 error code: {}", _err);
-    }
-
-    return ToUtf8({ buf.data(), static_cast<size_t>(written) });
-}
-
-StringView HResultErrorCategory::GetName() const noexcept
-{
-    return "HRESULT";
-}
-
-String HResultErrorCategory::MakeErrorMessage(
+String OsErrorCategory::MakeMessage(
     const int _err) const
 {
     const HRESULT hr = static_cast<HRESULT>(_err);
@@ -262,10 +238,8 @@ Error MakeSystemError(
     {
         case eSystemError::Errno:
             return Error { _err, GetErrorCategory<ErrnoErrorCategory>() };
-        case eSystemError::Win32:
-            return Error { _err, GetErrorCategory<Win32ErrorCategory>() };
-        case eSystemError::HRESULT:
-            return Error { _err, GetErrorCategory<HResultErrorCategory>() };
+        case eSystemError::OS:
+            return Error { _err, GetErrorCategory<OsErrorCategory>() };
         default:
             JUG_ASSERT(false, "Unrecognized system error type.\n");
             JUG_UNREACHABLE_RETURN(Error);

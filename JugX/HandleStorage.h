@@ -1,15 +1,5 @@
 ﻿#pragma once
-#include <iterator>
-#include <memory>
-#include <span>
-#include <type_traits>
-#include <utility>
-#include <vector>
-
-#include "Assertion.h"
 #include "Handle.h"
-#include "Math.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -50,9 +40,10 @@ public:
         friend class HandleStorage;
 
         using ContainerT = std::conditional_t<kbConst, const HandleStorage, HandleStorage>;
-        using ValueT     = std::conditional_t<kbConst, const V, V>;
 
     public:
+        using ValueT = std::conditional_t<kbConst, const V, V>;
+
         BaseIterator() = default;
 
         // ===========================================

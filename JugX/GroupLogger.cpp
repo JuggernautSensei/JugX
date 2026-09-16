@@ -1,9 +1,10 @@
-﻿#include "GroupLogger.h"
+﻿#include "pch.h"
+#include "GroupLogger.h"
 
 #include <algorithm>
 #include <format>
 
-#include "Assertion.h"
+#include "Assert.h"
 #include "Logger.h"
 
 namespace jug
@@ -37,18 +38,18 @@ void GroupLogger::RemoveLogger(
     }
 }
 
-void GroupLogger::WriteImpl(
+void GroupLogger::LogImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const bool             _bEndLog)
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->WriteImpl(_level, _msg, _bEndLog);
+        pLogger->LogImpl(_level, _msg, _bEndLog);
     }
 }
 
-void GroupLogger::VWriteImpl(
+void GroupLogger::VLogImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const std::format_args _args,
@@ -56,7 +57,7 @@ void GroupLogger::VWriteImpl(
 {
     for (Logger* pLogger: m_loggers)
     {
-        pLogger->VWriteImpl(_level, _msg, _args, _bEndLog);
+        pLogger->VLogImpl(_level, _msg, _args, _bEndLog);
     }
 }
 

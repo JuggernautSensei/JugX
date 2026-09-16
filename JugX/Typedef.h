@@ -1,14 +1,13 @@
 ﻿#pragma once
 #include <array>
+#include <chrono>
+#include <filesystem>
 #include <list>
 #include <map>
 #include <set>
 #include <span>
 #include <vector>
-#include <filesystem>
-#include <chrono>
-
-#include "Vendor/parallel-hashmap/parallel_hashmap/phmap.h"
+#include <parallel_hashmap/phmap.h>
 
 namespace jug
 {
@@ -22,6 +21,7 @@ using DirIter          = std::filesystem::directory_iterator;
 using RecursiveDirIter = std::filesystem::recursive_directory_iterator;
 using DirEntry         = std::filesystem::directory_entry;
 using FileStatus       = std::filesystem::file_status;
+namespace fs           = std::filesystem;
 
 // ===========================================
 //  Chrono

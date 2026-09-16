@@ -1,12 +1,4 @@
-﻿
-
-#pragma once
-#include <array>
-
-#include "Macro.h"
-#include "Math.h"
-#include "Typedef.h"
-#include "TypeTraits.h"
+﻿#pragma once
 #include "SIMD.h"
 #include "Vector2.h"
 

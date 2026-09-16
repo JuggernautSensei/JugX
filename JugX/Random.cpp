@@ -1,6 +1,7 @@
-﻿#include "Random.h"
+﻿#include "pch.h"
+#include "Random.h"
+
 #include <cstdint>
-#include <random>
 
 namespace jug
 {
@@ -16,7 +17,7 @@ namespace
 }   // namespace
 
 RngMwc::RngMwc(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
     : m_z(MakeRandomDeviceSeed_())
     , m_w(MakeRandomDeviceSeed_())
 {
@@ -31,7 +32,7 @@ RngMwc::RngMwc(
 }
 
 void RngMwc::Reseed(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
 {
     m_z = MakeRandomDeviceSeed_();
     m_w = MakeRandomDeviceSeed_();
@@ -53,7 +54,7 @@ uint64_t RngMwc::Generate() const
 }
 
 RngShr3::RngShr3(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
     : m_jsr(MakeRandomDeviceSeed_())
 {
 }
@@ -65,7 +66,7 @@ RngShr3::RngShr3(
 }
 
 void RngShr3::Reseed(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
 {
     m_jsr = MakeRandomDeviceSeed_();
 }
@@ -85,7 +86,7 @@ uint64_t RngShr3::Generate()
 }
 
 RngMt19937::RngMt19937(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
     : m_mt(MakeRandomDeviceSeed_())
 {
 }
@@ -97,7 +98,7 @@ RngMt19937::RngMt19937(
 }
 
 void RngMt19937::Reseed(
-    const RandomDeviceSeed) noexcept
+    const RandomDeviceSeedType) noexcept
 {
     m_mt.seed(MakeRandomDeviceSeed_());
 }

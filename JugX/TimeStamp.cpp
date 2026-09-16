@@ -1,10 +1,7 @@
-﻿#include "TimeStamp.h"
+﻿#include "pch.h"
+#include "TimeStamp.h"
 
-#include "Assertion.h"
 #include "EnumRefl.h"
-#include <ctime>
-#include <chrono>
-#include <optional>
 
 namespace jug
 {

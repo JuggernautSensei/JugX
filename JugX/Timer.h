@@ -1,8 +1,4 @@
 ﻿#pragma once
-#include <chrono>
-#include <cstdint>
-
-#include "Typedef.h"
 
 namespace jug
 {

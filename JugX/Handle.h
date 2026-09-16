@@ -1,9 +1,6 @@
 ﻿#pragma once
-#include <cstdint>
-#include <type_traits>
-
-#include "Assertion.h"
-#include "Config.h"
+#include "TypeRefl.h"
+#include "Tag.h"
 
 namespace jug
 {
@@ -15,26 +12,14 @@ namespace jug
 //   template 인자를 통해 강타입 핸들을 만들 수 있음.
 // ================================================================
 
+JUG_DEFINE_TAG(NullHandleType, kNullHandle)
+
 namespace handle_detail
 {
     constexpr uint32_t kNullValue = 0xFFFFFFFF;
-    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index.
+    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index. 0xFFFFFFFF 를 null handle sentinel로 사용하기 때문에 MaxIndex 값을 0xFFFFFF - 1로 설정.
     constexpr uint32_t kMaxToken  = 0xFF;           // 8 bits for token.
-                                                    // 0xFFFFFFFF 를 null handle sentinel로 사용하기 때문에 MaxIndex 값을 0xFFFFFF - 1로 설정.
 }   // namespace handle_detail
-
-struct NullHandleType
-{
-    struct Tag
-    {
-    };
-
-    constexpr explicit NullHandleType(Tag)
-    {
-    }
-};
-
-constexpr NullHandleType kNullHandle { NullHandleType::Tag {} };
 
 template<typename T>
 class Handle
@@ -174,5 +159,15 @@ struct std::hash<jug::Handle<T>>
         const jug::Handle<T>& _handle) const
     {
         return std::hash<uint32_t>()(_handle.GetValue());
+    }
+};
+
+template <typename T>
+struct std::formatter<jug::Handle<T>> : public std::formatter<std::string_view>
+{
+    template<typename FormatContext>
+    auto format(const jug::Handle<T>& _handle, FormatContext& _ctx) const
+    {
+        return std::format_to(_ctx.out(), "Handle<{}>(Index: {}, Token: {})", jug::NameOf<T>(), _handle.GetIndex(), _handle.GetToken());
     }
 };

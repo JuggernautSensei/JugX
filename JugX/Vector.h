@@ -1,12 +1,4 @@
 ﻿#pragma once
-#include "Config.h"
-#include "Math.h"
-#include "SIMD.h"
-//
-#include "Vector2.h"
-#include "Vector2I.h"
-#include "Vector3.h"
-#include "Vector3I.h"
 #include "Vector4.h"
 #include "Vector4I.h"
 

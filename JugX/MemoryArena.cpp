@@ -1,9 +1,11 @@
-﻿#include "MemoryArena.h"
+﻿#include "pch.h"
+#include "MemoryArena.h"
 
 namespace jug
 {
 
-MemoryArena::MemoryArena(const size_t _poolSize)
+MemoryArena::MemoryArena(
+    const size_t _poolSize)
     : m_poolSize(AlignUp(_poolSize, alignof(std::max_align_t)))
 {
     JUG_ASSERT(m_poolSize > 0, "_poolSize must be greater than 0");
@@ -14,7 +16,8 @@ MemoryArena::~MemoryArena()
     Reset();
 }
 
-MemoryArena::MemoryArena(MemoryArena&& _other) noexcept
+MemoryArena::MemoryArena(
+    MemoryArena&& _other) noexcept
     : m_pPoolList(_other.m_pPoolList)
     , m_pCur(_other.m_pCur)
     , m_pEnd(_other.m_pEnd)
@@ -25,7 +28,8 @@ MemoryArena::MemoryArena(MemoryArena&& _other) noexcept
     _other.m_pEnd      = nullptr;
 }
 
-MemoryArena& MemoryArena::operator=(MemoryArena&& _other) noexcept
+MemoryArena& MemoryArena::operator=(
+    MemoryArena&& _other) noexcept
 {
     if (this != &_other)
     {
@@ -41,12 +45,14 @@ MemoryArena& MemoryArena::operator=(MemoryArena&& _other) noexcept
     return *this;
 }
 
-void* MemoryArena::Alloc(const size_t _size)
+void* MemoryArena::Alloc(
+    const size_t _size)
 {
     return Alloc(_size, alignof(std::max_align_t));
 }
 
-void* MemoryArena::Alloc(const size_t _size, const size_t _alignment)
+void* MemoryArena::Alloc(
+    const size_t _size, const size_t _alignment)
 {
     JUG_ASSERT(std::has_single_bit(_alignment), "_alignment must be power of 2");
     JUG_ASSERT(sizeof(LINK) + (_alignment - 1) + _size <= m_poolSize, "MemoryArena pool size is too small for the requested allocation size and alignment.\n");

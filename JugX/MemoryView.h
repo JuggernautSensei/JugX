@@ -1,9 +1,4 @@
-﻿
-#pragma once
-#include <ranges>
-
-#include "Assertion.h"
-#include "Config.h"
+﻿#pragma once
 
 namespace jug
 {

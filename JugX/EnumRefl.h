@@ -1,10 +1,4 @@
 ﻿#pragma once
-#include <limits>
-#include <optional>
-#include <type_traits>
-#include <utility>
-
-#include "Assertion.h"
 #include "Math.h"
 #include "StringHasher.h"
 
@@ -27,13 +21,13 @@ using UnderlyingT = std::underlying_type_t<E>;
 namespace enum_relf_detail
 {
     inline constexpr int kReflectRange = kEnumReflMax - kEnumReflMin + 1;
-    inline constexpr int KInvalidIndex = std::numeric_limits<int>::max();
+    inline constexpr int KInvalidIndex = Max<int>();
 
     template<EnumT E, E kValue>
     [[nodiscard]] constexpr StringView ExtractFullName()
     {
-        constexpr StringView kName = JUG_PRETTY_FUNCTION;
-#if defined(__clang__) || defined(__GNUC__)
+        constexpr StringView kName = JUG_FUNCSIG;
+#if defined(JUG_COMPILER_CLANG) || defined(JUG_COMPILER_GCC)
         constexpr StringView kMarker    = "kValue = ";
         constexpr size_t     kMarkerPos = kName.find(kMarker);
         static_assert(kMarkerPos != StringView::npos);   // NOLINT
@@ -44,7 +38,7 @@ namespace enum_relf_detail
         constexpr size_t kEnd     = kSemi < kComma ? (kSemi < kBracket ? kSemi : kBracket) : (kComma < kBracket ? kComma : kBracket);   // NOLINT
         static_assert(kEnd != StringView::npos);
         return kName.substr(kBegin, kEnd - kBegin);
-#elif defined(_MSC_VER)
+#elif defined(JUG_COMPILER_MSVC)
         constexpr size_t kBegin = kName.rfind(',');
         constexpr size_t kEnd   = kName.rfind('>');
         static_assert(kBegin != StringView::npos && kEnd != StringView::npos);

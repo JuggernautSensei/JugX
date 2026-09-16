@@ -1,10 +1,4 @@
 ﻿#pragma once
-#include <array>
-
-#include "Macro.h"
-#include "Math.h"
-#include "Typedef.h"
-#include "TypeTraits.h"
 #include "Vector2I.h"
 
 namespace jug

@@ -1,10 +1,4 @@
 ﻿#pragma once
-#include <bit>
-#include <concepts>
-
-#include "Assertion.h"
-#include "Config.h"
-#include "Math.h"
 
 namespace jug
 {

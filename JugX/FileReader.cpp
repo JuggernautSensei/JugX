@@ -1,18 +1,20 @@
-﻿#include "FileReader.h"
+﻿#include "pch.h"
+#include "FileReader.h"
 
-#include "Assertion.h"
-#include "CoreLogger.h"
-#include "Error.h"
-#include "Result.h"
-#include "MemoryView.h"
-#include "SystemError.h"
-#include "Typedef.h"
-#include <cstddef>
-#include <stdio.h>
-#include <cstdio>
 #include <cerrno>
 #include <corecrt.h>
 #include <corecrt_wstdio.h>
+#include <cstddef>
+#include <cstdio>
+#include <stdio.h>
+
+#include "Assert.h"
+#include "CoreLogger.h"
+#include "Error.h"
+#include "MemoryView.h"
+#include "Result.h"
+#include "SystemError.h"
+#include "Typedef.h"
 
 namespace jug
 {

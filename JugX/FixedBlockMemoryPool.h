@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include <new>
 
 #include "Align.h"
 #include "Alloc.h"

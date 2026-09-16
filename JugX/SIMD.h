@@ -1,23 +1,24 @@
 ﻿#pragma once
-#include <cmath>
-#include <cstdint>
 
-// CUDA gpu device는 simd intrinsics을 지원하지않음.
+// ===========================================
+//  API
+// ===========================================
+
 #if !defined(__CUDA_ARCH__)
 #    if defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
 #        if defined(__AVX512F__) || defined(__AVX2__) || defined(__AVX__)                           \
             || defined(__SSE4_2__) || defined(__SSE4_1__) || defined(__SSE3__) || defined(__SSE2__) \
             || defined(__x86_64__) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
-#            define JUG_MATH_SIMD_SSE 1
 #            include <emmintrin.h>
+#            define JUG_MATH_SIMD_SSE 1
 #        endif
 #        if defined(__FMA__)
 #            include <immintrin.h>
 #            define JUG_MATH_SIMD_FMA 1
 #        endif
 #    elif defined(__ARM_NEON) || defined(__ARM_NEON__)
-#        define JUG_MATH_SIMD_NEON 1
 #        include <arm_neon.h>
+#        define JUG_MATH_SIMD_NEON 1
 #    endif
 
 #    if defined(JUG_MATH_SIMD_SSE) || defined(JUG_MATH_SIMD_FMA) || defined(JUG_MATH_SIMD_NEON)

@@ -1,11 +1,11 @@
-﻿#include "StringFormat.h"
-#include "TypeTraits.h"
-#include "Typedef.h"
+﻿#include "pch.h"
+#include "StringFormat.h"
+
+#include <cstddef>
 #include <format>
 #include <iterator>
+
 #include "CoreLogger.h"
-#include "Assertion.h"
-#include <cstddef>
 
 namespace jug
 {

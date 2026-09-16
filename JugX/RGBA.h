@@ -1,9 +1,5 @@
 ﻿#pragma once
-#include <cstdint>
 
-#include "Math.h"
-#include "Platform.h"
-#include "TypeTraits.h"
 #include "Vector4.h"
 
 namespace jug
@@ -11,7 +7,7 @@ namespace jug
 
 struct RGBA
 {
-    JUG_MATH_API constexpr RGBA() = default;
+    JUG_MATH_API RGBA() = default;
 
     JUG_MATH_API constexpr RGBA(
         const uint8_t _r,
@@ -54,6 +50,12 @@ struct RGBA
         };
     }
 
+    [[nodiscard]] JUG_MATH_API bool operator==(
+        const RGBA _rgba) const
+    {
+        return rgba == _rgba.rgba;
+    }
+
     // ======================================================
     //  Fields
     // ======================================================
@@ -73,7 +75,7 @@ struct RGBA
     {
         struct
         {
-#if JUG_LITTLE_ENDIAN
+#ifdef JUG_LITTLE_ENDIAN
             uint8_t a;
             uint8_t b;
             uint8_t g;
@@ -113,3 +115,5 @@ struct MathConstants<RGBA>
 };
 
 }   // namespace jug
+
+

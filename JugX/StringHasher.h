@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <cstdint>
-#include "Typedef.h"
 
 namespace jug
 {

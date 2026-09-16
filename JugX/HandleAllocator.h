@@ -1,5 +1,4 @@
 ﻿#pragma once
-#include "Assertion.h"
 #include "Handle.h"
 #include "Math.h"
 

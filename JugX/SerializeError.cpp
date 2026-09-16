@@ -1,7 +1,5 @@
-﻿#include "SerializeError.h"
-
-#include "Assertion.h"
-#include "Typedef.h"
+﻿#include "pch.h"
+#include "SerializeError.h"
 
 namespace jug
 {
@@ -11,7 +9,7 @@ StringView SerializeErrorCategory::GetName() const noexcept
     return "Serialize";
 }
 
-String SerializeErrorCategory::MakeErrorMessage(int _err) const
+String SerializeErrorCategory::MakeMessage(int _err) const
 {
     switch (static_cast<eSerializeError>(_err))
     {

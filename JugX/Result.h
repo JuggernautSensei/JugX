@@ -1,13 +1,4 @@
-﻿// ReSharper disable CppPossiblyUninitializedMember
-#pragma once
-#include <memory>
-#include <system_error>
-#include <type_traits>
-#include <utility>
-#include <variant>
-
-#include "Assertion.h"
-#include "Config.h"   // NOLINT
+﻿#pragma once
 #include "Error.h"
 
 namespace jug
@@ -97,22 +88,49 @@ public:
         return *this;
     }
 
-    ~Result()
-    {
-        Reset();
-    }
-
     // =====================================
     //  Value
     // =====================================
 
+    /* implicit */ Result(   // NOLINT
+        const T& _value)
+        : m_state(result_detail::eState::Value)
+    {
+        std::construct_at(std::addressof(m_value), _value);
+    }
+
+    /* implicit */ Result(   // NOLINT
+        T&& _value)
+        : m_state(result_detail::eState::Value)
+    {
+        std::construct_at(std::addressof(m_value), std::move(_value));
+    }
+
     template<typename... Args>
         requires std::is_constructible_v<T, Args...>
-    /* implicit */ Result(
+    /* implicit */ Result(   // NOLINT
         Args&&... _args)
         : m_state(result_detail::eState::Value)
     {
         std::construct_at(std::addressof(m_value), std::forward<Args>(_args)...);
+    }
+
+    Result& operator=(
+        const T& _value)
+    {
+        Reset();
+        m_state = result_detail::eState::Value;
+        std::construct_at(std::addressof(m_value), _value);
+        return *this;
+    }
+
+    Result& operator=(
+        T&& _value)
+    {
+        Reset();
+        m_state = result_detail::eState::Value;
+        std::construct_at(std::addressof(m_value), std::move(_value));
+        return *this;
     }
 
     template<typename... Args>
@@ -162,6 +180,15 @@ public:
         m_state = result_detail::eState::Error;
         std::construct_at(std::addressof(m_error), Error(_enum));
         return *this;
+    }
+
+    // ===========================================
+    //  Destructor
+    // ===========================================
+
+    ~Result()
+    {
+        Reset();
     }
 
     // ====================================

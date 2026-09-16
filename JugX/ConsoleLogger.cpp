@@ -1,4 +1,5 @@
-﻿#include "ConsoleLogger.h"
+﻿#include "pch.h"
+#include "ConsoleLogger.h"
 
 #include <format>
 #include <iostream>
@@ -25,7 +26,7 @@ namespace
     constexpr StringView kResetColor = "\033[0m";
 }   // namespace
 
-void ConsoleLogger::WriteImpl(
+void ConsoleLogger::LogImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const bool             _bEndLog)
@@ -37,7 +38,7 @@ void ConsoleLogger::WriteImpl(
     }
 }
 
-void ConsoleLogger::VWriteImpl(
+void ConsoleLogger::VLogImpl(
     const eLogLevel        _level,
     const StringView _msg,
     const std::format_args _args,

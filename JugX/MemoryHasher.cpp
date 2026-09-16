@@ -1,8 +1,11 @@
-﻿#include "MemoryHasher.h"
-#include <cstdint>
-#include "MemoryView.h"
+﻿#include "pch.h"
+#include "MemoryHasher.h"
+
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
+
+#include "MemoryView.h"
 
 namespace jug
 {

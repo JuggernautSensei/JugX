@@ -1,11 +1,7 @@
 ﻿#pragma once
-#include <algorithm>
-#include <cstdint>
-#include <type_traits>
 
-#include "Config.h"
-#include "Align.h"
 #include "RefCount.h"
+#include "Scoped.h"
 
 namespace jug
 {

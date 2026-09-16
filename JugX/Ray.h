@@ -1,7 +1,5 @@
 ﻿#pragma once
 #include "Matrix.h"
-#include "TypeTraits.h"
-#include "Vector.h"
 
 namespace jug
 {
@@ -35,9 +33,9 @@ struct RAY
         const float   _ndcY,
         const MATRIX& _invViewProj)
     {
-        const VECTOR3 near = MulPoint(VECTOR3 { _ndcX, _ndcY, 0.f }, _invViewProj);
-        const VECTOR3 far  = MulPoint(VECTOR3 { _ndcX, _ndcY, 1.f }, _invViewProj);
-        return RAY { near, Normalize(far - near) };
+        const VECTOR3 n = MulPoint(VECTOR3 { _ndcX, _ndcY, 0.f }, _invViewProj);
+        const VECTOR3 f = MulPoint(VECTOR3 { _ndcX, _ndcY, 1.f }, _invViewProj);
+        return RAY { n, Normalize(f - n) };
     }
 
     [[nodiscard]] JUG_MATH_API static constexpr RAY MakeRayOnScreen(
@@ -100,6 +98,5 @@ struct MathConstants<RAY>
 {
     return _ray.origin + _ray.dir * _t;
 }
-
 
 }   // namespace jug

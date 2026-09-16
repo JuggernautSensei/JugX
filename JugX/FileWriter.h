@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "FileReaderWriter.h"
+#include "MemoryView.h"
 #include "Result.h"
 
 namespace jug

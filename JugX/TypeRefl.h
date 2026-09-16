@@ -1,7 +1,4 @@
 ﻿#pragma once
-#include "Macro.h"
-#include "StringHasher.h"
-#include "Typedef.h"
 
 namespace jug
 {
@@ -11,8 +8,8 @@ namespace type_refl_detail
     template<typename T>
     [[nodiscard]] constexpr StringView ExtractFullName()
     {
-        constexpr StringView kName = JUG_PRETTY_FUNCTION;
-#if defined(__clang__) || defined(__GNUC__)
+        constexpr StringView kName = JUG_FUNCSIG;
+#if defined(JUG_COMPILER_CLANG) || defined(JUG_COMPILER_GCC)
         constexpr StringView kMarker    = "T = ";
         constexpr size_t     kMarkerPos = kName.find(kMarker);
         static_assert(kMarkerPos != StringView::npos);   // NOLINT
@@ -37,7 +34,7 @@ namespace type_refl_detail
             }
         }
         return kName.substr(kBegin, endPos - kBegin);
-#elif defined(_MSC_VER)
+#elif defined(JUG_COMPILER_MSVC)
         constexpr size_t kBegin = kName.rfind('<');
         constexpr size_t kEnd   = kName.rfind('>');
         static_assert(kBegin != StringView::npos && kEnd != StringView::npos);

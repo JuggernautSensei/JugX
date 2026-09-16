@@ -1,10 +1,6 @@
 ﻿#pragma once
-#include <array>
-
 #include "Corner.h"
 #include "Matrix.h"
-#include "TypeTraits.h"
-#include "Vector.h"
 #include "EnumArray.h"
 
 namespace jug

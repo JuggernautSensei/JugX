@@ -1,32 +1,20 @@
 ﻿#pragma once
-#include <cstdint>
 #include <random>
 
-#include "Config.h"
-#include "TypeTraits.h"
-#include "Math.h"
+#include "Tag.h"
 #include "Vector.h"
 
 namespace jug
 {
 
-struct RandomDeviceSeed
-{
-    struct Tag
-    {
-    };
-
-    explicit constexpr RandomDeviceSeed(Tag) {}
-};
-
-inline constexpr RandomDeviceSeed kRandomDeviceSeed { RandomDeviceSeed::Tag {} };
+JUG_DEFINE_TAG(RandomDeviceSeedType, kRandomDeviceSeed)
 
 class RngMwc
 {
 public:
-    explicit RngMwc(RandomDeviceSeed) noexcept;
+    explicit RngMwc(RandomDeviceSeedType) noexcept;
     explicit RngMwc(uint64_t _z = 123456789123ULL, uint64_t _w = 654356789123ULL) noexcept;
-    void                   Reseed(RandomDeviceSeed _seed) noexcept;
+    void                   Reseed(RandomDeviceSeedType _seed) noexcept;
     void                   Reseed(uint64_t _z, uint64_t _w) noexcept;
     [[nodiscard]] uint64_t Generate() const;
 
@@ -38,9 +26,9 @@ private:
 class RngShr3
 {
 public:
-    explicit RngShr3(RandomDeviceSeed) noexcept;
+    explicit RngShr3(RandomDeviceSeedType) noexcept;
     explicit RngShr3(uint64_t _seed = 123456789123ULL) noexcept;
-    void                   Reseed(RandomDeviceSeed _seed) noexcept;
+    void                   Reseed(RandomDeviceSeedType _seed) noexcept;
     void                   Reseed(uint64_t _seed) noexcept;
     [[nodiscard]] uint64_t Generate();
 
@@ -51,9 +39,9 @@ private:
 class RngMt19937
 {
 public:
-    explicit RngMt19937(RandomDeviceSeed) noexcept;
+    explicit RngMt19937(RandomDeviceSeedType) noexcept;
     explicit RngMt19937(uint64_t _seed) noexcept;
-    void                   Reseed(RandomDeviceSeed _seed) noexcept;
+    void                   Reseed(RandomDeviceSeedType _seed) noexcept;
     void                   Reseed(uint64_t _seed) noexcept;
     [[nodiscard]] uint64_t Generate();
 

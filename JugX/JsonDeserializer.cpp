@@ -1,19 +1,11 @@
-﻿#include "JsonDeserializer.h"
+﻿#include "pch.h"
+#include "JsonDeserializer.h"
 
-#include <compare>
-#include <cstddef>
-#include <type_traits>
-#include <cstdint>
-#include <utility>
+#include <yyjson.h>
 
-#include "Assertion.h"
 #include "CoreLogger.h"
-#include "EnumFlags.h"
 #include "FileReader.h"
-#include "Typedef.h"
-#include "Result.h"
 #include "SerializeError.h"
-#include "Vendor/yyjson/src/yyjson.h"
 
 namespace jug
 {
@@ -21,10 +13,10 @@ namespace jug
 namespace
 {
 
-    [[nodiscard]] StringView JsonTypeString_(
-        const yyjson_val* const _pValue)
+    [[nodiscard]] StringView GetJsonTypeName_(
+        yyjson_val* _pValue)
     {
-        switch (yyjson_get_type(_pValue))
+        switch (unsafe_yyjson_get_type(_pValue))
         {
             case YYJSON_TYPE_NONE: return "none";
             case YYJSON_TYPE_NULL: return "null";
@@ -38,10 +30,10 @@ namespace
     }
 
     void LogTypeMismatch_(
-        const yyjson_val* const _pValue,
-        const StringView        _expected)
+        yyjson_val*      _pValue,
+        const StringView _expected)
     {
-        JUG_CORE_LOG_ERROR("JsonReader: expected a JSON {}, but the value is a {}", _expected, JsonTypeString_(_pValue));
+        JUG_CORE_LOG_ERROR("JsonReader: expected a JSON {}, but the value is a {}", _expected, GetJsonTypeName_(_pValue));
     }
 
 }   // namespace
@@ -242,7 +234,7 @@ bool JsonReader::IsContainer() const
 }
 
 JsonReader::JsonReader(
-    const yyjson_val* const _pValue)
+    yyjson_val* _pValue)
     : m_pValue(_pValue)
 {
 }

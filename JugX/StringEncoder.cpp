@@ -1,12 +1,11 @@
-﻿#include "StringEncoder.h"
+﻿#include "pch.h"
+#include "StringEncoder.h"
 
-#include "Assertion.h"
-#include "CoreLogger.h"
-
-#include "Typedef.h"
-#include "Vendor/utfcpp/source/utf8/checked.h"
-#include <iterator>
 #include <cstddef>
+#include <iterator>
+#include <utf8cpp/utf8.h>
+
+#include "CoreLogger.h"
 
 namespace jug
 {

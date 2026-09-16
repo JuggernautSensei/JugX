@@ -1,19 +1,12 @@
-﻿#include "JsonSerializer.h"
+﻿#include "pch.h"
+#include "JsonSerializer.h"
 
-#include <cstddef>
-#include <cstdint>
-#include <cstdlib>
-#include <utility>
+#include <yyjson.h>
 
-#include "Assertion.h"
 #include "CoreLogger.h"
-#include "EnumFlags.h"
 #include "Error.h"
 #include "FileWriter.h"
-#include "Typedef.h"
-#include "Result.h"
 #include "SerializeError.h"
-#include "Vendor/yyjson/src/yyjson.h"
 
 namespace jug
 {

@@ -1,13 +1,11 @@
 ﻿#pragma once
-#include <array>
-
 #include "AABB.h"
-#include "Corner.h"
-#include "TypeTraits.h"
 #include "AffineTransform.h"
-#include "Quaternion.h"
-#include "Vector.h"
+#include "Corner.h"
 #include "EnumArray.h"
+#include "Quaternion.h"
+#include "TypeTraits.h"
+#include "Vector.h"
 
 namespace jug
 {

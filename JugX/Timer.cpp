@@ -1,9 +1,5 @@
-﻿#include "Timer.h"
-
-#include "Assertion.h"
-#include <cstdint>
-#include "Typedef.h"
-#include <chrono>
+﻿#include "pch.h"
+#include "Timer.h"
 
 namespace jug
 {

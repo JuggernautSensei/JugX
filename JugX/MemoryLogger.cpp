@@ -1,18 +1,21 @@
-﻿#include "MemoryLogger.h"
+﻿#include "pch.h"
+#include "MemoryLogger.h"
+
 #include <cstddef>
-#include "Logger.h"
-#include "Typedef.h"
 #include <format>
 #include <iterator>
-#include "Assertion.h"
 #include <utility>
+
+#include "Assert.h"
+#include "Logger.h"
+#include "Typedef.h"
 
 namespace jug
 {
 
 MemoryLogger::MemoryLogger(
     const size_t _capacity)
-    : m_cap(_capacity)
+    : m_logs(_capacity)
 {
 }
 
@@ -22,13 +25,19 @@ void MemoryLogger::Flush()
 
 void MemoryLogger::Clear()
 {
-    m_logs.clear();
+    m_logs.Clear();
 }
 
-void MemoryLogger::WriteImpl(
+void MemoryLogger::SetCapacity(
+    const size_t _capacity)
+{
+    m_logs.SetCapacity(_capacity);
+}
+
+void MemoryLogger::LogImpl(
     const eLogLevel,
     const StringView _msg,
-    const bool             _bEndLog)
+    const bool       _bEndLog)
 {
     m_pendding += _msg;
     if (_bEndLog)
@@ -38,9 +47,9 @@ void MemoryLogger::WriteImpl(
     }
 }
 
-void MemoryLogger::VWriteImpl(
+void MemoryLogger::VLogImpl(
     const eLogLevel,
-    const StringView _msg,
+    const StringView       _msg,
     const std::format_args _args,
     const bool             _bEndLog)
 {
@@ -54,13 +63,7 @@ void MemoryLogger::VWriteImpl(
 
 void MemoryLogger::PushPendding_()
 {
-    JUG_ASSERT(m_logs.size() <= m_cap, "MemoryLogger capacity exceeded.\n");
-
-    if (m_logs.size() == m_cap)
-    {
-        m_logs.pop_front();
-    }
-    m_logs.push_back(std::move(m_pendding));
+    m_logs.Push(std::move(m_pendding));
 }
 
 }   // namespace jug

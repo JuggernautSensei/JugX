@@ -1,8 +1,6 @@
 ﻿#pragma once
-#include "TypeTraits.h"
 #include "Matrix.h"
 #include "Quaternion.h"
-#include "Vector.h"
 
 namespace jug
 {

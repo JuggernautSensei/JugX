@@ -1,7 +1,4 @@
 ﻿#pragma once
-#include <type_traits>
-
-#include "Typedef.h"
 
 namespace jug
 {
@@ -21,19 +18,21 @@ public:
     }
 };
 
+// NoopHasher를 사용하는 특수 HashMap
+
 template<
     typename K,
     typename V,
     typename H     = NoopHasher<K>,
     typename E     = EqualTo<K>,
     typename Alloc = Allocator<std::pair<const K, V>>>
-using NoopHashMap = phmap::parallel_flat_hash_map<K, V, H, E, Alloc>;
+using NoopHashMap = HashMap<K, V, H, E, Alloc>;
 
 template<
     typename K,
     typename H     = NoopHasher<K>,
     typename E     = EqualTo<K>,
     typename Alloc = Allocator<K>>
-using NoopHashSet = phmap::parallel_flat_hash_set<K, H, E, Alloc>;
+using NoopHashSet = HashMap<K, H, E, Alloc>;
 
 }   // namespace jug

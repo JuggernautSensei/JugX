@@ -1,47 +1,17 @@
 ﻿#pragma once
-#include <initializer_list>
-#include <limits>
-
 #include "EnumRefl.h"
+#include "Tag.h"
 
 namespace jug
 {
 
-struct ZeroFlagType
-{
-    struct Tag
-    {
-    };
-
-    constexpr explicit ZeroFlagType(
-        const Tag)
-    {
-    }
-};
-
-inline constexpr ZeroFlagType kZeroFlag { ZeroFlagType::Tag {} };
-
-struct AllFlagType
-{
-    struct Tag
-    {
-    };
-
-    constexpr explicit AllFlagType(
-        const Tag)
-    {
-    }
-};
-
-inline constexpr AllFlagType kAllFlag { AllFlagType::Tag {} };
+JUG_DEFINE_TAG(ZeroFlagType, kZeroFlag)
+JUG_DEFINE_TAG(AllFlagType, kAllFlag)
 
 // ==========================================================
 //  EnumFlags
 //   kbBitmaskItself = true:  스스로 비트 마스킹을 표현할 수 있나?
-//                            enum eColor { Red = 1, Green = 2, Blue = 4 }; // 이런식으로 정의되어있으면 kbBitmaskItself = true
-//
 //   kbBitmaskItself = false: 비트 마스킹을 표현할 수 없고, 단순히 인덱스로만 사용하나?
-//                            enum eColor { Red, Green, Blue }; // 이런식으로 정의되어있으면 kbBitmaskItself = false
 // ==========================================================
 
 template<EnumT E, bool kbBitmaskItself>
@@ -158,6 +128,12 @@ public:
         const BaseFlags _other) const noexcept
     {
         return BaseFlags { static_cast<UnderlyingT>(m_flags ^ _other.m_flags) };
+    }
+
+    [[nodiscard]]constexpr bool operator==(
+        const BaseFlags _other) const noexcept
+    {
+        return m_flags == _other.m_flags;
     }
 
     [[nodiscard]] constexpr UnderlyingT GetFlags() const noexcept
