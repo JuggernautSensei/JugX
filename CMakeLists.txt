@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+﻿cmake_minimum_required(VERSION 3.25)
 
 project(JugX
     VERSION 0.1.0
@@ -132,7 +132,7 @@ if(JUGX_INSTALL)
 
     install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/JugX/"
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/JugX"
-        FILES_MATCHING PATTERN "*.h"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.inl"
     )
 
     install(EXPORT JugXTargets
