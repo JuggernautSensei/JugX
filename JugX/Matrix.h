@@ -483,12 +483,7 @@ struct alignas(16) MATRIX
                 simd::MulAdd(simd::Splat<1>(a3), b1, simd::Mul(simd::Splat<0>(a3), b0)),
                 simd::MulAdd(simd::Splat<3>(a3), b3, simd::Mul(simd::Splat<2>(a3), b2)));
 
-            return MATRIX {
-                VECTOR4::MakeFromSIMD(row0),
-                VECTOR4::MakeFromSIMD(row1),
-                VECTOR4::MakeFromSIMD(row2),
-                VECTOR4::MakeFromSIMD(row3)
-            };
+            return MATRIX { row0, row1, row2, row3 };
         }
 #endif
         const float b00 = _other.r[0].e[0], b01 = _other.r[0].e[1], b02 = _other.r[0].e[2], b03 = _other.r[0].e[3];
@@ -714,12 +709,7 @@ struct MathConstants<MATRIX>
         simd::M128 r2 = _mtx.r[2].ToSIMD();
         simd::M128 r3 = _mtx.r[3].ToSIMD();
         simd::Transpose4(r0, r1, r2, r3);
-        return MATRIX {
-            VECTOR4::MakeFromSIMD(r0),
-            VECTOR4::MakeFromSIMD(r1),
-            VECTOR4::MakeFromSIMD(r2),
-            VECTOR4::MakeFromSIMD(r3)
-        };
+        return MATRIX {r0,r1,r2,r3};
     }
 #endif
     return MATRIX {
@@ -896,12 +886,7 @@ namespace matrix_detail
             return MathConstants<MATRIX>::kZero;
         }
         const simd::M128 invDetV = simd::Div(simd::SetAll(1.f), detV);
-        return MATRIX {
-            VECTOR4::MakeFromSIMD(simd::Mul(c0, invDetV)),
-            VECTOR4::MakeFromSIMD(simd::Mul(c2, invDetV)),
-            VECTOR4::MakeFromSIMD(simd::Mul(c4, invDetV)),
-            VECTOR4::MakeFromSIMD(simd::Mul(c6, invDetV))
-        };
+        return MATRIX { simd::Mul(c0, invDetV),simd::Mul(c2, invDetV), simd::Mul(c4, invDetV), simd::Mul(c6, invDetV)};
     }
 #endif
     const float m00 = _mtx.r[0].e[0], m01 = _mtx.r[0].e[1], m02 = _mtx.r[0].e[2], m03 = _mtx.r[0].e[3];
@@ -971,7 +956,7 @@ JUG_MATH_API constexpr void Decompose(
         ret                  = simd::MulAdd(simd::Splat<1>(v), _mtx.r[1].ToSIMD(), ret);
         ret                  = simd::MulAdd(simd::Splat<2>(v), _mtx.r[2].ToSIMD(), ret);
         ret                  = simd::MulAdd(simd::Splat<3>(v), _mtx.r[3].ToSIMD(), ret);
-        return VECTOR4::MakeFromSIMD(ret);
+        return ret;
     }
 #endif
     float r[MATRIX::kCol];
@@ -1017,4 +1002,3 @@ JUG_MATH_API constexpr void Decompose(
 }   // namespace jug
 
 #include "Matrix.inl"
-

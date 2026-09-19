@@ -98,6 +98,11 @@ public:
         }
     }
 
+    explicit operator bool() const
+    {
+        return m_pMem;
+    }
+
     [[nodiscard]] Iterator Begin()
     {
         return m_pMem;
@@ -126,11 +131,6 @@ public:
     [[nodiscard]] ConstIterator CEnd() const
     {
         return m_pMem + m_size;
-    }
-
-    explicit operator bool() const
-    {
-        return m_pMem;
     }
 
     // ======================================

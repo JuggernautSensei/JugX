@@ -56,3 +56,9 @@ CMakeCache.txt
 nul
 *.tmp
 *.bak
+
+# vcpkg manifest mode
+vcpkg_installed/
+
+# CMake
+out/

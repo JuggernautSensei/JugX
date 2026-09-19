@@ -1,0 +1,70 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/build/${presetName}/install",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_MANIFEST_FEATURES": "test;bench"
+      }
+    },
+    {
+      "name": "msvc",
+      "displayName": "MSVC (Ninja Multi-Config)",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": { "VCPKG_TARGET_TRIPLET": "x64-windows" }
+    },
+    {
+      "name": "vs",
+      "displayName": "MSVC (Visual Studio solution)",
+      "inherits": "base",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": { "VCPKG_TARGET_TRIPLET": "x64-windows" }
+    },
+    {
+      "name": "clang",
+      "displayName": "Clang (Ninja Multi-Config)",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "gcc",
+      "displayName": "GCC (Ninja Multi-Config)",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "condition": { "type": "notEquals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "msvc-debug",   "configurePreset": "msvc",  "configuration": "Debug" },
+    { "name": "msvc-release", "configurePreset": "msvc",  "configuration": "Release" },
+    { "name": "vs-debug",     "configurePreset": "vs",    "configuration": "Debug" },
+    { "name": "vs-release",   "configurePreset": "vs",    "configuration": "Release" },
+    { "name": "clang-debug",  "configurePreset": "clang", "configuration": "Debug" },
+    { "name": "gcc-debug",    "configurePreset": "gcc",   "configuration": "Debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "msvc-debug",
+      "configurePreset": "msvc",
+      "configuration": "Debug",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

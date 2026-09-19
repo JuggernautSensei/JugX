@@ -6,306 +6,15 @@ namespace jug
 {
 
 #ifdef JUG_SIMD_AVAILABLE
-
-struct alignas(16) VECTOR4
-{
-    using ValueT = float;
-
-    VECTOR4() = default;
-
-    constexpr VECTOR4(
-        const float _x,
-        const float _y,
-        const float _z,
-        const float _w)
-        : e { _x, _y, _z, _w }
-    {
-    }
-
-    constexpr VECTOR4(
-        const VECTOR2 _xy,
-        const float   _z,
-        const float   _w)
-        : e { _xy.e[0], _xy.e[1], _z, _w }
-    {
-    }
-
-    constexpr VECTOR4(
-        const VECTOR3 _xyz,
-        const float   _w)
-        : e { _xyz.e[0], _xyz.e[1], _xyz.e[2], _w }
-    {
-    }
-
-    // Broadcast
-    explicit constexpr VECTOR4(
-        const float _value)
-        : e { _value, _value, _value, _value }
-    {
-    }
-
-    // =======================================================
-    //  SIMD utils
-    // =======================================================
-
-    [[nodiscard]] simd::M128 ToSIMD() const
-    {
-        return simd::LoadAligned(e.data());
-    }
-
-    [[nodiscard]] static VECTOR4 MakeFromSIMD(
-        const simd::M128 _value)
-    {
-        VECTOR4 v;
-        simd::StoreAligned(v.e.data(), _value);
-        return v;
-    }
-
-    // =======================================================
-    //  Operators
-    // =======================================================
-
-    [[nodiscard]] constexpr VECTOR4 operator-() const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Negate(ToSIMD()));
-        }
-
-        return VECTOR4 { -e[0], -e[1], -e[2], -e[3] };
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator+(
-        const VECTOR4 _other) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Add(ToSIMD(), _other.ToSIMD()));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] += _other.e[i];
-        }
-        return v;
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator-(
-        const VECTOR4 _other) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Sub(ToSIMD(), _other.ToSIMD()));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] -= _other.e[i];
-        }
-        return v;
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator*(
-        const float _scalar) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Scale(ToSIMD(), _scalar));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] *= _scalar;
-        }
-        return v;
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator/(
-        const float _scalar) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Div(ToSIMD(), simd::SetAll(_scalar)));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] /= _scalar;
-        }
-        return v;
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator*(
-        const VECTOR4 _other) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Mul(ToSIMD(), _other.ToSIMD()));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] *= _other.e[i];
-        }
-        return v;
-    }
-
-    [[nodiscard]] constexpr VECTOR4 operator/(
-        const VECTOR4 _other) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return MakeFromSIMD(simd::Div(ToSIMD(), _other.ToSIMD()));
-        }
-
-        VECTOR4 v = *this;
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            v.e[i] /= _other.e[i];
-        }
-        return v;
-    }
-
-    // =======================================================
-    //  Assignment
-    // =======================================================
-
-    constexpr VECTOR4& operator+=(
-        const VECTOR4 _other)
-    {
-        *this = *this + _other;
-        return *this;
-    }
-
-    constexpr VECTOR4& operator-=(
-        const VECTOR4 _other)
-    {
-        *this = *this - _other;
-        return *this;
-    }
-
-    constexpr VECTOR4& operator*=(
-        const float _scalar)
-    {
-        *this = *this * _scalar;
-        return *this;
-    }
-
-    constexpr VECTOR4& operator/=(
-        const float _scalar)
-    {
-        *this = *this / _scalar;
-        return *this;
-    }
-
-    constexpr VECTOR4& operator*=(
-        const VECTOR4 _other)
-    {
-        *this = *this * _other;
-        return *this;
-    }
-
-    constexpr VECTOR4& operator/=(
-        const VECTOR4 _other)
-    {
-        *this = *this / _other;
-        return *this;
-    }
-
-    [[nodiscard]] constexpr bool operator==(
-        const VECTOR4 _other) const
-    {
-        if (!std::is_constant_evaluated())
-        {
-            return simd::AllTrue(simd::CmpEq(ToSIMD(), _other.ToSIMD()));
-        }
-
-        for (size_t i = 0; i < kDim; ++i)
-        {
-            if (e[i] != _other.e[i])   // NOLINT
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    [[nodiscard]] constexpr bool operator!=(
-        const VECTOR4 _other) const
-    {
-        return !(*this == _other);
-    }
-
-    // =======================================================
-    //  Access
-    // =======================================================
-
-    [[nodiscard]] constexpr ValueT& operator[](
-        const size_t _index)
-    {
-        return e[_index];
-    }
-
-    [[nodiscard]] constexpr const ValueT& operator[](
-        const size_t _index) const
-    {
-        return e[_index];
-    }
-
-    [[nodiscard]] constexpr ValueT* GetPtr()
-    {
-        return e.data();
-    }
-
-    [[nodiscard]] constexpr const ValueT* GetPtr() const
-    {
-        return e.data();
-    }
-
-    // =======================================================
-    //  Constants
-    // =======================================================
-
-    const static VECTOR4 kZero;
-    const static VECTOR4 kOne;
-    const static VECTOR4 kRight;
-    const static VECTOR4 kUp;
-    const static VECTOR4 kForward;
-    const static VECTOR4 kUnitX;
-    const static VECTOR4 kUnitY;
-    const static VECTOR4 kUnitZ;
-    const static VECTOR4 kUnitW;
-    const static VECTOR4 kMax;
-    const static VECTOR4 kMin;
-
-    constexpr static size_t kDim = 4;
-
-    JUG_DISABLE_ANON_WARNING_BEGIN
-    union
-    {
-        struct
-        {
-            float x;
-            float y;
-            float z;
-            float w;
-        };
-        ARRAY<float, 4> e;
-    };
-    JUG_DISABLE_ANON_WARNING_END
-};
-
+#    define JUG_VECTOR4_SIMD_PATH(_expr)   \
+        if (!std::is_constant_evaluated()) \
+        return _expr
 #else
+#    define JUG_VECTOR4_SIMD_PATH(_expr)
+#endif
 
 struct alignas(16) VECTOR4
 {
-    using ValueT = float;
-
     JUG_MATH_API VECTOR4() = default;
 
     JUG_MATH_API constexpr VECTOR4(
@@ -332,14 +41,36 @@ struct alignas(16) VECTOR4
     {
     }
 
+    // Broadcast
     explicit JUG_MATH_API constexpr VECTOR4(
         const float _value)
         : e { _value, _value, _value, _value }
     {
     }
 
+#ifdef JUG_SIMD_AVAILABLE
+
+    JUG_MATH_API /* implicit */ VECTOR4(
+        const simd::M128 _value)
+    {
+        simd::StoreAligned(e.data(), _value);
+    }
+
+    [[nodiscard]] simd::M128 ToSIMD() const
+    {
+        return simd::LoadAligned(e.data());
+    }
+
+#endif
+
+    // =======================================================
+    //  Operators
+    // =======================================================
+
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator-() const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Negate(ToSIMD()));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -351,6 +82,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator+(
         const VECTOR4 _other) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Add(ToSIMD(), _other.ToSIMD()));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -362,6 +95,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator-(
         const VECTOR4 _other) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Sub(ToSIMD(), _other.ToSIMD()));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -373,6 +108,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator*(
         const float _scalar) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Scale(ToSIMD(), _scalar));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -384,6 +121,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
         const float _scalar) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Div(ToSIMD(), simd::SetAll(_scalar)));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -395,6 +134,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator*(
         const VECTOR4 _other) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Mul(ToSIMD(), _other.ToSIMD()));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -406,6 +147,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
         const VECTOR4 _other) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::Div(ToSIMD(), _other.ToSIMD()));
+
         VECTOR4 v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -413,6 +156,10 @@ struct alignas(16) VECTOR4
         }
         return v;
     }
+
+    // =======================================================
+    //  Assignment
+    // =======================================================
 
     JUG_MATH_API constexpr VECTOR4& operator+=(
         const VECTOR4 _other)
@@ -459,6 +206,8 @@ struct alignas(16) VECTOR4
     [[nodiscard]] JUG_MATH_API constexpr bool operator==(
         const VECTOR4 _other) const
     {
+        JUG_VECTOR4_SIMD_PATH(simd::AllTrue(simd::CmpEq(ToSIMD(), _other.ToSIMD())));
+
         for (size_t i = 0; i < kDim; ++i)
         {
             if (e[i] != _other.e[i])   // NOLINT
@@ -475,24 +224,28 @@ struct alignas(16) VECTOR4
         return !(*this == _other);
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT& operator[](
+    // =======================================================
+    //  Access
+    // =======================================================
+
+    [[nodiscard]] JUG_MATH_API constexpr float& operator[](
         const size_t _index)
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const float& operator[](
         const size_t _index) const
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT* GetPtr()
+    [[nodiscard]] JUG_MATH_API constexpr float* GetPtr()
     {
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT* GetPtr() const
+    [[nodiscard]] JUG_MATH_API constexpr const float* GetPtr() const
     {
         return e.data();
     }
@@ -515,7 +268,7 @@ struct alignas(16) VECTOR4
 
     constexpr static size_t kDim = 4;
 
-    JUG_MATH_DISABLE_ANON_WARNING_BEGIN
+    JUG_DISABLE_ANON_WARNING_BEGIN
     union
     {
         struct
@@ -529,8 +282,6 @@ struct alignas(16) VECTOR4
     };
     JUG_DISABLE_ANON_WARNING_END
 };
-
-#endif   // JUG_MATH_SIMD
 
 static_assert(sizeof(VECTOR4) == 16, "VECTOR4 must be tightly packed");
 static_assert(alignof(VECTOR4) == 16, "VECTOR4 must be 16-byte aligned for SIMD");
@@ -555,17 +306,17 @@ inline constexpr VECTOR4 VECTOR4::kMin { MathConstants<float>::kMin };
 template<>
 struct MathConstants<VECTOR4>
 {
-    constexpr static VECTOR4 kZero { 0.f };
-    constexpr static VECTOR4 kOne { 1.f };
-    constexpr static VECTOR4 kRight   = { 1.f, 0.f, 0.f, 0.f };
-    constexpr static VECTOR4 kUp      = { 0.f, 1.f, 0.f, 0.f };
-    constexpr static VECTOR4 kForward = { 0.f, 0.f, 1.f, 0.f };
-    constexpr static VECTOR4 kUnitX   = { 1.f, 0.f, 0.f, 0.f };
-    constexpr static VECTOR4 kUnitY   = { 0.f, 1.f, 0.f, 0.f };
-    constexpr static VECTOR4 kUnitZ   = { 0.f, 0.f, 1.f, 0.f };
-    constexpr static VECTOR4 kUnitW   = { 0.f, 0.f, 0.f, 1.f };
-    constexpr static VECTOR4 kMax { MathConstants<float>::kMax };
-    constexpr static VECTOR4 kMin { MathConstants<float>::kMin };
+    constexpr static VECTOR4 kZero    = VECTOR4::kZero;
+    constexpr static VECTOR4 kOne     = VECTOR4::kOne;
+    constexpr static VECTOR4 kRight   = VECTOR4::kRight;
+    constexpr static VECTOR4 kUp      = VECTOR4::kUp;
+    constexpr static VECTOR4 kForward = VECTOR4::kForward;
+    constexpr static VECTOR4 kUnitX   = VECTOR4::kUnitX;
+    constexpr static VECTOR4 kUnitY   = VECTOR4::kUnitY;
+    constexpr static VECTOR4 kUnitZ   = VECTOR4::kUnitZ;
+    constexpr static VECTOR4 kUnitW   = VECTOR4::kUnitW;
+    constexpr static VECTOR4 kMax     = VECTOR4::kMax;
+    constexpr static VECTOR4 kMin     = VECTOR4::kMin;
 };
 
 }   // namespace jug

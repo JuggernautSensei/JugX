@@ -9,7 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include "../Source/RingBuffer.h"
+#include <JugX/RingBuffer.h>
 
 using namespace jug;
 

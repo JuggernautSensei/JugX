@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "jugx",
+  "version-semver": "0.1.0",
+  "description": "JugX utility library",
+  "homepage": "https://github.com/JuggernautSensei/JugX",
+  "builtin-baseline": "e3ed41868d5034bc608eaaa58383cd6ecdbb5ffb",
+  "dependencies": [
+    "sdl3",
+    "parallel-hashmap",
+    "utfcpp",
+    "yyjson"
+  ],
+  "features": {
+    "test": {
+      "description": "Build unit tests",
+      "dependencies": [
+        "gtest",
+        "nlohmann-json",
+        "rapidjson"
+      ]
+    },
+    "bench": {
+      "description": "Build benchmarks",
+      "dependencies": [
+        "benchmark",
+        "nlohmann-json",
+        "rapidjson"
+      ]
+    }
+  }
+}

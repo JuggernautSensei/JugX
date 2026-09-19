@@ -101,11 +101,8 @@
     <ClInclude Include="JugX\TypeTraits.h" />
     <ClInclude Include="JugX\Vector.h" />
     <ClInclude Include="JugX\Vector2.h" />
-    <ClInclude Include="JugX\Vector2I.h" />
     <ClInclude Include="JugX\Vector3.h" />
-    <ClInclude Include="JugX\Vector3I.h" />
     <ClInclude Include="JugX\Vector4.h" />
-    <ClInclude Include="JugX\Vector4I.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="JugX\Alloc.cpp" />
@@ -195,11 +192,8 @@
     <ClCompile Include="JugX\Typedef.cpp" />
     <ClCompile Include="JugX\Vector.cpp" />
     <ClCompile Include="JugX\Vector2.cpp" />
-    <ClCompile Include="JugX\Vector2I.cpp" />
     <ClCompile Include="JugX\Vector3.cpp" />
-    <ClCompile Include="JugX\Vector3I.cpp" />
     <ClCompile Include="JugX\Vector4.cpp" />
-    <ClCompile Include="JugX\Vector4I.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="JugX\Matrix.inl" />
@@ -266,6 +260,8 @@
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestRoot>$(MSBuildThisFileDirectory)</VcpkgManifestRoot>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -300,6 +296,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -315,6 +313,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

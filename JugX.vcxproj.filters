@@ -37,22 +37,13 @@
     <ClInclude Include="JugX\AxisAngle.h">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Vector4I.h">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Vector.h">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Vector2.h">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Vector2I.h">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Vector3.h">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Vector3I.h">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Vector4.h">
@@ -196,9 +187,6 @@
     <ClInclude Include="JugX\StringParser.h">
       <Filter>String</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Platform.h">
-      <Filter>Platform</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\LruCache.h">
       <Filter>Container\LruCache</Filter>
     </ClInclude>
@@ -261,6 +249,9 @@
     </ClInclude>
     <ClInclude Include="JugX\Hash.h">
       <Filter>Hash\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Platform.h">
+      <Filter>Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -435,9 +426,6 @@
     <ClCompile Include="JugX\Plane.cpp">
       <Filter>Math\Geomtry</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Platform.cpp">
-      <Filter>Platform</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Quaternion.cpp">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
     </ClCompile>
@@ -486,19 +474,10 @@
     <ClCompile Include="JugX\Vector2.cpp">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Vector2I.cpp">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Vector3.cpp">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Vector3I.cpp">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Vector4.cpp">
-      <Filter>Math\LinearAlgebra\Vector</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\Vector4I.cpp">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Tag.cpp">
@@ -524,6 +503,9 @@
     </ClCompile>
     <ClCompile Include="JugX\Hash.cpp">
       <Filter>Hash\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Platform.cpp">
+      <Filter>Base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -624,9 +606,6 @@
     </Filter>
     <Filter Include="File\FileReaderWriter">
       <UniqueIdentifier>{5231be14-ce62-4dc5-8998-5b31f4917df9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Platform">
-      <UniqueIdentifier>{5334e8dc-fd3c-4269-8fec-c05fcd6647f9}</UniqueIdentifier>
     </Filter>
     <Filter Include="Serializer\Error">
       <UniqueIdentifier>{95449975-1bad-4735-a3c0-976b8512652b}</UniqueIdentifier>

@@ -11,6 +11,12 @@
 namespace jug
 {
 
+namespace
+{
+    constexpr Flags<eLogPattern>                kLogPatternFlags = { eLogPattern::YearMonthDay, eLogPattern::HourMinSec };
+    constexpr ENUM_ARRAY<eLogLevel, StringView> kLogLevelNames   = { "TRACE", "INFO", "WARN", "ERROR", "FATAL" };
+}   // namespace
+
 void Logger::Log(
     const eLogLevel  _level,
     const StringView _msg)
@@ -62,11 +68,11 @@ void Logger::LogPrefix_(
     bool bAnyLogged = false;
 
     // time stamp
-    if (m_patternFlags.HasAny({ eLogPattern::YearMonthDay, eLogPattern::HourMinSec }))
-    {
-        TimeStamp ts = TimeStamp::Now();
 
-        if (m_patternFlags.HasAll({ eLogPattern::YearMonthDay, eLogPattern::HourMinSec }))
+    if (m_patternFlags.HasAny(kLogPatternFlags))
+    {
+        const TimeStamp ts = TimeStamp::Now();
+        if (m_patternFlags.HasAll(kLogPatternFlags))
         {
             VLogImpl(_level, "[{:04d}-{:02d}-{:02d} {:02d}:{:02d}:{:02d}]", std::make_format_args(ts.year, ts.month, ts.dayOfTheMonth, ts.hour, ts.min, ts.sec), false);
         }
@@ -90,16 +96,7 @@ void Logger::LogPrefix_(
             LogImpl(_level, " ", false);
         }
 
-        constexpr ENUM_ARRAY<eLogLevel, StringView> kNames = {
-            "TRACE",
-            "DEBUG",
-            "INFO",
-            "WARN",
-            "ERROR",
-            "FATAL"
-        };
-
-        VLogImpl(_level, "[{:<5}]", std::make_format_args(kNames[_level]), false);
+        VLogImpl(_level, "[{:<5}]", std::make_format_args(kLogLevelNames[_level]), false);
         bAnyLogged = true;
     }
 

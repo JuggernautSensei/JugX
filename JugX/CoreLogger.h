@@ -22,7 +22,6 @@ void LogCore(
 
 // shortcut
 #define JUG_CORE_LOG_TRACE(...) jug::LogCore(jug::eLogLevel::Trace, __VA_ARGS__)
-#define JUG_CORE_LOG_DEBUG(...) jug::LogCore(jug::eLogLevel::Debug, __VA_ARGS__)
 #define JUG_CORE_LOG_INFO(...)  jug::LogCore(jug::eLogLevel::Info, __VA_ARGS__)
 #define JUG_CORE_LOG_WARN(...)  jug::LogCore(jug::eLogLevel::Warn, __VA_ARGS__)
 #define JUG_CORE_LOG_ERROR(...) jug::LogCore(jug::eLogLevel::Error, __VA_ARGS__)

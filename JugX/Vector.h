@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include "Vector4.h"
-#include "Vector4I.h"
 
 namespace jug
 {
@@ -10,13 +9,7 @@ namespace jug
 // =======================================================
 
 template<typename T>
-concept VectorT = AnyTypeOfV<T, VECTOR2, VECTOR3, VECTOR4, VECTOR2I, VECTOR3I, VECTOR4I>;
-
-template<typename T>
-concept IntegerVectorT = VectorT<T> && std::is_integral_v<typename T::ValueT>;
-
-template<typename T>
-concept FloatingVectorT = VectorT<T> && std::is_floating_point_v<typename T::ValueT>;
+concept VectorT = AnyTypeOfV<T, VECTOR2, VECTOR3, VECTOR4>;
 
 // =======================================================
 //  Basic
@@ -24,16 +17,16 @@ concept FloatingVectorT = VectorT<T> && std::is_floating_point_v<typename T::Val
 
 template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V operator*(
-    const typename V::ValueT _scalar,
-    const V                  _v)
+    const float _scalar,
+    const V     _v)
 {
     return _v * _scalar;
 }
 
 template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V operator/(
-    const typename V::ValueT _scalar,
-    const V                  _v)
+    const float _scalar,
+    const V     _v)
 {
     V ret = _v;
     for (size_t i = 0; i < V::kDim; ++i)
@@ -124,7 +117,7 @@ template<VectorT V>
     return ret;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Rcp(
     const V _v)
 {
@@ -136,7 +129,7 @@ template<FloatingVectorT V>
     return ret;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V RcpSafe(
     const V _v)
 {
@@ -148,7 +141,7 @@ template<FloatingVectorT V>
     return ret;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V ToRad(
     const V _v)
 {
@@ -160,7 +153,7 @@ template<FloatingVectorT V>
     return ret;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V ToDeg(
     const V _v)
 {
@@ -172,7 +165,7 @@ template<FloatingVectorT V>
     return ret;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Saturate(
     const V _v)
 {
@@ -185,15 +178,15 @@ template<FloatingVectorT V>
 }
 
 // =======================================================
-//  V operators
+//  Operators
 // =======================================================
 
 template<VectorT V>
-[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT Dot(
+[[nodiscard]] JUG_MATH_API constexpr float Dot(
     const V _x,
     const V _y)
 {
-    typename V::ValueT ret = _x.e[0] * _y.e[0];
+    float ret = _x.e[0] * _y.e[0];
     for (size_t i = 1; i < V::kDim; ++i)
     {
         ret += _x.e[i] * _y.e[i];
@@ -201,20 +194,16 @@ template<VectorT V>
     return ret;
 }
 
-template<VectorT V>
-    requires(V::kDim == 2)
-[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT Cross(
-    const V _x,
-    const V _y)
+[[nodiscard]] JUG_MATH_API constexpr float Cross(
+    const VECTOR2 _x,
+    const VECTOR2 _y)
 {
     return _x.e[0] * _y.e[1] - _x.e[1] * _y.e[0];
 }
 
-template<VectorT V>
-    requires(V::kDim == 3)
-[[nodiscard]] JUG_MATH_API constexpr V Cross(
-    const V _x,
-    const V _y)
+[[nodiscard]] JUG_MATH_API constexpr VECTOR3 Cross(
+    const VECTOR3 _x,
+    const VECTOR3 _y)
 {
     return {
         _x.e[1] * _y.e[2] - _x.e[2] * _y.e[1],
@@ -224,20 +213,20 @@ template<VectorT V>
 }
 
 template<VectorT V>
-[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT LengthSq(
+[[nodiscard]] JUG_MATH_API constexpr float LengthSq(
     const V _v)
 {
     return Dot(_v, _v);
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Length(
     const V _v)
 {
     return Sqrt(LengthSq(_v));
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Normalize(
     const V _v)
 {
@@ -249,14 +238,14 @@ template<FloatingVectorT V>
     return _v * RSqrt(lenSq);
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsNormalized(
     const V _v)
 {
     return IsEqualApprox(LengthSq(_v), 1.f);
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsOrthogonal(
     const V _x,
     const V _y)
@@ -264,28 +253,28 @@ template<FloatingVectorT V>
     return IsZeroApprox(Dot(_x, _y));
 }
 
-template<FloatingVectorT V>
-    requires(V::kDim == 2 || V::kDim == 3)
+template<VectorT V>
+    requires(V::kDim < 4)
 [[nodiscard]] JUG_MATH_API constexpr bool IsParallel(
     const V _x,
     const V _y)
 {
     return IsZeroApprox(Cross(_x, _y));
-}
+}   // namespace jug
 
 // =======================================================
 //  Distance
 // =======================================================
 
 template<VectorT V>
-[[nodiscard]] JUG_MATH_API constexpr typename V::ValueT DistanceSq(
+[[nodiscard]] JUG_MATH_API constexpr float DistanceSq(
     const V _x,
     const V _y)
 {
     return LengthSq(_x - _y);
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Distance(
     const V _x,
     const V _y)
@@ -297,7 +286,7 @@ template<FloatingVectorT V>
 //  Interpolation
 // =======================================================
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Lerp(
     const V     _x,
     const V     _y,
@@ -306,7 +295,7 @@ template<FloatingVectorT V>
     return _x + (_y - _x) * _t;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr float Angle(
     const V _x,
     const V _y)
@@ -314,7 +303,7 @@ template<FloatingVectorT V>
     return ACos(Clamp(Dot(Normalize(_x), Normalize(_y)), -1.f, 1.f));
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Reflect(
     const V _v,
     const V _normal)
@@ -323,7 +312,7 @@ template<FloatingVectorT V>
     return _v - 2.f * Dot(_v, _normal) * _normal;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Refract(
     const V     _v,
     const V     _normal,
@@ -336,7 +325,7 @@ template<FloatingVectorT V>
     return perp + para;
 }
 
-template<FloatingVectorT V>
+template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Project(
     const V _v,
     const V _onto)
@@ -352,7 +341,7 @@ template<FloatingVectorT V>
 #ifdef JUG_SIMD_AVAILABLE
 
 // =======================================================
-//  VECTOR3 SIMD optimization
+//  VECTOR3
 // =======================================================
 
 [[nodiscard]] constexpr VECTOR3 Normalize(
@@ -360,16 +349,16 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        const simd::M128 value = _v.ToSIMD();
+        const simd::M128 value = simd::LoadAligned(_v.e.data());
         const simd::M128 lenSq = simd::Dot4V(value, value);
         const simd::M128 valid = simd::CmpGe(lenSq, simd::SetAll(kEpsilon));
-        return VECTOR3::MakeFromSIMD(simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid));
+        return simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid);
     }
     return Normalize<VECTOR3>(_v);
 }
 
 // =======================================================
-//  VECTOR4 SIMD optimization
+//  VECTOR4
 // =======================================================
 
 [[nodiscard]] constexpr float Dot(
@@ -407,7 +396,7 @@ template<FloatingVectorT V>
         const simd::M128 value = _v.ToSIMD();
         const simd::M128 lenSq = simd::Dot4V(value, value);
         const simd::M128 valid = simd::CmpGe(lenSq, simd::SetAll(kEpsilon));
-        return VECTOR4::MakeFromSIMD(simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid));
+        return simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid);
     }
     return Normalize<VECTOR4>(_v);
 }
@@ -432,7 +421,7 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        return VECTOR4::MakeFromSIMD(simd::Min(_x.ToSIMD(), _y.ToSIMD()));
+        return simd::Min(_x.ToSIMD(), _y.ToSIMD());
     }
     return Min<VECTOR4>(_x, _y);
 }
@@ -443,7 +432,7 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        return VECTOR4::MakeFromSIMD(simd::Max(_x.ToSIMD(), _y.ToSIMD()));
+        return simd::Max(_x.ToSIMD(), _y.ToSIMD());
     }
     return Max<VECTOR4>(_x, _y);
 }
@@ -455,7 +444,7 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        return VECTOR4::MakeFromSIMD(simd::Clamp(_v.ToSIMD(), _min.ToSIMD(), _max.ToSIMD()));
+        return simd::Clamp(_v.ToSIMD(), _min.ToSIMD(), _max.ToSIMD());
     }
     return Clamp<VECTOR4>(_v, _min, _max);
 }
@@ -465,7 +454,7 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        return VECTOR4::MakeFromSIMD(simd::Abs(_v.ToSIMD()));
+        return simd::Abs(_v.ToSIMD());
     }
     return Abs<VECTOR4>(_v);
 }
@@ -477,7 +466,7 @@ template<FloatingVectorT V>
 {
     if (!std::is_constant_evaluated())
     {
-        return VECTOR4::MakeFromSIMD(simd::Lerp(_x.ToSIMD(), _y.ToSIMD(), _t));
+        return simd::Lerp(_x.ToSIMD(), _y.ToSIMD(), _t);
     }
     return Lerp<VECTOR4>(_x, _y, _t);
 }

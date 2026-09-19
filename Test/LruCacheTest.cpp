@@ -8,7 +8,7 @@
 
 #include <gtest/gtest.h>
 
-#include "../Source/LruCache.h"
+#include <JugX/LruCache.h>
 
 using namespace jug;
 

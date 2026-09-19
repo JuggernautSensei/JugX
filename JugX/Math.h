@@ -143,6 +143,19 @@ template<ArithmeticT T>
 template<ArithmeticT T>
 [[nodiscard]] JUG_MATH_API constexpr T Pulse(T _x, T _start, T _end);
 
+// ===========================================
+//  Integeral
+// ===========================================
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Floor(T _x, T _multiple);
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Ceil(T _x, T _multiple);
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Round(T _x, T _multiple);
+
 // =========================================
 //  Float
 // =========================================

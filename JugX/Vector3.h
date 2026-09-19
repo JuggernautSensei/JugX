@@ -7,7 +7,6 @@ namespace jug
 
 struct VECTOR3
 {
-    using ValueT = float;
 
     JUG_MATH_API VECTOR3() = default;
 
@@ -36,20 +35,18 @@ struct VECTOR3
 #ifdef JUG_SIMD_AVAILABLE
 
     // =======================================================
-    //  SIMD utils
+    //  SIMD
     // =======================================================
+
+    /* implicit */ JUG_MATH_API VECTOR3(
+        const simd::M128 _value)
+    {
+        simd::StoreAligned(e.data(), _value);
+    }
 
     [[nodiscard]] simd::M128 ToSIMD() const
     {
         return simd::LoadFloat3(e.data());
-    }
-
-    [[nodiscard]] static VECTOR3 MakeFromSIMD(
-        const simd::M128 _value)
-    {
-        VECTOR3 v;
-        simd::StoreFloat3(v.e.data(), _value);
-        return v;
     }
 
 #endif
@@ -203,24 +200,24 @@ struct VECTOR3
     //  Access
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr float& operator[](
         const size_t _index)
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const float& operator[](
         const size_t _index) const
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT* GetPtr()
+    [[nodiscard]] JUG_MATH_API constexpr float* GetPtr()
     {
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT* GetPtr() const
+    [[nodiscard]] JUG_MATH_API constexpr const float* GetPtr() const
     {
         return e.data();
     }

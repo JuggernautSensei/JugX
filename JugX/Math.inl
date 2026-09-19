@@ -211,6 +211,32 @@ template<ArithmeticT T>
     return Step(_start, _x) - Step(_end, _x);
 }
 
+// ===========================================
+//  Integral
+// ===========================================
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Floor(T _x, T _multiple)
+{
+    T remainder = _x % _multiple;
+    return remainder == T(0) ? _x : _x - remainder - (remainder < T(0) ? _multiple : T(0));
+}
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Ceil(T _x, T _multiple)
+{
+    T remainder = _x % _multiple;
+    return remainder == T(0) ? _x : _x - remainder + (remainder > T(0) ? _multiple : T(0));
+}
+
+template<std::integral T>
+[[nodiscard]] JUG_MATH_API constexpr T Round(T _x, T _multiple)
+{
+    T f    = Floor(_x, _multiple);
+    T diff = _x - f;   
+    return diff >= (_multiple + T(1)) / T(2) ? f + _multiple : f;
+}
+
 // =========================================
 //  Float
 // =========================================

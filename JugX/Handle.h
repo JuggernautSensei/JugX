@@ -17,7 +17,7 @@ JUG_DEFINE_TAG(NullHandleType, kNullHandle)
 namespace handle_detail
 {
     constexpr uint32_t kNullValue = 0xFFFFFFFF;
-    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index. 0xFFFFFFFF 를 null handle sentinel로 사용하기 때문에 MaxIndex 값을 0xFFFFFF - 1로 설정.
+    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index. 0xFFFFFFFF 를 null value sentinel로 사용하기 때문에 MaxIndex 값을 0xFFFFFF - 1로 설정.
     constexpr uint32_t kMaxToken  = 0xFF;           // 8 bits for token.
 }   // namespace handle_detail
 

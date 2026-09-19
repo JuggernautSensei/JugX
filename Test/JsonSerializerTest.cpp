@@ -9,8 +9,8 @@
 
 #include <gtest/gtest.h>
 
-#include "../Source/JsonDeserializer.h"
-#include "../Source/JsonSerializer.h"
+#include <JugX/JsonDeserializer.h>
+#include <JugX/JsonSerializer.h>
 
 using namespace jug;
 

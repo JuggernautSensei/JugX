@@ -8,7 +8,6 @@ namespace jug
 enum class eLogLevel
 {
     Trace,
-    Debug,
     Info,
     Warn,
     Error,

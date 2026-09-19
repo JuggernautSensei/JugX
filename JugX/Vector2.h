@@ -6,8 +6,6 @@ namespace jug
 
 struct VECTOR2
 {
-    using ValueT = float;
-
     JUG_MATH_API VECTOR2() = default;
 
     JUG_MATH_API constexpr VECTOR2(
@@ -173,24 +171,24 @@ struct VECTOR2
     //  Access
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr float& operator[](
         const size_t _index)
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const float& operator[](
         const size_t _index) const
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr ValueT* GetPtr()
+    [[nodiscard]] JUG_MATH_API constexpr float* GetPtr()
     {
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const ValueT* GetPtr() const
+    [[nodiscard]] JUG_MATH_API constexpr const float* GetPtr() const
     {
         return e.data();
     }

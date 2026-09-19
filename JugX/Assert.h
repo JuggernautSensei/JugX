@@ -40,5 +40,5 @@ void ReportAssert(
         }                                                                            \
         JUG_END_MACRO_BLOCK
 #else
-#    define JUG_ASSERT(_cond, _msg) ((void)0)
+#    define JUG_ASSERT(_cond, ...) ((void)0)
 #endif

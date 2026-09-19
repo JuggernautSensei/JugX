@@ -110,6 +110,13 @@ void Murmur3::Mix(
             k1 = Rotl64_(k1, 31);
             k1 *= k_c2;
             m_hash ^= k1;
+
+            // [AI] 블록 경로와 똑같이 해시를 전진시킨다. 정통 Murmur3 는 tail 을 맨 끝에 한 번만
+            //      돌리므로 전진이 필요 없지만, 이 클래스는 Mix 를 연달아 부르는 스트리밍이라
+            //      tail 이 중간에 반복된다. 전진이 없으면 8바이트 미만 값들이 순수 XOR 로 합쳐져
+            //      교환법칙이 성립한다 -> Mix(a),Mix(b) 와 Mix(b),Mix(a) 가 같은 해시가 된다.
+            m_hash = Rotl64_(m_hash, 27);
+            m_hash = m_hash * 5 + 0x52dce729;
     }
 }
 

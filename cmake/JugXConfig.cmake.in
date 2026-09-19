@@ -1,0 +1,17 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+# Public link dependencies: these appear in JugX's public headers.
+find_dependency(SDL3 CONFIG)
+
+# parallel-hashmap has no CMake package; its headers are exposed through the
+# consumer's own include path (vcpkg places them in <prefix>/include).
+find_path(JugX_PHMAP_INCLUDE_DIR "parallel_hashmap/phmap.h" REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/JugXTargets.cmake")
+
+set_property(TARGET JugX::JugX APPEND PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES "${JugX_PHMAP_INCLUDE_DIR}")
+
+check_required_components(JugX)

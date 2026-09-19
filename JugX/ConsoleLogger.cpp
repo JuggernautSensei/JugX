@@ -16,7 +16,6 @@ namespace
 {
     constexpr ENUM_ARRAY<eLogLevel, StringView> kColors = {
         "\033[0m",          // TRACE 흰색
-        "\033[38;5;39m",    // DEBUG 하늘색
         "\033[38;5;46m",    // INFO  초록
         "\033[38;5;226m",   // WARN  노랑
         "\033[38;5;9m",     // ERROR 빨강

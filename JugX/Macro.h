@@ -1,5 +1,4 @@
 ﻿#pragma once
-
 #ifdef _MSC_VER
 #    define JUG_DISABLE_ANON_WARNING_BEGIN \
         __pragma(warning(push))            \
@@ -86,8 +85,10 @@
 #define JUG_CONCAT_IMPL(_a, _b) _a##_b
 #define JUG_CONCAT(_a, _b)      JUG_CONCAT_IMPL(_a, _b)
 
+#define JUG_FOURCC(_a, _b, _c, _d) ((static_cast<uint32_t>(_a) | (static_cast<uint32_t>(_b) << 8) | (static_cast<uint32_t>(_c) << 16) | (static_cast<uint32_t>(_d) << 24)))
+
 // ===========================================
-//  Class Macros
+//  Class
 // ===========================================
 
 #define JUG_CLASS_NO_COPY(_class)              \
