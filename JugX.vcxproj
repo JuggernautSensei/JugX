@@ -34,7 +34,6 @@
     <ClInclude Include="JugX\JsonAdlSerializer.h" />
     <ClInclude Include="JugX\LruCache.h" />
     <ClInclude Include="JugX\NoopHasher.h" />
-    <ClInclude Include="JugX\OS.h" />
     <ClInclude Include="JugX\OsAPI.h" />
     <ClInclude Include="JugX\pch.h" />
     <ClInclude Include="JugX\Random.h" />
@@ -125,7 +124,6 @@
     <ClCompile Include="JugX\MemoryArena.cpp" />
     <ClCompile Include="JugX\MemoryHasher.cpp" />
     <ClCompile Include="JugX\MemoryLogger.cpp" />
-    <ClCompile Include="JugX\OS.cpp" />
     <ClCompile Include="JugX\OsAPI.cpp" />
     <ClCompile Include="JugX\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

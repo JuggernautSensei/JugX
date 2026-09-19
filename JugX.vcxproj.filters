@@ -232,9 +232,6 @@
     <ClInclude Include="JugX\Fatal.h">
       <Filter>Base</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\OS.h">
-      <Filter>OS</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\OsAPI.h">
       <Filter>OS</Filter>
     </ClInclude>
@@ -485,9 +482,6 @@
     </ClCompile>
     <ClCompile Include="JugX\Fatal.cpp">
       <Filter>Base</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\OS.cpp">
-      <Filter>OS</Filter>
     </ClCompile>
     <ClCompile Include="JugX\OsAPI.cpp">
       <Filter>OS</Filter>
