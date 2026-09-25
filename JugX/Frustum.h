@@ -19,10 +19,7 @@ enum class eFrustumPlane
     Near
 };
 
-// =======================================================
-//  Frustum
-//   절두체를 이루는 평면의 법선은 절두체 안쪽을 향한다.
-// =======================================================
+// 절두체를 이루는 평면의 법선은 절두체 안쪽을 향한다.
 
 struct FRUSTUM
 {
@@ -35,40 +32,27 @@ struct FRUSTUM
         const PLANE _down,
         const PLANE _far,
         const PLANE _near)
+        : planes { _right, _left, _up, _down, _far, _near }
     {
-        planes[eFrustumPlane::Right] = _right;
-        planes[eFrustumPlane::Left]  = _left;
-        planes[eFrustumPlane::Up]    = _up;
-        planes[eFrustumPlane::Down]  = _down;
-        planes[eFrustumPlane::Far]   = _far;
-        planes[eFrustumPlane::Near]  = _near;
     }
-
-    // =======================================================
-    //  Factory
-    // =======================================================
 
     [[nodiscard]] JUG_MATH_API static constexpr FRUSTUM MakeFromMatrix(
         const MATRIX& _mtx)
     {
-        const VECTOR4 c0 = VECTOR4 { _mtx.r[0].e[0], _mtx.r[1].e[0], _mtx.r[2].e[0], _mtx.r[3].e[0] };
-        const VECTOR4 c1 = VECTOR4 { _mtx.r[0].e[1], _mtx.r[1].e[1], _mtx.r[2].e[1], _mtx.r[3].e[1] };
-        const VECTOR4 c2 = VECTOR4 { _mtx.r[0].e[2], _mtx.r[1].e[2], _mtx.r[2].e[2], _mtx.r[3].e[2] };
-        const VECTOR4 c3 = VECTOR4 { _mtx.r[0].e[3], _mtx.r[1].e[3], _mtx.r[2].e[3], _mtx.r[3].e[3] };
+        const VECTOR4 c0 = VECTOR4 { _mtx[0][0], _mtx[1][0], _mtx[2][0], _mtx[3][0] };
+        const VECTOR4 c1 = VECTOR4 { _mtx[0][1], _mtx[1][1], _mtx[2][1], _mtx[3][1] };
+        const VECTOR4 c2 = VECTOR4 { _mtx[0][2], _mtx[1][2], _mtx[2][2], _mtx[3][2] };
+        const VECTOR4 c3 = VECTOR4 { _mtx[0][3], _mtx[1][3], _mtx[2][3], _mtx[3][3] };
 
-        FRUSTUM ret;
-        ret.planes[eFrustumPlane::Right] = PLANE { c3 - c0 };
-        ret.planes[eFrustumPlane::Left]  = PLANE { c3 + c0 };
-        ret.planes[eFrustumPlane::Up]    = PLANE { c3 - c1 };
-        ret.planes[eFrustumPlane::Down]  = PLANE { c3 + c1 };
-        ret.planes[eFrustumPlane::Near]  = PLANE { c2 };
-        ret.planes[eFrustumPlane::Far]   = PLANE { c3 - c2 };
-        return ret;
+        return FRUSTUM {
+            PLANE { c3 - c0 },
+            PLANE { c3 + c0 },
+            PLANE { c3 - c1 },
+            PLANE { c3 + c1 },
+            PLANE { c3 - c2 },
+            PLANE { c2 }
+        };
     }
-
-    // =======================================================
-    //  Utils
-    // =======================================================
 
     [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
     {
@@ -95,14 +79,14 @@ struct FRUSTUM
         const MATRIX& _invMtx)
     {
         DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = MulPoint(VECTOR3 { -1.f, -1.f, 0.f }, _invMtx);
-        ret[eCorner::LeftBottomFar]   = MulPoint(VECTOR3 { -1.f, -1.f, 1.f }, _invMtx);
-        ret[eCorner::LeftTopNear]     = MulPoint(VECTOR3 { -1.f, 1.f, 0.f }, _invMtx);
-        ret[eCorner::LeftTopFar]      = MulPoint(VECTOR3 { -1.f, 1.f, 1.f }, _invMtx);
-        ret[eCorner::RightBottomNear] = MulPoint(VECTOR3 { 1.f, -1.f, 0.f }, _invMtx);
-        ret[eCorner::RightBottomFar]  = MulPoint(VECTOR3 { 1.f, -1.f, 1.f }, _invMtx);
-        ret[eCorner::RightTopNear]    = MulPoint(VECTOR3 { 1.f, 1.f, 0.f }, _invMtx);
-        ret[eCorner::RightTopFar]     = MulPoint(VECTOR3 { 1.f, 1.f, 1.f }, _invMtx);
+        ret[eCorner::LeftBottomNear]  = XformPoint(VECTOR3 { -1.f, -1.f, 0.f }, _invMtx);
+        ret[eCorner::LeftBottomFar]   = XformPoint(VECTOR3 { -1.f, -1.f, 1.f }, _invMtx);
+        ret[eCorner::LeftTopNear]     = XformPoint(VECTOR3 { -1.f, 1.f, 0.f }, _invMtx);
+        ret[eCorner::LeftTopFar]      = XformPoint(VECTOR3 { -1.f, 1.f, 1.f }, _invMtx);
+        ret[eCorner::RightBottomNear] = XformPoint(VECTOR3 { 1.f, -1.f, 0.f }, _invMtx);
+        ret[eCorner::RightBottomFar]  = XformPoint(VECTOR3 { 1.f, -1.f, 1.f }, _invMtx);
+        ret[eCorner::RightTopNear]    = XformPoint(VECTOR3 { 1.f, 1.f, 0.f }, _invMtx);
+        ret[eCorner::RightTopFar]     = XformPoint(VECTOR3 { 1.f, 1.f, 1.f }, _invMtx);
         return ret;
     }
 
@@ -158,10 +142,6 @@ struct FRUSTUM
         return ret;
     }
 
-    // =======================================================
-    //  Fields
-    // =======================================================
-
     const static FRUSTUM kZero;
 
     JUG_DISABLE_ANON_WARNING_BEGIN
@@ -182,9 +162,9 @@ struct FRUSTUM
 };
 static_assert(PodT<FRUSTUM>, "FRUSTUM must be POD type.");
 
-// ========================================================
+// ===========================================
 //  Constants
-// ========================================================
+// ===========================================
 
 inline constexpr FRUSTUM FRUSTUM::kZero = FRUSTUM {};
 
@@ -194,35 +174,21 @@ struct MathConstants<FRUSTUM>
     static constexpr FRUSTUM kZero = FRUSTUM::kZero;
 };
 
-// =======================================================
-//  Operators
-// =======================================================
-
-[[nodiscard]] JUG_MATH_API constexpr FRUSTUM Transform(
-    const FRUSTUM& _frustum,
-    const MATRIX&  _invTransMtx)   // 평면 변환 * 6임. 역-전치 행렬을 사용해야함.
-{
-    FRUSTUM ret;
-    ret.planes[eFrustumPlane::Right] = Transform(_frustum.planes[eFrustumPlane::Right], _invTransMtx);
-    ret.planes[eFrustumPlane::Left]  = Transform(_frustum.planes[eFrustumPlane::Left], _invTransMtx);
-    ret.planes[eFrustumPlane::Up]    = Transform(_frustum.planes[eFrustumPlane::Up], _invTransMtx);
-    ret.planes[eFrustumPlane::Down]  = Transform(_frustum.planes[eFrustumPlane::Down], _invTransMtx);
-    ret.planes[eFrustumPlane::Far]   = Transform(_frustum.planes[eFrustumPlane::Far], _invTransMtx);
-    ret.planes[eFrustumPlane::Near]  = Transform(_frustum.planes[eFrustumPlane::Near], _invTransMtx);
-    return ret;
-}
+// ===========================================
+//  Method
+// ===========================================
 
 [[nodiscard]] JUG_MATH_API constexpr FRUSTUM Normalize(
     const FRUSTUM& _frustum)
 {
-    FRUSTUM ret;
-    ret.planes[eFrustumPlane::Right] = Normalize(_frustum.planes[eFrustumPlane::Right]);
-    ret.planes[eFrustumPlane::Left]  = Normalize(_frustum.planes[eFrustumPlane::Left]);
-    ret.planes[eFrustumPlane::Up]    = Normalize(_frustum.planes[eFrustumPlane::Up]);
-    ret.planes[eFrustumPlane::Down]  = Normalize(_frustum.planes[eFrustumPlane::Down]);
-    ret.planes[eFrustumPlane::Far]   = Normalize(_frustum.planes[eFrustumPlane::Far]);
-    ret.planes[eFrustumPlane::Near]  = Normalize(_frustum.planes[eFrustumPlane::Near]);
-    return ret;
+    return FRUSTUM {
+        Normalize(_frustum.planes[eFrustumPlane::Right]),
+        Normalize(_frustum.planes[eFrustumPlane::Left]),
+        Normalize(_frustum.planes[eFrustumPlane::Up]),
+        Normalize(_frustum.planes[eFrustumPlane::Down]),
+        Normalize(_frustum.planes[eFrustumPlane::Far]),
+        Normalize(_frustum.planes[eFrustumPlane::Near])
+    };
 }
 
 [[nodiscard]] JUG_MATH_API inline bool IsNormalized(
@@ -236,6 +202,20 @@ struct MathConstants<FRUSTUM>
         }
     }
     return true;
+}
+
+[[nodiscard]] JUG_MATH_API constexpr FRUSTUM Xform(
+    const FRUSTUM& _frustum,
+    const MATRIX&  _invTransMtx)   // 평면 변환 * 6임. 역-전치 행렬을 사용해야함.
+{
+    return FRUSTUM {
+        Xform(_frustum.planes[eFrustumPlane::Right], _invTransMtx),
+        Xform(_frustum.planes[eFrustumPlane::Left], _invTransMtx),
+        Xform(_frustum.planes[eFrustumPlane::Up], _invTransMtx),
+        Xform(_frustum.planes[eFrustumPlane::Down], _invTransMtx),
+        Xform(_frustum.planes[eFrustumPlane::Far], _invTransMtx),
+        Xform(_frustum.planes[eFrustumPlane::Near], _invTransMtx)
+    };
 }
 
 }   // namespace jug

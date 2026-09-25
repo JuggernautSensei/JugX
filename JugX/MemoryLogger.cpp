@@ -63,7 +63,7 @@ void MemoryLogger::VLogImpl(
 
 void MemoryLogger::PushPendding_()
 {
-    m_logs.Push(std::move(m_pendding));
+    m_logs.PushBack(std::move(m_pendding));
 }
 
 }   // namespace jug

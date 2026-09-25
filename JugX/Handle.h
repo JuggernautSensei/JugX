@@ -51,34 +51,6 @@ public:
     {
     }
 
-    constexpr Handle(
-        Handle&& _other) noexcept
-        : value(std::exchange(_other.value, handle_detail::kNullValue))
-    {
-    }
-
-    constexpr Handle& operator=(
-        const NullHandleType)
-    {
-        value = handle_detail::kNullValue;
-        return *this;
-    }
-
-    constexpr Handle& operator=(
-        Handle&& _other) noexcept
-    {
-        if (this != &_other)
-        {
-            value = std::exchange(_other.value, handle_detail::kNullValue);
-        }
-        return *this;
-    }
-
-    constexpr Handle(const Handle&)            = default;
-    constexpr Handle& operator=(const Handle&) = default;
-    constexpr ~Handle()                        = default;
-
-    // 익명 유니온 멤버가 있으면 기본 비교 연산자가 delete 된다. value 로 직접 비교한다.
     [[nodiscard]] constexpr bool operator==(
         const Handle& _other) const
     {

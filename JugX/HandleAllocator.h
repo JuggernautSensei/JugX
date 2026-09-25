@@ -14,7 +14,7 @@ namespace jug
 
 namespace handle_allocator_detail
 {
-    constexpr size_t kNullIndex  = SIZE_MAX;
+    constexpr size_t kNullIndex  = Max<size_t>();
     constexpr size_t kGrowFactor = 2;
     constexpr size_t kMinSize    = 4;
 }   // namespace handle_allocator_detail

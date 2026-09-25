@@ -361,6 +361,22 @@ std::strong_ordering JsonReader::ObjectIterator::operator<=>(
 //  JsonDeserializer
 // ==========================================================
 
+JsonReader::ArrayIterator::ArrayIterator(
+    yyjson_val*  _pValue,
+    const size_t _remain)
+    : m_pValue(_pValue)
+      , m_remain(_remain)
+{
+}
+
+JsonReader::ObjectIterator::ObjectIterator(
+    yyjson_val*  _pKey,
+    const size_t _remain)
+    : m_pKey(_pKey)
+      , m_remain(_remain)
+{
+}
+
 Result<JsonDeserializer> JsonDeserializer::Load(
     const StringView             _json,
     const Flags<eJsonLoadOption> _flags)
@@ -406,14 +422,6 @@ Result<JsonDeserializer> JsonDeserializer::LoadFromFile(
     return JsonDeserializer { pDoc };
 }
 
-JsonDeserializer::~JsonDeserializer()
-{
-    if (m_pDoc)
-    {
-        yyjson_doc_free(m_pDoc);
-    }
-}
-
 JsonDeserializer::JsonDeserializer(
     JsonDeserializer&& _other) noexcept
     : m_pDoc(std::exchange(_other.m_pDoc, nullptr))
@@ -434,6 +442,13 @@ JsonDeserializer& JsonDeserializer::operator=(
     return *this;
 }
 
+JsonDeserializer::~JsonDeserializer()
+{
+    if (m_pDoc)
+    {
+        yyjson_doc_free(m_pDoc);
+    }
+}
 JsonReader JsonDeserializer::GetReader() const
 {
     JUG_ASSERT(m_pDoc, "JsonDeserializer: the document has been moved out");

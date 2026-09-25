@@ -24,11 +24,11 @@
 #endif
 
 #ifdef _MSC_VER
-#    define JUG_FORCEINLINE __forceinline
+#    define JUG_FORCE_INLINE __forceinline
 #elif defined(__clang__) || defined(__GNUC__)
-#    define JUG_FORCEINLINE inline __attribute__((always_inline))
+#    define JUG_FORCE_INLINE inline __attribute__((always_inline))
 #else
-#    define JUG_FORCEINLINE inline
+#    define JUG_FORCE_INLINE inline
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)

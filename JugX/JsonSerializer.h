@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include "EnumFlags.h"
 #include "JsonAdlSerializer.h"
+#include "JsonString.h"
 #include "Result.h"
 
 struct yyjson_mut_doc;
@@ -175,8 +176,8 @@ public:
     JsonSerializer& operator=(JsonSerializer&& _other) noexcept;
     ~JsonSerializer();
 
-    [[nodiscard]] Result<String> Save(Flags<eJsonSaveOption> _flags = eJsonSaveOption::None) const;
-    [[nodiscard]] Error          SaveToFile(const FilePath& _path, Flags<eJsonSaveOption> _flags = eJsonSaveOption::None) const;
+    [[nodiscard]] Result<JsonString> Save(Flags<eJsonSaveOption> _flags = eJsonSaveOption::None) const;
+    [[nodiscard]] Error              SaveToFile(const FilePath& _path, Flags<eJsonSaveOption> _flags = eJsonSaveOption::None) const;
 
     [[nodiscard]] JsonWriter GetWriter() const;
 

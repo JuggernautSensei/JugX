@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "TypeRefl.h"
 
 namespace jug
 {
@@ -27,7 +28,11 @@ concept EventT = std::is_base_of_v<Event, T>;
 
 }   // namespace jug
 
-#define EVENT_BODY(_type)                                                             \
-public:                                                                               \
-    [[nodiscard]] uint64_t   GetHash() const override { return HashOfType<_type>(); } \
-    [[nodiscard]] StringView GetName() const override { return #_type; }
+#define JUG_EVENT_BODY(_type)                                                  \
+public:                                                                        \
+    static constexpr uint64_t          kHash = ::jug::HashOf<_type>();         \
+    static constexpr ::jug::StringView kName = ::jug::NameOf<_type>();         \
+                                                                               \
+    [[nodiscard]] uint64_t          GetHash() const override { return kHash; } \
+    [[nodiscard]] ::jug::StringView GetName() const override { return kName; } \
+    static_assert(true, "JUG_EVENT_BODY must be terminated with a semicolon.")

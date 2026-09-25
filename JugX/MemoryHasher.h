@@ -31,8 +31,10 @@ public:
     [[nodiscard]] uint64_t Finalize() const;
 
 private:
-    uint64_t m_hash   = 0;
-    size_t   m_length = 0;
+    uint64_t m_hash    = 0;
+    size_t   m_length  = 0;
+    uint8_t  m_tail[8] = {};
+    uint8_t  m_tailLen = 0;
 };
 
 // ===========================================

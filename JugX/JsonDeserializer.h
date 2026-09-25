@@ -48,7 +48,7 @@ public:
         [[nodiscard]] std::strong_ordering operator<=>(const ArrayIterator& _other) const;
 
     private:
-        constexpr ArrayIterator(yyjson_val* _pValue, size_t _remain);
+        ArrayIterator(yyjson_val* _pValue, size_t _remain);
 
         yyjson_val* m_pValue = nullptr;
         size_t      m_remain = 0;
@@ -86,7 +86,7 @@ public:
         [[nodiscard]] std::strong_ordering              operator<=>(const ObjectIterator& _other) const;
 
     private:
-        constexpr ObjectIterator(yyjson_val* _pKey, size_t _remain);
+        ObjectIterator(yyjson_val* _pKey, size_t _remain);
 
         yyjson_val* m_pKey   = nullptr;
         size_t      m_remain = 0;
@@ -218,22 +218,6 @@ private:
 
     yyjson_val* m_pValue = nullptr;
 };
-
-constexpr JsonReader::ArrayIterator::ArrayIterator(
-    yyjson_val*  _pValue,
-    const size_t _remain)
-    : m_pValue(_pValue)
-    , m_remain(_remain)
-{
-}
-
-constexpr JsonReader::ObjectIterator::ObjectIterator(
-    yyjson_val*  _pKey,
-    const size_t _remain)
-    : m_pKey(_pKey)
-    , m_remain(_remain)
-{
-}
 
 // ==========================================================
 //  JsonDeserializer

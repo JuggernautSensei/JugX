@@ -11,41 +11,6 @@
 namespace jug
 {
 
-namespace
-{
-
-    [[nodiscard]] void* DefaultMalloc(
-        void*,
-        const size_t _size)
-    {
-        return std::malloc(_size);
-    }
-
-    [[nodiscard]] void* DefaultRealloc(
-        void*,
-        void* _ptr,
-        const size_t,
-        const size_t _size)
-    {
-        return std::realloc(_ptr, _size);
-    }
-
-    void DefaultFree(
-        void*,
-        void* _ptr)
-    {
-        std::free(_ptr);
-    }
-
-    constexpr yyjson_alc kDefaultAlc = {
-        DefaultMalloc,
-        DefaultRealloc,
-        DefaultFree,
-        nullptr
-    };
-
-}   // namespace
-
 // ==========================================================
 //  JsonWriter
 // ==========================================================
@@ -203,14 +168,6 @@ JsonSerializer::JsonSerializer()
     JUG_ASSERT(m_pDoc, "JsonSerializer: failed to allocate a mutable document");
 }
 
-JsonSerializer::~JsonSerializer()
-{
-    if (m_pDoc)
-    {
-        yyjson_mut_doc_free(m_pDoc);
-    }
-}
-
 JsonSerializer::JsonSerializer(
     JsonSerializer&& _other) noexcept
     : m_pDoc(std::exchange(_other.m_pDoc, nullptr))
@@ -231,27 +188,27 @@ JsonSerializer& JsonSerializer::operator=(
     return *this;
 }
 
-JsonWriter JsonSerializer::GetWriter() const
+JsonSerializer::~JsonSerializer()
 {
-    JUG_ASSERT(m_pDoc, "JsonSerializer: the document has been moved out");
-    return JsonWriter { m_pDoc, yyjson_mut_doc_get_root(m_pDoc) };
+    if (m_pDoc)
+    {
+        yyjson_mut_doc_free(m_pDoc);
+    }
 }
 
-Result<String> JsonSerializer::Save(
+Result<JsonString> JsonSerializer::Save(
     const Flags<eJsonSaveOption> _flags) const
 {
     size_t           len;
     yyjson_write_err err;
-    char*            pText = yyjson_mut_write_opts(m_pDoc, _flags.GetFlags(), &kDefaultAlc, &len, &err);
-    if (!pText)
+    char*            pStr = yyjson_mut_write_opts(m_pDoc, _flags.GetFlags(), nullptr, &len, &err);
+    if (!pStr)
     {
         JUG_CORE_LOG_ERROR("JsonSerializer: failed to serialize the document - error code: {}, message: {}", err.code, err.msg);
         return eSerializeError::OutputFailed;
     }
 
-    String text { pText, len };
-    kDefaultAlc.free(kDefaultAlc.ctx, pText);
-    return text;
+    return { pStr, len };
 }
 
 Error JsonSerializer::SaveToFile(
@@ -267,6 +224,12 @@ Error JsonSerializer::SaveToFile(
         return eSerializeError::OutputFailed;
     }
     return eSerializeError::None;
+}
+
+JsonWriter JsonSerializer::GetWriter() const
+{
+    JUG_ASSERT(m_pDoc, "JsonSerializer: the document has been moved out");
+    return JsonWriter { m_pDoc, yyjson_mut_doc_get_root(m_pDoc) };
 }
 
 }   // namespace jug

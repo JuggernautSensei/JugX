@@ -6,8 +6,8 @@ namespace jug
 {
 
 // ================================================
-//  Resource Pool
-//   Handle의 발급과 Resource 관리를 동시에 하는 컨테이너.
+//  ResourceRef Pool
+//   Handle의 발급과 ResourceRef 관리를 동시에 하는 컨테이너.
 // ================================================
 
 template<HandleT H, typename V>

@@ -4,17 +4,31 @@ namespace jug
 {
 
 // ===================================================
-//  Stack AllocMemory
+//  Stack Alloc
 // ===================================================
 
-#if defined(_MSC_VER)
+#if defined(JUG_COMPILER_MSVC)
 #    include <malloc.h>
 #    define JUG_STACK_ALLOC(_size) _alloca(_size)
-#elif defined(__GNUC__) || defined(__clang__)
+#elif defined(JUG_COMPILER_GCC) || defined(JUG_COMPILER_CLANG)
 #    include <alloca.h>
 #    define JUG_STACK_ALLOC(_size) alloca(_size)
 #else
 #    error "Unsupported compiler for stack allocation"
+#endif
+
+// ===========================================
+//  Aligned Alloca
+// ===========================================
+
+#if defined(JUG_COMPILER_MSVC)
+#    include <stdlib.h>
+#    define JUG_ALIGNED_ALLOC(_size, _alignment) _aligned_malloc(_size, _alignment)
+#elif defined(JUG_COMPILER_GCC) || defined(JUG_COMPILER_CLANG)
+#    include <stdlib.h>
+#    define JUG_ALIGNED_ALLOC(_size, _alignment) aligned_alloc(_alignment, _size)
+#else
+#    error "Unsupported compiler for aligned stack allocation"
 #endif
 
 // ===================================================

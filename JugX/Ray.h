@@ -14,7 +14,7 @@ struct HIT
 
 struct RAY
 {
-    JUG_MATH_API constexpr RAY() = default;
+    JUG_MATH_API  RAY() = default;
 
     JUG_MATH_API constexpr RAY(
         const VECTOR3 _origin,
@@ -24,17 +24,13 @@ struct RAY
     {
     }
 
-    // ========================================================
-    //  Factory
-    // ========================================================
-
     [[nodiscard]] JUG_MATH_API static constexpr RAY MakeRayOnNDC(
         const float   _ndcX,
         const float   _ndcY,
         const MATRIX& _invViewProj)
     {
-        const VECTOR3 n = MulPoint(VECTOR3 { _ndcX, _ndcY, 0.f }, _invViewProj);
-        const VECTOR3 f = MulPoint(VECTOR3 { _ndcX, _ndcY, 1.f }, _invViewProj);
+        const VECTOR3 n = XformPoint(VECTOR3 { _ndcX, _ndcY, 0.f }, _invViewProj);
+        const VECTOR3 f = XformPoint(VECTOR3 { _ndcX, _ndcY, 1.f }, _invViewProj);
         return RAY { n, Normalize(f - n) };
     }
 
@@ -51,10 +47,6 @@ struct RAY
         const float yNDC    = 1.f - (yScreen / static_cast<float>(_screenHeight)) * 2.f;
         return MakeRayOnNDC(xNDC, yNDC, _invViewProj);
     }
-
-    // ========================================================
-    //  Fields
-    // ========================================================
 
     const static RAY kZero;
 
@@ -77,7 +69,7 @@ struct MathConstants<RAY>
 };
 
 // ========================================================
-//  Operators
+//  Method  
 // ========================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsNormalized(

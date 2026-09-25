@@ -160,14 +160,11 @@ public:
     using ConstIterator = BaseIterator<true>;
 
 public:
-    RingBuffer()
-        : m_capacity(ring_buffer_detail::kDefaultCapacity)
-    {
-    }
-
     explicit RingBuffer(
-        const size_t _capacity)
+        const size_t _capacity = ring_buffer_detail::kDefaultCapacity,
+        Alloc        _alloc    = Alloc {})
         : m_capacity(_capacity)
+        , m_allocator(std::move(_alloc))
     {
         JUG_ASSERT(_capacity > 0, "RingBuffer capacity must be greater than 0.\n");
     }
@@ -223,38 +220,73 @@ public:
         Destroy_();
     }
 
-    void Push(
+    void PushBack(
         const T& _value)
     {
-        Emplace(_value);
+        EmplaceBack(_value);
     }
 
-    void Push(
+    void PushBack(
         T&& _value)
     {
-        Emplace(std::move(_value));
+        EmplaceBack(std::move(_value));
     }
 
     template<typename... Args>
-    void Emplace(
+    void EmplaceBack(
         Args&&... _args)
     {
         Ensure_();
 
         if (IsFull())
         {
-            Pop();
+            PopFront();
         }
 
         std::construct_at(m_pData + ToRealIndex_(m_size), std::forward<Args>(_args)...);
         ++m_size;
     }
 
-    void Pop()
+    void PushFront(
+        const T& _value)
+    {
+        EmplaceFront(_value);
+    }
+
+    void PushFront(
+        T&& _value)
+    {
+        EmplaceFront(std::move(_value));
+    }
+
+    template<typename... Args>
+    void EmplaceFront(
+        Args&&... _args)
+    {
+        Ensure_();
+
+        if (IsFull())
+        {
+            PopBack();
+        }
+
+        m_head = (m_head > 0) ? m_head - 1 : m_capacity - 1;
+        std::construct_at(m_pData + m_head, std::forward<Args>(_args)...);
+        ++m_size;
+    }
+
+    void PopFront()
     {
         JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
         std::destroy_at(m_pData + m_head);
         m_head = ToRealIndex_(1);
+        --m_size;
+    }
+
+    void PopBack()
+    {
+        JUG_ASSERT(!IsEmpty(), "RingBuffer is empty.\n");
+        std::destroy_at(m_pData + ToRealIndex_(m_size - 1));
         --m_size;
     }
 
@@ -268,7 +300,7 @@ public:
     {
         while (!IsEmpty())
         {
-            Pop();
+            PopFront();
         }
     }
 

@@ -6,7 +6,7 @@ namespace jug
 
 struct TRIANGLE
 {
-    JUG_MATH_API constexpr TRIANGLE() = default;
+    JUG_MATH_API  TRIANGLE() = default;
 
     JUG_MATH_API constexpr TRIANGLE(
         const VECTOR3 _p0,
@@ -18,10 +18,6 @@ struct TRIANGLE
     {
     }
 
-    // =====================================================
-    //  Utils
-    // =====================================================
-
     [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetNormal() const
     {
         return Normalize(Cross(p1 - p0, p2 - p0));
@@ -31,10 +27,6 @@ struct TRIANGLE
     {
         return (p0 + p1 + p2) / 3.f;
     }
-
-    // =====================================================
-    //  Fields
-    // =====================================================
 
     const static TRIANGLE kZero;
 
@@ -58,17 +50,17 @@ struct MathConstants<TRIANGLE>
 };
 
 // ========================================================
-//  Operators
+//  Method
 // ========================================================
 
-[[nodiscard]] JUG_MATH_API constexpr TRIANGLE Transform(
+[[nodiscard]] JUG_MATH_API constexpr TRIANGLE Xform(
     const TRIANGLE& _triangle,
     const MATRIX&   _mtx)
 {
     return TRIANGLE {
-        MulPoint(_triangle.p0, _mtx),
-        MulPoint(_triangle.p1, _mtx),
-        MulPoint(_triangle.p2, _mtx)
+        XformPoint(_triangle.p0, _mtx),
+        XformPoint(_triangle.p1, _mtx),
+        XformPoint(_triangle.p2, _mtx)
     };
 }
 

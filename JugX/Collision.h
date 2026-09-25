@@ -27,8 +27,8 @@ namespace collision_detail
     // AABB/OBB 에 대한 공통 타입
     struct BOX
     {
-        VECTOR3                center;
-        VECTOR3                extents;
+        VECTOR3           center;
+        VECTOR3           extents;
         ARRAY<VECTOR3, 3> axes;
     };
 
@@ -50,9 +50,13 @@ namespace collision_detail
         BOX box;
         box.center  = _obb.GetCenter();
         box.extents = _obb.GetExtents();
-        box.axes[0] = _obb.transform.GetAxisX();
-        box.axes[1] = _obb.transform.GetAxisY();
-        box.axes[2] = _obb.transform.GetAxisZ();
+
+        const VECTOR3 invExtents = RcpSafe(box.extents);
+        for (size_t i = 0; i < 3; ++i)
+        {
+            const VECTOR4 row = _obb.mtx[i];
+            box.axes[i]       = VECTOR3 { row[0], row[1], row[2] } * invExtents[i];
+        }
         return box;
     }
 
@@ -61,9 +65,9 @@ namespace collision_detail
         const BOX&    _box,
         const VECTOR3 _axis)
     {
-        return _box.extents.e[0] * Abs(Dot(_axis, _box.axes[0]))
-             + _box.extents.e[1] * Abs(Dot(_axis, _box.axes[1]))
-             + _box.extents.e[2] * Abs(Dot(_axis, _box.axes[2]));
+        return _box.extents[0] * Abs(Dot(_axis, _box.axes[0]))
+             + _box.extents[1] * Abs(Dot(_axis, _box.axes[1]))
+             + _box.extents[2] * Abs(Dot(_axis, _box.axes[2]));
     }
 
     [[nodiscard]] JUG_MATH_API constexpr VECTOR3 ToBoxLocal(
@@ -79,9 +83,9 @@ namespace collision_detail
         const VECTOR3 _local)
     {
         return _box.center
-             + _box.axes[0] * _local.e[0]
-             + _box.axes[1] * _local.e[1]
-             + _box.axes[2] * _local.e[2];
+             + _box.axes[0] * _local[0]
+             + _box.axes[1] * _local[1]
+             + _box.axes[2] * _local[2];
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool ContainBoxLocalPoint(
@@ -89,9 +93,9 @@ namespace collision_detail
         const VECTOR3 _point)
     {
         const VECTOR3 l = Abs(ToBoxLocal(_box, _point));
-        return l.e[0] <= _box.extents.e[0] + kEpsilon
-            && l.e[1] <= _box.extents.e[1] + kEpsilon
-            && l.e[2] <= _box.extents.e[2] + kEpsilon;
+        return l[0] <= _box.extents[0] + kEpsilon
+            && l[1] <= _box.extents[1] + kEpsilon
+            && l[2] <= _box.extents[2] + kEpsilon;
     }
 
     // ====================================================
@@ -115,16 +119,16 @@ namespace collision_detail
             }
         }
 
-        const VECTOR3              d  = _b.center - _a.center;
+        const VECTOR3         d  = _b.center - _a.center;
         const ARRAY<float, 3> t  = { Dot(d, _a.axes[0]), Dot(d, _a.axes[1]), Dot(d, _a.axes[2]) };
-        const VECTOR3              ea = _a.extents;
-        const VECTOR3              eb = _b.extents;
+        const VECTOR3         ea = _a.extents;
+        const VECTOR3         eb = _b.extents;
 
         // A 의 면 법선 3축
         for (int i = 0; i < 3; ++i)
         {
-            const float ra = ea.e[i];
-            const float rb = eb.e[0] * absR[i][0] + eb.e[1] * absR[i][1] + eb.e[2] * absR[i][2];
+            const float ra = ea[i];
+            const float rb = eb[0] * absR[i][0] + eb[1] * absR[i][1] + eb[2] * absR[i][2];
             if (Abs(t[i]) > ra + rb)
             {
                 return false;
@@ -134,56 +138,56 @@ namespace collision_detail
         // B 의 면 법선 3축
         for (int j = 0; j < 3; ++j)
         {
-            const float ra = ea.e[0] * absR[0][j] + ea.e[1] * absR[1][j] + ea.e[2] * absR[2][j];
-            const float rb = eb.e[j];
+            const float ra = ea[0] * absR[0][j] + ea[1] * absR[1][j] + ea[2] * absR[2][j];
+            const float rb = eb[j];
             if (Abs(t[0] * r[0][j] + t[1] * r[1][j] + t[2] * r[2][j]) > ra + rb)
             {
                 return false;
             }
         }
 
-        // A0 x B0
-        if (Abs(t[2] * r[1][0] - t[1] * r[2][0]) > ea.e[1] * absR[2][0] + ea.e[2] * absR[1][0] + eb.e[1] * absR[0][2] + eb.e[2] * absR[0][1])
+        // A0 × B0
+        if (Abs(t[2] * r[1][0] - t[1] * r[2][0]) > ea[1] * absR[2][0] + ea[2] * absR[1][0] + eb[1] * absR[0][2] + eb[2] * absR[0][1])
         {
             return false;
         }
-        // A0 x B1
-        if (Abs(t[2] * r[1][1] - t[1] * r[2][1]) > ea.e[1] * absR[2][1] + ea.e[2] * absR[1][1] + eb.e[0] * absR[0][2] + eb.e[2] * absR[0][0])
+        // A0 × B1
+        if (Abs(t[2] * r[1][1] - t[1] * r[2][1]) > ea[1] * absR[2][1] + ea[2] * absR[1][1] + eb[0] * absR[0][2] + eb[2] * absR[0][0])
         {
             return false;
         }
-        // A0 x B2
-        if (Abs(t[2] * r[1][2] - t[1] * r[2][2]) > ea.e[1] * absR[2][2] + ea.e[2] * absR[1][2] + eb.e[0] * absR[0][1] + eb.e[1] * absR[0][0])
+        // A0 × B2
+        if (Abs(t[2] * r[1][2] - t[1] * r[2][2]) > ea[1] * absR[2][2] + ea[2] * absR[1][2] + eb[0] * absR[0][1] + eb[1] * absR[0][0])
         {
             return false;
         }
-        // A1 x B0
-        if (Abs(t[0] * r[2][0] - t[2] * r[0][0]) > ea.e[0] * absR[2][0] + ea.e[2] * absR[0][0] + eb.e[1] * absR[1][2] + eb.e[2] * absR[1][1])
+        // A1 × B0
+        if (Abs(t[0] * r[2][0] - t[2] * r[0][0]) > ea[0] * absR[2][0] + ea[2] * absR[0][0] + eb[1] * absR[1][2] + eb[2] * absR[1][1])
         {
             return false;
         }
-        // A1 x B1
-        if (Abs(t[0] * r[2][1] - t[2] * r[0][1]) > ea.e[0] * absR[2][1] + ea.e[2] * absR[0][1] + eb.e[0] * absR[1][2] + eb.e[2] * absR[1][0])
+        // A1 × B1
+        if (Abs(t[0] * r[2][1] - t[2] * r[0][1]) > ea[0] * absR[2][1] + ea[2] * absR[0][1] + eb[0] * absR[1][2] + eb[2] * absR[1][0])
         {
             return false;
         }
-        // A1 x B2
-        if (Abs(t[0] * r[2][2] - t[2] * r[0][2]) > ea.e[0] * absR[2][2] + ea.e[2] * absR[0][2] + eb.e[0] * absR[1][1] + eb.e[1] * absR[1][0])
+        // A1 × B2
+        if (Abs(t[0] * r[2][2] - t[2] * r[0][2]) > ea[0] * absR[2][2] + ea[2] * absR[0][2] + eb[0] * absR[1][1] + eb[1] * absR[1][0])
         {
             return false;
         }
-        // A2 x B0
-        if (Abs(t[1] * r[0][0] - t[0] * r[1][0]) > ea.e[0] * absR[1][0] + ea.e[1] * absR[0][0] + eb.e[1] * absR[2][2] + eb.e[2] * absR[2][1])
+        // A2 × B0
+        if (Abs(t[1] * r[0][0] - t[0] * r[1][0]) > ea[0] * absR[1][0] + ea[1] * absR[0][0] + eb[1] * absR[2][2] + eb[2] * absR[2][1])
         {
             return false;
         }
-        // A2 x B1
-        if (Abs(t[1] * r[0][1] - t[0] * r[1][1]) > ea.e[0] * absR[1][1] + ea.e[1] * absR[0][1] + eb.e[0] * absR[2][2] + eb.e[2] * absR[2][0])
+        // A2 × B1
+        if (Abs(t[1] * r[0][1] - t[0] * r[1][1]) > ea[0] * absR[1][1] + ea[1] * absR[0][1] + eb[0] * absR[2][2] + eb[2] * absR[2][0])
         {
             return false;
         }
-        // A2 x B2
-        if (Abs(t[1] * r[0][2] - t[0] * r[1][2]) > ea.e[0] * absR[1][2] + ea.e[1] * absR[0][2] + eb.e[0] * absR[2][1] + eb.e[1] * absR[2][0])
+        // A2 × B2
+        if (Abs(t[1] * r[0][2] - t[0] * r[1][2]) > ea[0] * absR[1][2] + ea[1] * absR[0][2] + eb[0] * absR[2][1] + eb[1] * absR[2][0])
         {
             return false;
         }
@@ -202,7 +206,7 @@ namespace collision_detail
         {
             const float t  = Dot(d, _a.axes[i]);
             const float rb = ProjectedRadius(_b, _a.axes[i]);
-            if (Abs(t) + rb > _a.extents.e[i] + kEpsilon)
+            if (Abs(t) + rb > _a.extents[i] + kEpsilon)
             {
                 return false;
             }
@@ -230,7 +234,7 @@ namespace collision_detail
         const float p0 = Dot(_v0, _axis);
         const float p1 = Dot(_v1, _axis);
         const float p2 = Dot(_v2, _axis);
-        const float r  = _e.e[0] * Abs(_axis.e[0]) + _e.e[1] * Abs(_axis.e[1]) + _e.e[2] * Abs(_axis.e[2]);
+        const float r  = _e[0] * Abs(_axis[0]) + _e[1] * Abs(_axis[1]) + _e[2] * Abs(_axis[2]);
         return Min(p0, p1, p2) > r || Max(p0, p1, p2) < -r;
     }
 
@@ -266,16 +270,16 @@ namespace collision_detail
         const VECTOR3 f1 = v2 - v1;
         const VECTOR3 f2 = v0 - v2;
 
-        // 9축: 박스 축 x 삼각형 변. 박스 축이 단위 기저이므로 외적을 전개해 둔다.
-        const VECTOR3 a00 { 0.f, -f0.e[2], f0.e[1] };
-        const VECTOR3 a01 { 0.f, -f1.e[2], f1.e[1] };
-        const VECTOR3 a02 { 0.f, -f2.e[2], f2.e[1] };
-        const VECTOR3 a10 { f0.e[2], 0.f, -f0.e[0] };
-        const VECTOR3 a11 { f1.e[2], 0.f, -f1.e[0] };
-        const VECTOR3 a12 { f2.e[2], 0.f, -f2.e[0] };
-        const VECTOR3 a20 { -f0.e[1], f0.e[0], 0.f };
-        const VECTOR3 a21 { -f1.e[1], f1.e[0], 0.f };
-        const VECTOR3 a22 { -f2.e[1], f2.e[0], 0.f };
+        // 9축: 박스 축 × 삼각형 변. 박스 축이 단위 기저이므로 외적을 전개해 둔다.
+        const VECTOR3 a00 { 0.f, -f0[2], f0[1] };
+        const VECTOR3 a01 { 0.f, -f1[2], f1[1] };
+        const VECTOR3 a02 { 0.f, -f2[2], f2[1] };
+        const VECTOR3 a10 { f0[2], 0.f, -f0[0] };
+        const VECTOR3 a11 { f1[2], 0.f, -f1[0] };
+        const VECTOR3 a12 { f2[2], 0.f, -f2[0] };
+        const VECTOR3 a20 { -f0[1], f0[0], 0.f };
+        const VECTOR3 a21 { -f1[1], f1[0], 0.f };
+        const VECTOR3 a22 { -f2[1], f2[0], 0.f };
 
         if (SeparatedBoxTriAxis(a00, e, v0, v1, v2)
             || SeparatedBoxTriAxis(a01, e, v0, v1, v2)
@@ -306,7 +310,7 @@ namespace collision_detail
         }
 
         const float dist = Dot(n, v0);
-        const float r    = e.e[0] * Abs(n.e[0]) + e.e[1] * Abs(n.e[1]) + e.e[2] * Abs(n.e[2]);
+        const float r    = e[0] * Abs(n[0]) + e[1] * Abs(n[1]) + e[2] * Abs(n[2]);
         return Abs(dist) <= r;
     }
 
@@ -336,9 +340,9 @@ namespace collision_detail
 
             for (int i = 0; i < 3; ++i)
             {
-                const float o = _origin.e[i];
-                const float d = _dir.e[i];
-                const float e = _extents.e[i];
+                const float o = _origin[i];
+                const float d = _dir[i];
+                const float e = _extents[i];
 
                 if (Abs(d) < kEpsilon)   // 슬랩과 평행
                 {
@@ -358,16 +362,16 @@ namespace collision_detail
             return SLAB_RESULT { tEnter, tExit, tExit >= tEnter };
         }
 
-        const float invX = 1.f / _dir.e[0];
-        const float invY = 1.f / _dir.e[1];
-        const float invZ = 1.f / _dir.e[2];
+        const float invX = 1.f / _dir[0];
+        const float invY = 1.f / _dir[1];
+        const float invZ = 1.f / _dir[2];
 
-        const float lx = (-_extents.e[0] - _origin.e[0]) * invX;
-        const float hx = (_extents.e[0] - _origin.e[0]) * invX;
-        const float ly = (-_extents.e[1] - _origin.e[1]) * invY;
-        const float hy = (_extents.e[1] - _origin.e[1]) * invY;
-        const float lz = (-_extents.e[2] - _origin.e[2]) * invZ;
-        const float hz = (_extents.e[2] - _origin.e[2]) * invZ;
+        const float lx = (-_extents[0] - _origin[0]) * invX;
+        const float hx = (_extents[0] - _origin[0]) * invX;
+        const float ly = (-_extents[1] - _origin[1]) * invY;
+        const float hy = (_extents[1] - _origin[1]) * invY;
+        const float lz = (-_extents[2] - _origin[2]) * invZ;
+        const float hz = (_extents[2] - _origin[2]) * invZ;
 
         const float tEnter = Max(Max(Min(lx, hx), Min(ly, hy)), Min(lz, hz));
         const float tExit  = Min(Min(Max(lx, hx), Max(ly, hy)), Max(lz, hz));
@@ -380,9 +384,9 @@ namespace collision_detail
         const VECTOR3 _localHit,
         const VECTOR3 _extents)
     {
-        const float nx = _extents.e[0] > 0.f ? _localHit.e[0] / _extents.e[0] : 0.f;
-        const float ny = _extents.e[1] > 0.f ? _localHit.e[1] / _extents.e[1] : 0.f;
-        const float nz = _extents.e[2] > 0.f ? _localHit.e[2] / _extents.e[2] : 0.f;
+        const float nx = _extents[0] > 0.f ? _localHit[0] / _extents[0] : 0.f;
+        const float ny = _extents[1] > 0.f ? _localHit[1] / _extents[1] : 0.f;
+        const float nz = _extents[2] > 0.f ? _localHit[2] / _extents[2] : 0.f;
 
         const float ax = Abs(nx);
         const float ay = Abs(ny);
@@ -595,10 +599,7 @@ namespace collision_detail
         const VECTOR3 localNormal = collision_detail::CalcSlabNormal(localHit, box.extents);
 
         // 로컬 법선을 박스 축으로 되돌린다. 성분이 하나만 ±1 이라 축 하나만 살아남는다.
-        const VECTOR3 outward = box.axes[0] * localNormal.e[0]
-                              + box.axes[1] * localNormal.e[1]
-                              + box.axes[2] * localNormal.e[2];
-
+        const VECTOR3 outward = box.axes[0] * localNormal[0] + box.axes[1] * localNormal[1] + box.axes[2] * localNormal[2];
         collision_detail::FillHit(_pOutHitOrNull, _ray, t, outward);
     }
     return true;
@@ -791,9 +792,9 @@ namespace collision_detail
     {
         const VECTOR3 min = _aabb.GetMin();
         const VECTOR3 max = _aabb.GetMax();
-        return _point.e[0] >= min.e[0] && _point.e[0] <= max.e[0]
-            && _point.e[1] >= min.e[1] && _point.e[1] <= max.e[1]
-            && _point.e[2] >= min.e[2] && _point.e[2] <= max.e[2];
+        return _point[0] >= min[0] && _point[0] <= max[0]
+            && _point[1] >= min[1] && _point[1] <= max[1]
+            && _point[2] >= min[2] && _point[2] <= max[2];
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
@@ -804,9 +805,9 @@ namespace collision_detail
         const VECTOR3 maxX = _x.GetMax();
         const VECTOR3 minY = _y.GetMin();
         const VECTOR3 maxY = _y.GetMax();
-        return minX.e[0] <= maxY.e[0] && maxX.e[0] >= minY.e[0]
-            && minX.e[1] <= maxY.e[1] && maxX.e[1] >= minY.e[1]
-            && minX.e[2] <= maxY.e[2] && maxX.e[2] >= minY.e[2];
+        return minX[0] <= maxY[0] && maxX[0] >= minY[0]
+            && minX[1] <= maxY[1] && maxX[1] >= minY[1]
+            && minX[2] <= maxY[2] && maxX[2] >= minY[2];
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
@@ -1096,8 +1097,7 @@ namespace collision_detail
         }
 
         // 평행하면 완전히 같은 평면일 때만 교차한다.
-        return Dot(_x.normal, _y.normal) > 0.f ? IsEqualApprox(_x.d, _y.d)
-                                               : IsEqualApprox(_x.d, -_y.d);
+        return Dot(_x.normal, _y.normal) > 0.f ? IsEqualApprox(_x.d, _y.d) : IsEqualApprox(_x.d, -_y.d);
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
@@ -1358,9 +1358,9 @@ template<typename T>
     const VECTOR3 max0 = _x.GetMax();
     const VECTOR3 min1 = _y.GetMin();
     const VECTOR3 max1 = _y.GetMax();
-    return min1.e[0] >= min0.e[0] && max1.e[0] <= max0.e[0]
-        && min1.e[1] >= min0.e[1] && max1.e[1] <= max0.e[1]
-        && min1.e[2] >= min0.e[2] && max1.e[2] <= max0.e[2];
+    return min1[0] >= min0[0] && max1[0] <= max0[0]
+        && min1[1] >= min0[1] && max1[1] <= max0[1]
+        && min1[2] >= min0[2] && max1[2] <= max0[2];
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1377,9 +1377,9 @@ template<typename T>
     const VECTOR3 min = _aabb.GetMin();
     const VECTOR3 max = _aabb.GetMax();
     const float   r   = _sphere.radius;
-    return _sphere.center.e[0] - r >= min.e[0] && _sphere.center.e[0] + r <= max.e[0]
-        && _sphere.center.e[1] - r >= min.e[1] && _sphere.center.e[1] + r <= max.e[1]
-        && _sphere.center.e[2] - r >= min.e[2] && _sphere.center.e[2] + r <= max.e[2];
+    return _sphere.center[0] - r >= min[0] && _sphere.center[0] + r <= max[0]
+        && _sphere.center[1] - r >= min[1] && _sphere.center[1] + r <= max[1]
+        && _sphere.center[2] - r >= min[2] && _sphere.center[2] + r <= max[2];
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
@@ -1433,9 +1433,9 @@ template<typename T>
 {
     const collision_detail::BOX box   = collision_detail::MakeBox(_obb);
     const VECTOR3               local = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
-    return local.e[0] + _sphere.radius <= box.extents.e[0]
-        && local.e[1] + _sphere.radius <= box.extents.e[1]
-        && local.e[2] + _sphere.radius <= box.extents.e[2];
+    return local[0] + _sphere.radius <= box.extents[0]
+        && local[1] + _sphere.radius <= box.extents[1]
+        && local[2] + _sphere.radius <= box.extents[2];
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(

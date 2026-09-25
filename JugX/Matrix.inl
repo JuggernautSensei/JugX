@@ -9,10 +9,10 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeRotation(
 {
     JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
 
-    const float x = _q.v.e[0];
-    const float y = _q.v.e[1];
-    const float z = _q.v.e[2];
-    const float w = _q.v.e[3];
+    const float x = _q[0];
+    const float y = _q[1];
+    const float z = _q[2];
+    const float w = _q[3];
 
     const float xx = x * x, yy = y * y, zz = z * z;
     const float xy = x * y, xz = x * z, yz = y * z;
@@ -34,16 +34,16 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeSRT(
     JUG_ASSERT(IsNormalized(_rotation), "QUATERNION must be normalized");
     JUG_ASSERT(!IsZeroApprox(_scale.x) && !IsZeroApprox(_scale.y) && !IsZeroApprox(_scale.z), "Scale cannot have a zero component.");
 
-    const float sx = _scale.e[0], sy = _scale.e[1], sz = _scale.e[2];
-    const float xx = _rotation.v.e[0] * _rotation.v.e[0], yy = _rotation.v.e[1] * _rotation.v.e[1], zz = _rotation.v.e[2] * _rotation.v.e[2];
-    const float xy = _rotation.v.e[0] * _rotation.v.e[1], xz = _rotation.v.e[0] * _rotation.v.e[2], yz = _rotation.v.e[1] * _rotation.v.e[2];
-    const float wx = _rotation.v.e[3] * _rotation.v.e[0], wy = _rotation.v.e[3] * _rotation.v.e[1], wz = _rotation.v.e[3] * _rotation.v.e[2];
+    const float sx = _scale[0], sy = _scale[1], sz = _scale[2];
+    const float xx = _rotation[0] * _rotation[0], yy = _rotation[1] * _rotation[1], zz = _rotation[2] * _rotation[2];
+    const float xy = _rotation[0] * _rotation[1], xz = _rotation[0] * _rotation[2], yz = _rotation[1] * _rotation[2];
+    const float wx = _rotation[3] * _rotation[0], wy = _rotation[3] * _rotation[1], wz = _rotation[3] * _rotation[2];
 
     return MATRIX {
         VECTOR4 { sx * (1.f - 2.f * (yy + zz)),       sx * (2.f * (xy + wz)),       sx * (2.f * (xz - wy)), 0.f },
         VECTOR4 {       sy * (2.f * (xy - wz)), sy * (1.f - 2.f * (xx + zz)),       sy * (2.f * (yz + wx)), 0.f },
         VECTOR4 {       sz * (2.f * (xz + wy)),       sz * (2.f * (yz - wx)), sz * (1.f - 2.f * (xx + yy)), 0.f },
-        VECTOR4 {            _translation.e[0],            _translation.e[1],            _translation.e[2], 1.f }
+        VECTOR4 {              _translation[0],              _translation[1],              _translation[2], 1.f }
     };
 }
 
@@ -55,12 +55,12 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeInvSRT(
     JUG_ASSERT(IsNormalized(_rotation), "Rotation must be normalized.");
     JUG_ASSERT(!IsZeroApprox(_scale.x) && !IsZeroApprox(_scale.y) && !IsZeroApprox(_scale.z), "Scale cannot have a zero component.");
 
-    const float sx = _scale.e[0], sy = _scale.e[1], sz = _scale.e[2];
+    const float sx = _scale[0], sy = _scale[1], sz = _scale[2];
     const float isx = 1.f / sx, isy = 1.f / sy, isz = 1.f / sz;
-    const float tx = _translation.e[0], ty = _translation.e[1], tz = _translation.e[2];
-    const float xx = _rotation.v.e[0] * _rotation.v.e[0], yy = _rotation.v.e[1] * _rotation.v.e[1], zz = _rotation.v.e[2] * _rotation.v.e[2];
-    const float xy = _rotation.v.e[0] * _rotation.v.e[1], xz = _rotation.v.e[0] * _rotation.v.e[2], yz = _rotation.v.e[1] * _rotation.v.e[2];
-    const float wx = _rotation.v.e[3] * _rotation.v.e[0], wy = _rotation.v.e[3] * _rotation.v.e[1], wz = _rotation.v.e[3] * _rotation.v.e[2];
+    const float tx = _translation[0], ty = _translation[1], tz = _translation[2];
+    const float xx = _rotation[0] * _rotation[0], yy = _rotation[1] * _rotation[1], zz = _rotation[2] * _rotation[2];
+    const float xy = _rotation[0] * _rotation[1], xz = _rotation[0] * _rotation[2], yz = _rotation[1] * _rotation[2];
+    const float wx = _rotation[3] * _rotation[0], wy = _rotation[3] * _rotation[1], wz = _rotation[3] * _rotation[2];
 
     const float r00 = 1.f - 2.f * (yy + zz);
     const float r01 = 2.f * (xy + wz);
@@ -96,19 +96,22 @@ JUG_MATH_API constexpr void Decompose(
     // S
     if (_pOutRotationOrNull || _pOutScaleOrNull)
     {
-        const float sx = Length(_mtx.r[0]);
-        const float sy = Length(_mtx.r[1]);
-        const float sz = Length(_mtx.r[2]);
+        const float sx = Length(_mtx[0]);
+        const float sy = Length(_mtx[1]);
+        const float sz = Length(_mtx[2]);
         if (_pOutScaleOrNull)
         {
-            *_pOutScaleOrNull = VECTOR3 { sx, sy, sz };
+            VECTOR3& scale = *_pOutScaleOrNull;
+            scale[0]       = sx;
+            scale[1]       = sy;
+            scale[2]       = sz;
         }
 
         // R
         if (_pOutRotationOrNull)
         {
             JUG_ASSERT(!IsZeroApprox(sx) && !IsZeroApprox(sy) && !IsZeroApprox(sz), "Scale components cannot be zero");
-            MATRIX rotMtx { _mtx.r[0] / sx, _mtx.r[1] / sy, _mtx.r[2] / sz, MathConstants<VECTOR4>::kUnitW };
+            const MATRIX rotMtx { _mtx[0] / sx, _mtx[1] / sy, _mtx[2] / sz, MathConstants<VECTOR4>::kUnitW };
             *_pOutRotationOrNull = QUATERNION::MakeFromMatrix(rotMtx);
         }
     }
@@ -116,7 +119,10 @@ JUG_MATH_API constexpr void Decompose(
     // T
     if (_pOutTranslationOrNull)
     {
-        *_pOutTranslationOrNull = VECTOR3 { _mtx.r[3].e[0], _mtx.r[3].e[1], _mtx.r[3].e[2] };
+        VECTOR3& translation = *_pOutTranslationOrNull;
+        translation[0]       = _mtx[3][0];
+        translation[1]       = _mtx[3][1];
+        translation[2]       = _mtx[3][2];
     }
 }
 

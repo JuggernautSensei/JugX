@@ -1,188 +1,188 @@
 ﻿#pragma once
+#include <concepts>
+
 #include "SIMD.h"
 #include "Vector2.h"
 
 namespace jug
 {
 
-struct VECTOR3
+template<VectorScalarT T>
+struct VECTOR<T, 3>
 {
+    JUG_MATH_API VECTOR() = default;
 
-    JUG_MATH_API VECTOR3() = default;
-
-    JUG_MATH_API constexpr VECTOR3(
-        const float _x,
-        const float _y,
-        const float _z)
+    JUG_MATH_API constexpr VECTOR(
+        const T _x,
+        const T _y,
+        const T _z)
         : e { _x, _y, _z }
     {
     }
 
-    JUG_MATH_API constexpr VECTOR3(
-        const VECTOR2 _xy,
-        const float   _z)
-        : e { _xy.e[0], _xy.e[1], _z }
+    JUG_MATH_API constexpr VECTOR(
+        const VECTOR<T, 2> _xy,
+        const T            _z)
+        : e { _xy[0], _xy[1], _z }
     {
     }
 
     // Broadcast
-    explicit JUG_MATH_API constexpr VECTOR3(
-        const float _value)
+    explicit JUG_MATH_API constexpr VECTOR(
+        const T _value)
         : e { _value, _value, _value }
     {
     }
 
 #ifdef JUG_SIMD_AVAILABLE
-
-    // =======================================================
-    //  SIMD
-    // =======================================================
-
-    /* implicit */ JUG_MATH_API VECTOR3(
+    [[nodiscard]] static VECTOR MakeFromM128(
         const simd::M128 _value)
+        requires std::is_floating_point_v<T>
     {
-        simd::StoreAligned(e.data(), _value);
+        VECTOR ret;
+        simd::StoreFloat3(ret.e.data(), _value);
+        return ret;
     }
 
-    [[nodiscard]] simd::M128 ToSIMD() const
+    [[nodiscard]] simd::M128 ToM128() const
+        requires std::is_floating_point_v<T>
     {
         return simd::LoadFloat3(e.data());
     }
-
 #endif
 
-    // =======================================================
-    //  Operators
-    // =======================================================
-
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator-() const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-() const
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] = -v.e[i];
+            v[i] = -v[i];
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator+(
-        const VECTOR3 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator+(
+        const VECTOR _other) const
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] += _other.e[i];
+            v[i] += _other[i];
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator-(
-        const VECTOR3 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-(
+        const VECTOR _other) const
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] -= _other.e[i];
+            v[i] -= _other[i];
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator*(
-        const float _scalar) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
+        const T _scalar) const
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] *= _scalar;
+            v[i] *= _scalar;
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator/(
-        const float _scalar) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const T _scalar) const
+        requires std::is_integral_v<T>
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] /= _scalar;
+            v[i] /= _scalar;
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator*(
-        const VECTOR3 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const T _scalar) const
+        requires std::is_floating_point_v<T>
     {
-        VECTOR3 v = *this;
+        return *this * (1.f / _scalar);
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
+        const VECTOR _other) const
+    {
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] *= _other.e[i];
+            v[i] *= _other[i];
         }
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 operator/(
-        const VECTOR3 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const VECTOR _other) const
     {
-        VECTOR3 v = *this;
+        VECTOR v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] /= _other.e[i];
+            v[i] /= _other[i];
         }
         return v;
     }
 
-    // =======================================================
-    //  Assignment
-    // =======================================================
-
-    JUG_MATH_API constexpr VECTOR3& operator+=(
-        const VECTOR3 _other)
+    JUG_MATH_API constexpr VECTOR& operator+=(
+        const VECTOR _other)
     {
         *this = *this + _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR3& operator-=(
-        const VECTOR3 _other)
+    JUG_MATH_API constexpr VECTOR& operator-=(
+        const VECTOR _other)
     {
         *this = *this - _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR3& operator*=(
-        const float _scalar)
+    JUG_MATH_API constexpr VECTOR& operator*=(
+        const T _scalar)
     {
         *this = *this * _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR3& operator/=(
-        const float _scalar)
+    JUG_MATH_API constexpr VECTOR& operator/=(
+        const T _scalar)
     {
         *this = *this / _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR3& operator*=(
-        const VECTOR3 _other)
+    JUG_MATH_API constexpr VECTOR& operator*=(
+        const VECTOR _other)
     {
         *this = *this * _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR3& operator/=(
-        const VECTOR3 _other)
+    JUG_MATH_API constexpr VECTOR& operator/=(
+        const VECTOR _other)
     {
         *this = *this / _other;
         return *this;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool operator==(
-        const VECTOR3 _other) const
+        const VECTOR _other) const
     {
         for (size_t i = 0; i < kDim; ++i)
         {
-            if (e[i] != _other.e[i])   // NOLINT
+            if (e[i] != _other[i])   // NOLINT
             {
                 return false;
             }
@@ -190,52 +190,43 @@ struct VECTOR3
         return true;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr bool operator!=(
-        const VECTOR3 _other) const
-    {
-        return !(*this == _other);
-    }
-
-    // =======================================================
-    //  Access
-    // =======================================================
-
-    [[nodiscard]] JUG_MATH_API constexpr float& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr T& operator[](
         const size_t _index)
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const float& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const T& operator[](
         const size_t _index) const
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr float* GetPtr()
+    [[nodiscard]] JUG_MATH_API constexpr T* GetPtr()
     {
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const float* GetPtr() const
+    [[nodiscard]] JUG_MATH_API constexpr const T* GetPtr() const
     {
         return e.data();
     }
 
-    // =======================================================
-    //  Fields
-    // =======================================================
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR<T, 2> ToVector2() const
+    {
+        return VECTOR<T, 2> { x, y };
+    }
 
-    const static VECTOR3 kZero;
-    const static VECTOR3 kOne;
-    const static VECTOR3 kRight;
-    const static VECTOR3 kUp;
-    const static VECTOR3 kForward;
-    const static VECTOR3 kUnitX;
-    const static VECTOR3 kUnitY;
-    const static VECTOR3 kUnitZ;
-    const static VECTOR3 kMax;
-    const static VECTOR3 kMin;
+    const static VECTOR kZero;
+    const static VECTOR kOne;
+    const static VECTOR kRight;
+    const static VECTOR kUp;
+    const static VECTOR kForward;
+    const static VECTOR kUnitX;
+    const static VECTOR kUnitY;
+    const static VECTOR kUnitZ;
+    const static VECTOR kMax;
+    const static VECTOR kMin;
 
     constexpr static size_t kDim = 3;
 
@@ -244,14 +235,32 @@ struct VECTOR3
     {
         struct
         {
-            float x;
-            float y;
-            float z;
+            T x, y, z;
         };
-        ARRAY<float, 3> e;
+        struct
+        {
+            T width, height, depth;
+        };
+        struct
+        {
+            T pitch, yaw, roll;
+        };
+        struct
+        {
+            T r, g, b;
+        };
+        struct
+        {
+            T u, v, w;
+        };
+        ARRAY<T, 3> e;
     };
     JUG_DISABLE_ANON_WARNING_END
 };
+
+using VECTOR3  = VECTOR<float, 3>;
+using VECTOR3S = VECTOR<int, 3>;
+using VECTOR3U = VECTOR<uint32_t, 3>;
 
 static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
 
@@ -259,16 +268,26 @@ static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
 //  Constants
 // =======================================================
 
-inline constexpr VECTOR3 VECTOR3::kZero { 0.f };
-inline constexpr VECTOR3 VECTOR3::kOne { 1.f };
-inline constexpr VECTOR3 VECTOR3::kRight   = { 1.f, 0.f, 0.f };
-inline constexpr VECTOR3 VECTOR3::kUp      = { 0.f, 1.f, 0.f };
-inline constexpr VECTOR3 VECTOR3::kForward = { 0.f, 0.f, 1.f };
-inline constexpr VECTOR3 VECTOR3::kUnitX   = { 1.f, 0.f, 0.f };
-inline constexpr VECTOR3 VECTOR3::kUnitY   = { 0.f, 1.f, 0.f };
-inline constexpr VECTOR3 VECTOR3::kUnitZ   = { 0.f, 0.f, 1.f };
-inline constexpr VECTOR3 VECTOR3::kMax { MathConstants<float>::kMax };
-inline constexpr VECTOR3 VECTOR3::kMin { MathConstants<float>::kMin };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kZero { T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kOne { T { 1 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kRight = { T { 1 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUp = { T { 0 }, T { 1 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kForward = { T { 0 }, T { 0 }, T { 1 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitX = { T { 1 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitY = { T { 0 }, T { 1 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitZ = { T { 0 }, T { 0 }, T { 1 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kMax { MathConstants<T>::kMax };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kMin { MathConstants<T>::kMin };
 
 template<>
 struct MathConstants<VECTOR3>

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "StringHasher.h"
 
 namespace jug
 {

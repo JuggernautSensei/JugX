@@ -3,15 +3,6 @@
 namespace jug
 {
 
-namespace math_detail
-{
-    constexpr uint32_t kFloatSignMask     = 0x80000000u;
-    constexpr uint32_t kFloatExponentMask = 0x7f800000u;
-    constexpr uint32_t kFloatMantissaMask = 0x007fffffu;
-    constexpr float    kFloatInfinity     = std::bit_cast<float>(math_detail::kFloatExponentMask);
-    constexpr float    kFloatSmallest     = FLT_MIN;
-}   // namespace math_detail
-
 // ==========================================
 //  Comparison
 // ==========================================
@@ -161,8 +152,8 @@ template<ArithmeticT T>
 
     if constexpr (std::is_same_v<T, float>)
     {
-        const uint32_t magnitude = std::bit_cast<uint32_t>(_x) & ~math_detail::kFloatSignMask;
-        const uint32_t sign      = std::bit_cast<uint32_t>(_y) & math_detail::kFloatSignMask;
+        const uint32_t magnitude = std::bit_cast<uint32_t>(_x) & ~kFloatSignMask;
+        const uint32_t sign      = std::bit_cast<uint32_t>(_y) & kFloatSignMask;
         return std::bit_cast<float>(magnitude | sign);
     }
     else
@@ -251,14 +242,14 @@ template<std::integral T>
     return _deg * kDeg2Rad;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(const float _x, const float _epsilon)
 {
-    return Abs(_x) < kEpsilon;
+    return Abs(_x) < _epsilon;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(const float _x, const float _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(const float _x, const float _y, const float _epsilon)
 {
-    return IsZeroApprox(_x - _y);
+    return IsZeroApprox(_x - _y, _epsilon);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Trunc(const float _x)
@@ -298,24 +289,24 @@ template<std::integral T>
 [[nodiscard]] JUG_MATH_API constexpr bool IsNan(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp > math_detail::kFloatExponentMask;
+    return tmp > kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsFinite(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp < math_detail::kFloatExponentMask;
+    return tmp < kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsInfinite(const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
-    return tmp == math_detail::kFloatExponentMask;
+    return tmp == kFloatExponentMask;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float RcpSafe(const float _x)
 {
-    return 1.f / CopySign(Max(math_detail::kFloatSmallest, Abs(_x)), _x);
+    return 1.f / CopySign(Max(kFloatSmallest, Abs(_x)), _x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Lerp(const float _x, const float _y, const float _t)
@@ -355,17 +346,17 @@ namespace math_detail
     {
         if (_x < 0.f)
         {
-            return std::bit_cast<float>(math_detail::kFloatSignMask | math_detail::kFloatExponentMask | math_detail::kFloatMantissaMask);
+            return std::bit_cast<float>(kFloatSignMask | kFloatExponentMask | kFloatMantissaMask);
         }
 
         if (_x == 0.f)
         {
-            return -math_detail::kFloatInfinity;
+            return -kFloatInfinity;
         }
 
         const uint32_t ftob    = std::bit_cast<uint32_t>(_x);
-        const int      exp0    = static_cast<int>((ftob & math_detail::kFloatExponentMask) >> 23) - 0x7e;
-        const uint32_t masked1 = (ftob & (math_detail::kFloatSignMask | math_detail::kFloatMantissaMask)) | 0x3f000000u;
+        const int      exp0    = static_cast<int>((ftob & kFloatExponentMask) >> 23) - 0x7e;
+        const uint32_t masked1 = (ftob & (kFloatSignMask | kFloatMantissaMask)) | 0x3f000000u;
         float          ff      = std::bit_cast<float>(masked1);
         int            exp     = exp0;
         if (ff < kSqrt2 * 0.5f)
@@ -404,7 +395,7 @@ namespace math_detail
             return _x + 1.f;
         }
 
-        if (_x <= Log(math_detail::kFloatSmallest))
+        if (_x <= Log(kFloatSmallest))
         {
             return 0.f;
         }
@@ -431,8 +422,8 @@ namespace math_detail
         const float tmp6  = 1.f - ((lo - tmp5) - hi);
 
         const uint32_t ftob    = std::bit_cast<uint32_t>(tmp6);
-        const uint32_t expbits = static_cast<uint32_t>(static_cast<int>((ftob & math_detail::kFloatExponentMask) >> 23) + static_cast<int>(kk));
-        const uint32_t ret     = (ftob & ~math_detail::kFloatExponentMask) | ((expbits & 0xffu) << 23);
+        const uint32_t expbits = static_cast<uint32_t>(static_cast<int>((ftob & kFloatExponentMask) >> 23) + static_cast<int>(kk));
+        const uint32_t ret     = (ftob & ~kFloatExponentMask) | ((expbits & 0xffu) << 23);
         return std::bit_cast<float>(ret);
     }
 
@@ -448,7 +439,7 @@ namespace math_detail
     return ::logf(_x);
 }
 
-constexpr float Log2(
+[[nodiscard]] constexpr JUG_MATH_API float Log2(
     const float _x)
 {
     if (std::is_constant_evaluated())
@@ -459,7 +450,7 @@ constexpr float Log2(
     return ::log2f(_x);
 }
 
-constexpr float Exp2(
+[[nodiscard]] constexpr JUG_MATH_API float Exp2(
     const float _x)
 {
     if (std::is_constant_evaluated())
@@ -484,12 +475,12 @@ constexpr float Exp2(
 {
     if (std::is_constant_evaluated())
     {
-        if (Abs(_y) < math_detail::kFloatSmallest)
+        if (Abs(_y) < kFloatSmallest)
         {
             return 1.f;
         }
 
-        if (Abs(_x) < math_detail::kFloatSmallest)
+        if (Abs(_x) < kFloatSmallest)
         {
             return 0.f;
         }
@@ -506,10 +497,10 @@ constexpr float Exp2(
     {
         if (_x < 0.f)
         {
-            return std::bit_cast<float>(math_detail::kFloatExponentMask | math_detail::kFloatMantissaMask);
+            return std::bit_cast<float>(kFloatExponentMask | kFloatMantissaMask);
         }
 
-        if (_x < math_detail::kFloatSmallest)
+        if (_x < kFloatSmallest)
         {
             return 0.f;
         }
@@ -526,9 +517,9 @@ constexpr float Exp2(
 
 [[nodiscard]] JUG_MATH_API constexpr float RSqrt(const float _x)
 {
-    if (_x < math_detail::kFloatSmallest)
+    if (_x < kFloatSmallest)
     {
-        return math_detail::kFloatInfinity;
+        return kFloatInfinity;
     }
 
     if (std::is_constant_evaluated())

@@ -1,216 +1,226 @@
 ﻿#pragma once
+#include <concepts>
+
 #include "SIMD.h"
 #include "Vector3.h"
 
-namespace jug
-{
-
 #ifdef JUG_SIMD_AVAILABLE
-#    define JUG_VECTOR4_SIMD_PATH(_expr)   \
-        if (!std::is_constant_evaluated()) \
-        return _expr
+#    define JUG_VECTOR4_SIMD_PATH(_expr)           \
+        JUG_BEGIN_MACRO_BLOCK                      \
+        if constexpr (std::is_floating_point_v<T>) \
+        {                                          \
+            if (!std::is_constant_evaluated())     \
+            {                                      \
+                return (_expr);                    \
+            }                                      \
+        }                                          \
+        JUG_END_MACRO_BLOCK
 #else
 #    define JUG_VECTOR4_SIMD_PATH(_expr)
 #endif
 
-struct alignas(16) VECTOR4
+namespace jug
 {
-    JUG_MATH_API VECTOR4() = default;
 
-    JUG_MATH_API constexpr VECTOR4(
-        const float _x,
-        const float _y,
-        const float _z,
-        const float _w)
+template<VectorScalarT T>
+struct alignas(16) VECTOR<T, 4>
+{
+    JUG_MATH_API VECTOR() = default;
+
+    JUG_MATH_API constexpr VECTOR(
+        const T _x,
+        const T _y,
+        const T _z,
+        const T _w)
         : e { _x, _y, _z, _w }
     {
     }
 
-    JUG_MATH_API constexpr VECTOR4(
-        const VECTOR2 _xy,
-        const float   _z,
-        const float   _w)
-        : e { _xy.e[0], _xy.e[1], _z, _w }
+    JUG_MATH_API constexpr VECTOR(
+        const VECTOR<T, 2> _xy,
+        const T            _z,
+        const T            _w)
+        : e { _xy[0], _xy[1], _z, _w }
     {
     }
 
-    JUG_MATH_API constexpr VECTOR4(
-        const VECTOR3 _xyz,
-        const float   _w)
-        : e { _xyz.e[0], _xyz.e[1], _xyz.e[2], _w }
+    JUG_MATH_API constexpr VECTOR(
+        const VECTOR<T, 3> _xyz,
+        const T            _w)
+        : e { _xyz[0], _xyz[1], _xyz[2], _w }
     {
     }
 
     // Broadcast
-    explicit JUG_MATH_API constexpr VECTOR4(
-        const float _value)
+    explicit JUG_MATH_API constexpr VECTOR(
+        const T _value)
         : e { _value, _value, _value, _value }
     {
     }
 
 #ifdef JUG_SIMD_AVAILABLE
-
-    JUG_MATH_API /* implicit */ VECTOR4(
+    [[nodiscard]] static VECTOR MakeFromM128(
         const simd::M128 _value)
+        requires std::is_floating_point_v<T>
     {
-        simd::StoreAligned(e.data(), _value);
+        VECTOR ret;
+        simd::StoreAligned(ret.e.data(), _value);
+        return ret;
     }
 
-    [[nodiscard]] simd::M128 ToSIMD() const
+    [[nodiscard]] simd::M128 ToM128() const
+        requires std::is_floating_point_v<T>
     {
         return simd::LoadAligned(e.data());
     }
-
 #endif
 
-    // =======================================================
-    //  Operators
-    // =======================================================
-
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator-() const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-() const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Negate(ToSIMD()));
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Negate(ToM128())));
 
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] = -v.e[i];
+            ret[i] = -ret[i];
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator+(
-        const VECTOR4 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator+(
+        const VECTOR _other) const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Add(ToSIMD(), _other.ToSIMD()));
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Add(ToM128(), _other.ToM128())));
 
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] += _other.e[i];
+            ret[i] += _other[i];
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator-(
-        const VECTOR4 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-(
+        const VECTOR _other) const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Sub(ToSIMD(), _other.ToSIMD()));
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Sub(ToM128(), _other.ToM128())));
 
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] -= _other.e[i];
+            ret[i] -= _other[i];
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator*(
-        const float _scalar) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
+        const T _scalar) const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Scale(ToSIMD(), _scalar));
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Scale(ToM128(), _scalar)));
 
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] *= _scalar;
+            ret[i] *= _scalar;
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
-        const float _scalar) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const T _scalar) const
+        requires std::is_integral_v<T>
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Div(ToSIMD(), simd::SetAll(_scalar)));
-
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] /= _scalar;
+            ret[i] /= _scalar;
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator*(
-        const VECTOR4 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const T _scalar) const
+        requires std::is_floating_point_v<T>
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Mul(ToSIMD(), _other.ToSIMD()));
+        return *this * (1.f / _scalar);
+    }
 
-        VECTOR4 v = *this;
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
+        const VECTOR _other) const
+    {
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Mult(ToM128(), _other.ToM128())));
+
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] *= _other.e[i];
+            ret[i] *= _other[i];
         }
-        return v;
+        return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
-        const VECTOR4 _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+        const VECTOR _other) const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::Div(ToSIMD(), _other.ToSIMD()));
+        JUG_VECTOR4_SIMD_PATH(MakeFromM128(simd::Div(ToM128(), _other.ToM128())));
 
-        VECTOR4 v = *this;
+        VECTOR ret = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
-            v.e[i] /= _other.e[i];
+            ret[i] /= _other[i];
         }
-        return v;
+        return ret;
     }
 
-    // =======================================================
-    //  Assignment
-    // =======================================================
-
-    JUG_MATH_API constexpr VECTOR4& operator+=(
-        const VECTOR4 _other)
+    JUG_MATH_API constexpr VECTOR& operator+=(
+        const VECTOR _other)
     {
         *this = *this + _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR4& operator-=(
-        const VECTOR4 _other)
+    JUG_MATH_API constexpr VECTOR& operator-=(
+        const VECTOR _other)
     {
         *this = *this - _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR4& operator*=(
-        const float _scalar)
+    JUG_MATH_API constexpr VECTOR& operator*=(
+        const T _scalar)
     {
         *this = *this * _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR4& operator/=(
-        const float _scalar)
+    JUG_MATH_API constexpr VECTOR& operator/=(
+        const T _scalar)
     {
         *this = *this / _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR4& operator*=(
-        const VECTOR4 _other)
+    JUG_MATH_API constexpr VECTOR& operator*=(
+        const VECTOR _other)
     {
         *this = *this * _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR4& operator/=(
-        const VECTOR4 _other)
+    JUG_MATH_API constexpr VECTOR& operator/=(
+        const VECTOR _other)
     {
         *this = *this / _other;
         return *this;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool operator==(
-        const VECTOR4 _other) const
+        const VECTOR _other) const
     {
-        JUG_VECTOR4_SIMD_PATH(simd::AllTrue(simd::CmpEq(ToSIMD(), _other.ToSIMD())));
+        JUG_VECTOR4_SIMD_PATH(simd::AllTrue(simd::CmpEq(ToM128(), _other.ToM128())));
 
         for (size_t i = 0; i < kDim; ++i)
         {
-            if (e[i] != _other.e[i])   // NOLINT
+            if (e[i] != _other[i])   // NOLINT
             {
                 return false;
             }
@@ -218,53 +228,49 @@ struct alignas(16) VECTOR4
         return true;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr bool operator!=(
-        const VECTOR4 _other) const
-    {
-        return !(*this == _other);
-    }
-
-    // =======================================================
-    //  Access
-    // =======================================================
-
-    [[nodiscard]] JUG_MATH_API constexpr float& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr T& operator[](
         const size_t _index)
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const float& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const T& operator[](
         const size_t _index) const
     {
         return e[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr float* GetPtr()
+    [[nodiscard]] JUG_MATH_API constexpr T* GetPtr()
     {
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const float* GetPtr() const
+    [[nodiscard]] JUG_MATH_API constexpr const T* GetPtr() const
     {
         return e.data();
     }
 
-    // =======================================================
-    //  Fields
-    // =======================================================
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR<T, 2> ToVector2() const
+    {
+        return VECTOR<T, 2> { x, y };
+    }
 
-    const static VECTOR4 kZero;
-    const static VECTOR4 kOne;
-    const static VECTOR4 kRight;
-    const static VECTOR4 kUp;
-    const static VECTOR4 kForward;
-    const static VECTOR4 kUnitX;
-    const static VECTOR4 kUnitY;
-    const static VECTOR4 kUnitZ;
-    const static VECTOR4 kUnitW;
-    const static VECTOR4 kMax;
-    const static VECTOR4 kMin;
+    [[nodiscard]] JUG_MATH_API constexpr VECTOR<T, 3> ToVector3() const
+    {
+        return VECTOR<T, 3> { x, y, z };
+    }
+
+    const static VECTOR kZero;
+    const static VECTOR kOne;
+    const static VECTOR kRight;
+    const static VECTOR kUp;
+    const static VECTOR kForward;
+    const static VECTOR kUnitX;
+    const static VECTOR kUnitY;
+    const static VECTOR kUnitZ;
+    const static VECTOR kUnitW;
+    const static VECTOR kMax;
+    const static VECTOR kMin;
 
     constexpr static size_t kDim = 4;
 
@@ -273,15 +279,20 @@ struct alignas(16) VECTOR4
     {
         struct
         {
-            float x;
-            float y;
-            float z;
-            float w;
+            T x, y, z, w;
         };
-        ARRAY<float, 4> e;
+        struct
+        {
+            T r, g, b, a;
+        };
+        ARRAY<T, 4> e;
     };
     JUG_DISABLE_ANON_WARNING_END
 };
+
+using VECTOR4  = VECTOR<float, 4>;
+using VECTOR4S = VECTOR<int, 4>;
+using VECTOR4U = VECTOR<uint32_t, 4>;
 
 static_assert(sizeof(VECTOR4) == 16, "VECTOR4 must be tightly packed");
 static_assert(alignof(VECTOR4) == 16, "VECTOR4 must be 16-byte aligned for SIMD");
@@ -291,17 +302,28 @@ static_assert(PodT<VECTOR4>, "VECTOR4 must be POD type.");
 //  Constants
 // =======================================================
 
-inline constexpr VECTOR4 VECTOR4::kZero { 0.f };
-inline constexpr VECTOR4 VECTOR4::kOne { 1.f };
-inline constexpr VECTOR4 VECTOR4::kRight   = { 1.f, 0.f, 0.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kUp      = { 0.f, 1.f, 0.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kForward = { 0.f, 0.f, 1.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kUnitX   = { 1.f, 0.f, 0.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kUnitY   = { 0.f, 1.f, 0.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kUnitZ   = { 0.f, 0.f, 1.f, 0.f };
-inline constexpr VECTOR4 VECTOR4::kUnitW   = { 0.f, 0.f, 0.f, 1.f };
-inline constexpr VECTOR4 VECTOR4::kMax { MathConstants<float>::kMax };
-inline constexpr VECTOR4 VECTOR4::kMin { MathConstants<float>::kMin };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kZero { T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kOne { T { 1 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kRight = { T { 1 }, T { 0 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kUp = { T { 0 }, T { 1 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kForward = { T { 0 }, T { 0 }, T { 1 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kUnitX = { T { 1 }, T { 0 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kUnitY = { T { 0 }, T { 1 }, T { 0 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kUnitZ = { T { 0 }, T { 0 }, T { 1 }, T { 0 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kUnitW = { T { 0 }, T { 0 }, T { 0 }, T { 1 } };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kMax { MathConstants<T>::kMax };
+template<VectorScalarT T>
+inline constexpr VECTOR<T, 4> VECTOR<T, 4>::kMin { MathConstants<T>::kMin };
 
 template<>
 struct MathConstants<VECTOR4>
@@ -320,3 +342,5 @@ struct MathConstants<VECTOR4>
 };
 
 }   // namespace jug
+
+#undef JUG_VECTOR4_SIMD_PATH

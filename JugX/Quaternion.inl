@@ -7,9 +7,9 @@ namespace jug
 [[nodiscard]] JUG_MATH_API constexpr QUATERNION QUATERNION::MakeFromMatrix(
     const MATRIX& _mtx)
 {
-    const float m00 = _mtx.r[0].e[0], m01 = _mtx.r[0].e[1], m02 = _mtx.r[0].e[2];
-    const float m10 = _mtx.r[1].e[0], m11 = _mtx.r[1].e[1], m12 = _mtx.r[1].e[2];
-    const float m20 = _mtx.r[2].e[0], m21 = _mtx.r[2].e[1], m22 = _mtx.r[2].e[2];
+    const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2];
+    const float m10 = _mtx[1][0], m11 = _mtx[1][1], m12 = _mtx[1][2];
+    const float m20 = _mtx[2][0], m21 = _mtx[2][1], m22 = _mtx[2][2];
 
     const float trace = m00 + m11 + m22;
 

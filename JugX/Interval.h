@@ -6,7 +6,7 @@ namespace jug
 
 struct INTERVAL
 {
-    JUG_MATH_API  INTERVAL() = default;
+    JUG_MATH_API INTERVAL() = default;
 
     JUG_MATH_API constexpr INTERVAL(
         const float _min,
@@ -15,10 +15,6 @@ struct INTERVAL
         , max(_max)
     {
     }
-
-    // =======================================================
-    //  Utils
-    // =======================================================
 
     [[nodiscard]] JUG_MATH_API constexpr float GetLength() const
     {
@@ -29,10 +25,6 @@ struct INTERVAL
     {
         return (min + max) * 0.5f;
     }
-
-    // =======================================================
-    //  Fields
-    // =======================================================
 
     static const INTERVAL kZero;
     static const INTERVAL kUniverse;
@@ -58,7 +50,7 @@ struct MathConstants<INTERVAL>
 };
 
 // =======================================================
-//  Operators
+//  Method
 // =======================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(

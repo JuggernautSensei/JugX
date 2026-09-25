@@ -24,14 +24,14 @@ public:
     using Iterator      = typename ListT::iterator;
     using ConstIterator = typename ListT::const_iterator;
 
-    LruCache()
-        : m_capacity(lru_cache_detail::kDefaultCapacity)
-    {
-    }
-
     explicit LruCache(
-        const size_t _capacity)
-        : m_capacity(_capacity)
+        const size_t _capacity = lru_cache_detail::kDefaultCapacity,
+        const H&     _hash     = H {},
+        const E&     _equal    = E {},
+        const Alloc& _alloc    = Alloc {})
+        : m_hashMap(0, _hash, _equal, _alloc)
+        , m_list(_alloc)
+        , m_capacity(_capacity)
     {
         JUG_ASSERT(_capacity > 0, "LruCache capacity must be greater than 0.\n");
     }
@@ -143,6 +143,7 @@ public:
         Trim_();
     }
 
+    // 승격만
     void Touch(
         const K& _key)
     {
@@ -151,6 +152,7 @@ public:
         Touch_(it->second);
     }
 
+    // 조회 후 승격
     [[nodiscard]] Iterator Find(
         const K& _key)
     {
@@ -160,7 +162,7 @@ public:
             return m_list.end();
         }
 
-        // 찾고 MRU로 승격
+        // 승격
         Touch_(it->second);
         return it->second;
     }

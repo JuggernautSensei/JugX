@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Assert.h"
 #include "Event.h"
 
 namespace jug
@@ -17,34 +18,39 @@ public:
 
     template<EventT T, typename Fn>
         requires EventDispatchFnT<T, Fn>
-    bool Dispatch(
+    void Dispatch(
         Fn&& _fn)
     {
-        if (!m_pEvent->IsHandled() && m_hash == HashOf<T>())
+        if (m_pEvent->IsHandled())
+        {
+            return;
+        }
+
+        if (m_hash == T::kHash)
         {
             T& event = *static_cast<T*>(m_pEvent);
             _fn(event);
-            return true;
         }
-
-        return true;
     }
 
     template<EventT T, typename Caller, typename Method>
         requires EventDispatchMethodT<T, Caller, Method>
-    bool Dispatch(
+    void Dispatch(
         Caller*  _pCaller,
         Method&& _method)
     {
         JUG_ASSERT(_pCaller, "EventDispatcher::Dispatch: _pCaller is nullptr.\n");
 
-        if (!m_pEvent->IsHandled() && m_hash == HashOf<T>())
+        if (m_pEvent->IsHandled())
+        {
+            return;
+        }
+
+        if (m_hash == T::kHash)
         {
             T& event = *static_cast<T*>(m_pEvent);
             (_pCaller->*_method)(event);
         }
-
-        return true;
     }
 
 private:

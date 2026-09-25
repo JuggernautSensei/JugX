@@ -8,7 +8,7 @@ namespace jug
 
 struct AABB
 {
-    JUG_MATH_API constexpr AABB() = default;
+    JUG_MATH_API AABB() = default;
 
     JUG_MATH_API constexpr AABB(
         const VECTOR3 _center,
@@ -17,10 +17,6 @@ struct AABB
         , extends(_extends)
     {
     }
-
-    // ========================================================
-    //  Factory
-    // ========================================================
 
     [[nodiscard]] JUG_MATH_API static constexpr AABB MakeFromMinMax(
         const VECTOR3 _min,
@@ -31,10 +27,6 @@ struct AABB
         aabb.extends = (_max - _min) * 0.5f;
         return aabb;
     }
-
-    // ========================================================
-    //  Utils
-    // ========================================================
 
     [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetMin() const
     {
@@ -48,17 +40,17 @@ struct AABB
 
     [[nodiscard]] JUG_MATH_API constexpr float GetWidth() const
     {
-        return extends.e[0] * 2.f;
+        return extends[0] * 2.f;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr float GetHeight() const
     {
-        return extends.e[1] * 2.f;
+        return extends[1] * 2.f;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr float GetDepth() const
     {
-        return extends.e[2] * 2.f;
+        return extends[2] * 2.f;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
@@ -67,20 +59,16 @@ struct AABB
         const VECTOR3 max = GetMax();
 
         DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners;
-        corners[eCorner::LeftBottomNear]  = VECTOR3 { min.e[0], min.e[1], min.e[2] };
-        corners[eCorner::LeftBottomFar]   = VECTOR3 { min.e[0], min.e[1], max.e[2] };
-        corners[eCorner::LeftTopNear]     = VECTOR3 { min.e[0], max.e[1], min.e[2] };
-        corners[eCorner::LeftTopFar]      = VECTOR3 { min.e[0], max.e[1], max.e[2] };
-        corners[eCorner::RightBottomNear] = VECTOR3 { max.e[0], min.e[1], min.e[2] };
-        corners[eCorner::RightBottomFar]  = VECTOR3 { max.e[0], min.e[1], max.e[2] };
-        corners[eCorner::RightTopNear]    = VECTOR3 { max.e[0], max.e[1], min.e[2] };
-        corners[eCorner::RightTopFar]     = VECTOR3 { max.e[0], max.e[1], max.e[2] };
+        corners[eCorner::LeftBottomNear]  = VECTOR3 { min[0], min[1], min[2] };
+        corners[eCorner::LeftBottomFar]   = VECTOR3 { min[0], min[1], max[2] };
+        corners[eCorner::LeftTopNear]     = VECTOR3 { min[0], max[1], min[2] };
+        corners[eCorner::LeftTopFar]      = VECTOR3 { min[0], max[1], max[2] };
+        corners[eCorner::RightBottomNear] = VECTOR3 { max[0], min[1], min[2] };
+        corners[eCorner::RightBottomFar]  = VECTOR3 { max[0], min[1], max[2] };
+        corners[eCorner::RightTopNear]    = VECTOR3 { max[0], max[1], min[2] };
+        corners[eCorner::RightTopFar]     = VECTOR3 { max[0], max[1], max[2] };
         return corners;
     }
-
-    // ========================================================
-    //  Fields
-    // =======================================================
 
     const static AABB kZero;
     const static AABB kUnit;
@@ -90,9 +78,9 @@ struct AABB
 };
 static_assert(PodT<AABB>, "AABB must be POD type.");
 
-// ========================================================
-//  Constant
-// ========================================================
+// ===========================================
+//  Constants
+// ===========================================
 
 inline constexpr AABB AABB::kZero = AABB { Zero<VECTOR3>(), Zero<VECTOR3>() };
 inline constexpr AABB AABB::kUnit = AABB { Zero<VECTOR3>(), VECTOR3 { 0.5f } };
@@ -104,9 +92,9 @@ struct MathConstants<AABB>
     static constexpr AABB kOne  = AABB::kUnit;
 };
 
-// ========================================================
-//  Operators
-// ========================================================
+// ===========================================
+//  Method
+// ===========================================
 
 [[nodiscard]] JUG_MATH_API constexpr AABB Merge(
     const AABB& _x,
@@ -126,15 +114,13 @@ struct MathConstants<AABB>
     return AABB::MakeFromMinMax(min, max);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr AABB Transform(
+[[nodiscard]] JUG_MATH_API constexpr AABB Xform(
     const AABB&   _aabb,
     const MATRIX& _mtx)
 {
-    const VECTOR3 newCenter = MulPoint(_aabb.center, _mtx);
-    const VECTOR3 ex        = Abs(MulVector(VECTOR3 { _aabb.extends.e[0], 0.f, 0.f }, _mtx));
-    const VECTOR3 ey        = Abs(MulVector(VECTOR3 { 0.f, _aabb.extends.e[1], 0.f }, _mtx));
-    const VECTOR3 ez        = Abs(MulVector(VECTOR3 { 0.f, 0.f, _aabb.extends.e[2] }, _mtx));
-    return AABB { newCenter, ex + ey + ez };
+    const VECTOR3 e       = Abs(_aabb.extends);
+    const VECTOR4 extends = Abs(_mtx[0]) * e[0] + Abs(_mtx[1]) * e[1] + Abs(_mtx[2]) * e[2];
+    return AABB { XformPoint(_aabb.center, _mtx), extends.ToVector3() };
 }
 
 }   // namespace jug

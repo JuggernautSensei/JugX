@@ -29,10 +29,10 @@ struct RGBA
         const VECTOR4 _rgba)
     {
         RGBA rgba;
-        rgba.r = static_cast<uint8_t>(jug::Clamp(_rgba.e[0] * 255.f, 0.f, 255.f));
-        rgba.g = static_cast<uint8_t>(jug::Clamp(_rgba.e[1] * 255.f, 0.f, 255.f));
-        rgba.b = static_cast<uint8_t>(jug::Clamp(_rgba.e[2] * 255.f, 0.f, 255.f));
-        rgba.a = static_cast<uint8_t>(jug::Clamp(_rgba.e[3] * 255.f, 0.f, 255.f));
+        rgba.r = static_cast<uint8_t>(Clamp(_rgba[0] * 255.f, 0.f, 255.f));
+        rgba.g = static_cast<uint8_t>(Clamp(_rgba[1] * 255.f, 0.f, 255.f));
+        rgba.b = static_cast<uint8_t>(Clamp(_rgba[2] * 255.f, 0.f, 255.f));
+        rgba.a = static_cast<uint8_t>(Clamp(_rgba[3] * 255.f, 0.f, 255.f));
         return rgba;
     }
 

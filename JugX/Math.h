@@ -16,14 +16,14 @@ namespace jug
 #    define JUG_MATH_API
 #endif
 
-// ==========================================
-//   Constants
-// ==========================================
+// ===========================================
+//  Math Constants
+// ===========================================
 
 template<typename T>
 struct MathConstants;
 
-#define JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(_type)                     \
+#define JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(_type)                          \
     template<>                                                               \
     struct MathConstants<_type>                                              \
     {                                                                        \
@@ -44,7 +44,7 @@ JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(uint64_t);
 JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(float);
 JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(double);
 
-#define JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(_constant)    \
+#define JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(_constant)         \
     template<typename T>                                      \
         requires requires { MathConstants<T>::k##_constant; } \
     [[nodiscard]] JUG_MATH_API constexpr T _constant()        \
@@ -53,11 +53,11 @@ JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(double);
     }   // namespace jug
 
 #define JUG_DEFINE_MATH_CONSTANTS_SHORTCUT_INVERSE(_constant, _base) \
-    template<typename T>                                                  \
-        requires requires { MathConstants<T>::k##_constant; }             \
-    [[nodiscard]] JUG_MATH_API constexpr T _constant()                    \
-    {                                                                     \
-        return -_base<T>();                                               \
+    template<typename T>                                             \
+        requires requires { MathConstants<T>::k##_constant; }        \
+    [[nodiscard]] JUG_MATH_API constexpr T _constant()               \
+    {                                                                \
+        return -_base<T>();                                          \
     }
 
 JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Zero);
@@ -160,6 +160,12 @@ template<std::integral T>
 //  Float
 // =========================================
 
+constexpr uint32_t kFloatSignMask     = 0x80000000u;
+constexpr uint32_t kFloatExponentMask = 0x7f800000u;
+constexpr uint32_t kFloatMantissaMask = 0x007fffffu;
+constexpr float    kFloatInfinity     = std::bit_cast<float>(kFloatExponentMask);
+constexpr float    kFloatSmallest     = FLT_MIN;
+
 constexpr static float kPI        = std::numbers::pi_v<float>;
 constexpr static float k2PI       = 2.f * kPI;
 constexpr static float kHalfPI    = kPI * 0.5f;
@@ -178,8 +184,8 @@ constexpr static float kInvLogNat2 = 1.4426950408889634f;
 
 [[nodiscard]] JUG_MATH_API constexpr float ToDeg(float _rad);
 [[nodiscard]] JUG_MATH_API constexpr float ToRad(float _deg);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsZeroApprox(float _x);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsEqualApprox(float _x, float _y);
+[[nodiscard]] JUG_MATH_API constexpr bool  IsZeroApprox(float _x, float _epsilon = kEpsilon);
+[[nodiscard]] JUG_MATH_API constexpr bool  IsEqualApprox(float _x, float _y, float _epsilon = kEpsilon);
 [[nodiscard]] JUG_MATH_API constexpr float Trunc(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Fract(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Floor(float _x);
@@ -215,4 +221,3 @@ constexpr static float kInvLogNat2 = 1.4426950408889634f;
 }   // namespace jug
 
 #include "Math.inl"
-
