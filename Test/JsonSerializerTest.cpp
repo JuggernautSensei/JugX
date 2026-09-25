@@ -9,8 +9,7 @@
 
 #include <gtest/gtest.h>
 
-#include <JugX/JsonDeserializer.h>
-#include <JugX/JsonSerializer.h>
+#include <JugX/JugX.h>
 
 using namespace jug;
 
@@ -53,15 +52,15 @@ struct Vector3
         _writer.WriteField("z", z);
     }
 
-    [[nodiscard]] static SerializeResult<Vector3> Deserialize(
+    [[nodiscard]] static Result<Vector3> Deserialize(
         const JsonReader& _reader)
     {
-        SerializeResult<float> x = _reader.ReadField<float>("x");
-        JUG_DISPATCH_FAILED(x);
-        SerializeResult<float> y = _reader.ReadField<float>("y");
-        JUG_DISPATCH_FAILED(y);
-        SerializeResult<float> z = _reader.ReadField<float>("z");
-        JUG_DISPATCH_FAILED(z);
+        Result<float> x = _reader.ReadField<float>("x");
+        JUG_RETURN_IF_ERROR(x);
+        Result<float> y = _reader.ReadField<float>("y");
+        JUG_RETURN_IF_ERROR(y);
+        Result<float> z = _reader.ReadField<float>("z");
+        JUG_RETURN_IF_ERROR(z);
         return Vector3 { x.GetValue(), y.GetValue(), z.GetValue() };
     }
 
@@ -101,11 +100,11 @@ public:
         _writer.Write(m_id);
     }
 
-    [[nodiscard]] static SerializeResult<Handle> Deserialize(
+    [[nodiscard]] static Result<Handle> Deserialize(
         const JsonReader& _reader)
     {
-        SerializeResult<uint32_t> id = _reader.Read<uint32_t>();
-        JUG_DISPATCH_FAILED(id);
+        Result<uint32_t> id = _reader.Read<uint32_t>();
+        JUG_RETURN_IF_ERROR(id);
         return Handle { id.GetValue() };
     }
 
@@ -168,30 +167,30 @@ struct Person
         _writer.WriteField("position", position);
     }
 
-    [[nodiscard]] static SerializeResult<Person> Deserialize(
+    [[nodiscard]] static Result<Person> Deserialize(
         const JsonReader& _reader)
     {
-        SerializeResult<std::string> name = _reader.ReadField<std::string>("name");
-        JUG_DISPATCH_FAILED(name);
-        SerializeResult<int> age = _reader.ReadField<int>("age");
-        JUG_DISPATCH_FAILED(age);
-        SerializeResult<bool> isEmployed = _reader.ReadField<bool>("isEmployed");
-        JUG_DISPATCH_FAILED(isEmployed);
+        Result<std::string> name = _reader.ReadField<std::string>("name");
+        JUG_RETURN_IF_ERROR(name);
+        Result<int> age = _reader.ReadField<int>("age");
+        JUG_RETURN_IF_ERROR(age);
+        Result<bool> isEmployed = _reader.ReadField<bool>("isEmployed");
+        JUG_RETURN_IF_ERROR(isEmployed);
 
-        SerializeResult<JsonReader> skillArray = _reader.FindField("skills");
-        JUG_DISPATCH_FAILED(skillArray);
+        Result<JsonReader> skillArray = _reader.FindField("skills");
+        JUG_RETURN_IF_ERROR(skillArray);
 
         std::vector<std::string> skills;
         skills.reserve(skillArray.GetValue().GetSize());
         for (const JsonReader& element: skillArray.GetValue().GetArray())
         {
-            SerializeResult<std::string> skill = element.Read<std::string>();
-            JUG_DISPATCH_FAILED(skill);
+            Result<std::string> skill = element.Read<std::string>();
+            JUG_RETURN_IF_ERROR(skill);
             skills.push_back(skill.Take());
         }
 
-        SerializeResult<Vector3> position = _reader.ReadField<Vector3>("position");
-        JUG_DISPATCH_FAILED(position);
+        Result<Vector3> position = _reader.ReadField<Vector3>("position");
+        JUG_RETURN_IF_ERROR(position);
 
         return Person { name.Take(), age.GetValue(), isEmployed.GetValue(), std::move(skills), position.GetValue() };
     }
@@ -214,10 +213,19 @@ enum class Suit : uint8_t
     Spades,
 };
 
+[[nodiscard]] Result<std::string> SaveToString(
+    const JsonSerializer&         _serializer,
+    const Flags<eJsonSaveOption> _flags = eJsonSaveOption::None)
+{
+    Result<JsonString> json = _serializer.Save(_flags);
+    JUG_RETURN_IF_ERROR(json);
+    return static_cast<std::string>(json.GetValue());
+}
+
 [[nodiscard]] JsonDeserializer MakeDeserializer(
     const std::string_view _json)
 {
-    SerializeResult<JsonDeserializer> result = JsonDeserializer::LoadFromString(_json);
+    Result<JsonDeserializer> result = JsonDeserializer::Load(_json);
     EXPECT_TRUE(result.HasValue());
     return result.Take();
 }
@@ -243,7 +251,7 @@ struct JsonAdlSerializer<test::Rgba>
         _writer.PushBack(_value.a);
     }
 
-    [[nodiscard]] static SerializeResult<test::Rgba> Deserialize(
+    [[nodiscard]] static Result<test::Rgba> Deserialize(
         const JsonReader& _reader)
     {
         uint8_t* pChannels[] = { nullptr, nullptr, nullptr, nullptr };
@@ -259,18 +267,18 @@ struct JsonAdlSerializer<test::Rgba>
         {
             if (index >= 4)
             {
-                return Failed { eSerializerError::TypeMismatch };
+                return eSerializeError::TypeMismatch;
             }
 
-            SerializeResult<uint8_t> channel = element.Read<uint8_t>();
-            JUG_DISPATCH_FAILED(channel);
+            Result<uint8_t> channel = element.Read<uint8_t>();
+            JUG_RETURN_IF_ERROR(channel);
             *pChannels[index] = channel.GetValue();
             ++index;
         }
 
         if (index != 4)
         {
-            return Failed { eSerializerError::TypeMismatch };
+            return eSerializeError::TypeMismatch;
         }
         return color;
     }
@@ -288,7 +296,7 @@ struct JsonAdlSerializer<test::Version>
         _writer.PushBack(_value.GetMinor());
     }
 
-    [[nodiscard]] static SerializeResult<test::Version> Deserialize(
+    [[nodiscard]] static Result<test::Version> Deserialize(
         const JsonReader& _reader)
     {
         JsonReader::ArrayIterator it  = _reader.BeginArray();
@@ -296,23 +304,23 @@ struct JsonAdlSerializer<test::Version>
 
         if (it == end)
         {
-            return Failed { eSerializerError::TypeMismatch };
+            return eSerializeError::TypeMismatch;
         }
-        SerializeResult<int> major = (*it).Read<int>();
-        JUG_DISPATCH_FAILED(major);
+        Result<int> major = (*it).Read<int>();
+        JUG_RETURN_IF_ERROR(major);
 
         ++it;
         if (it == end)
         {
-            return Failed { eSerializerError::TypeMismatch };
+            return eSerializeError::TypeMismatch;
         }
-        SerializeResult<int> minor = (*it).Read<int>();
-        JUG_DISPATCH_FAILED(minor);
+        Result<int> minor = (*it).Read<int>();
+        JUG_RETURN_IF_ERROR(minor);
 
         ++it;
         if (it != end)
         {
-            return Failed { eSerializerError::TypeMismatch };
+            return eSerializeError::TypeMismatch;
         }
         return test::Version { major.GetValue(), minor.GetValue() };
     }
@@ -335,17 +343,17 @@ struct JsonAdlSerializer<test::Suit>
         JUG_ASSERT(false, "Unknown Suit value");
     }
 
-    [[nodiscard]] static SerializeResult<test::Suit> Deserialize(
+    [[nodiscard]] static Result<test::Suit> Deserialize(
         const JsonReader& _reader)
     {
-        SerializeResult<std::string> name = _reader.Read<std::string>();
-        JUG_DISPATCH_FAILED(name);
+        Result<std::string> name = _reader.Read<std::string>();
+        JUG_RETURN_IF_ERROR(name);
 
         if (name.GetValue() == "Clubs") return test::Suit::Clubs;
         if (name.GetValue() == "Diamonds") return test::Suit::Diamonds;
         if (name.GetValue() == "Hearts") return test::Suit::Hearts;
         if (name.GetValue() == "Spades") return test::Suit::Spades;
-        return Failed { eSerializerError::TypeMismatch };
+        return eSerializeError::TypeMismatch;
     }
 };
 
@@ -372,7 +380,7 @@ TEST(JsonReader, PrimitiveRoundTrip)
     writer.WriteField("empty", "");
     writer.WriteField("color", test::eColor::Blue);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
 
     JsonDeserializer deserializer = test::MakeDeserializer(jsonOr.GetValue());
@@ -405,16 +413,16 @@ TEST(JsonReader, NestedObject)
     }
     writer.WriteField("sibling", "ok");
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"outer":{"inner":{"depth":3}},"sibling":"ok"})");
 
     JsonDeserializer deserializer = test::MakeDeserializer(jsonOr.GetValue());
     JsonReader       reader       = deserializer.GetReader();
 
-    SerializeResult<JsonReader> outer = reader.FindField("outer");
+    Result<JsonReader> outer = reader.FindField("outer");
     ASSERT_TRUE(outer.HasValue());
-    SerializeResult<JsonReader> inner = outer.GetValue().FindField("inner");
+    Result<JsonReader> inner = outer.GetValue().FindField("inner");
     ASSERT_TRUE(inner.HasValue());
     EXPECT_EQ(inner.GetValue().ReadField<int>("depth").GetValue(), 3);
     EXPECT_EQ(reader.ReadField<std::string>("sibling").GetValue(), "ok");
@@ -432,7 +440,7 @@ TEST(JsonReader, ArrayRange)
     writer.PushBackArray().PushBack("nested");
     writer.PushBackObject().WriteField("k", 1);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"([0,10,20,30,40,["nested"],{"k":1}])");
 
@@ -578,14 +586,14 @@ TEST(JsonReader, TypeQueries)
 
 TEST(JsonReader, ParseErrors)
 {
-    EXPECT_TRUE(JsonDeserializer::LoadFromString("{ broken").HasError());
-    EXPECT_TRUE(JsonDeserializer::LoadFromString("").HasError());
-    EXPECT_TRUE(JsonDeserializer::LoadFromString(R"({"a":1,})").HasError());
+    EXPECT_TRUE(JsonDeserializer::Load("{ broken").HasError());
+    EXPECT_TRUE(JsonDeserializer::Load("").HasError());
+    EXPECT_TRUE(JsonDeserializer::Load(R"({"a":1,})").HasError());
 }
 
 TEST(JsonReader, ParseOptionAllowsTrailingComma)
 {
-    SerializeResult<JsonDeserializer> result = JsonDeserializer::LoadFromString(R"({"a":1,})", eJsonLoadOption::AllowTrailingCommas);
+    Result<JsonDeserializer> result = JsonDeserializer::Load(R"({"a":1,})", eJsonLoadOption::AllowTrailingCommas);
     ASSERT_TRUE(result.HasValue());
     EXPECT_EQ(result.GetValue().GetReader().ReadField<int>("a").GetValue(), 1);
 }
@@ -593,33 +601,33 @@ TEST(JsonReader, ParseOptionAllowsTrailingComma)
 TEST(JsonReader, TypeMismatchStringAsInt)
 {
     JsonDeserializer     deserializer = test::MakeDeserializer(R"({"str":"x"})");
-    SerializeResult<int> value        = deserializer.GetReader().ReadField<int>("str");
+    Result<int> value        = deserializer.GetReader().ReadField<int>("str");
     ASSERT_TRUE(value.HasError());
-    EXPECT_EQ(value.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(value.GetError(), eSerializeError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchNumberAsBool)
 {
     JsonDeserializer      deserializer = test::MakeDeserializer(R"({"big":300})");
-    SerializeResult<bool> value        = deserializer.GetReader().ReadField<bool>("big");
+    Result<bool> value        = deserializer.GetReader().ReadField<bool>("big");
     ASSERT_TRUE(value.HasError());
-    EXPECT_EQ(value.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(value.GetError(), eSerializeError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchNumberAsString)
 {
     JsonDeserializer             deserializer = test::MakeDeserializer(R"({"big":300})");
-    SerializeResult<std::string> value        = deserializer.GetReader().ReadField<std::string>("big");
+    Result<std::string> value        = deserializer.GetReader().ReadField<std::string>("big");
     ASSERT_TRUE(value.HasError());
-    EXPECT_EQ(value.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(value.GetError(), eSerializeError::TypeMismatch);
 }
 
 TEST(JsonReader, TypeMismatchRealAsInt)
 {
     JsonDeserializer     deserializer = test::MakeDeserializer(R"({"real":1.5})");
-    SerializeResult<int> value        = deserializer.GetReader().ReadField<int>("real");
+    Result<int> value        = deserializer.GetReader().ReadField<int>("real");
     ASSERT_TRUE(value.HasError());
-    EXPECT_EQ(value.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(value.GetError(), eSerializeError::TypeMismatch);
 }
 
 TEST(JsonReader, IntAsRealAccepted)
@@ -631,9 +639,9 @@ TEST(JsonReader, IntAsRealAccepted)
 TEST(JsonReader, MissingField)
 {
     JsonDeserializer     deserializer = test::MakeDeserializer(R"({"a":1})");
-    SerializeResult<int> value        = deserializer.GetReader().ReadField<int>("missing");
+    Result<int> value        = deserializer.GetReader().ReadField<int>("missing");
     ASSERT_TRUE(value.HasError());
-    EXPECT_EQ(value.GetError(), eSerializerError::MissingField);
+    EXPECT_EQ(value.GetError(), eSerializeError::MissingField);
 }
 
 TEST(JsonReader, NarrowingRead)
@@ -659,7 +667,7 @@ TEST(JsonReader, NarrowIntegerAndFloatTypes)
 TEST(JsonReader, CustomAdlTakesPriorityOverPrimitiveForEnum)
 {
     JsonDeserializer            deserializer = test::MakeDeserializer(R"("Spades")");
-    SerializeResult<test::Suit> value        = deserializer.GetReader().Read<test::Suit>();
+    Result<test::Suit> value        = deserializer.GetReader().Read<test::Suit>();
     ASSERT_TRUE(value.HasValue());
     EXPECT_EQ(value.GetValue(), test::Suit::Spades);
 }
@@ -673,7 +681,7 @@ TEST(JsonReader, CustomAdlEnumRejectsUnknownString)
 TEST(JsonReader, PlainEnumWithoutAdlSpecializationStaysRawInteger)
 {
     JsonDeserializer              deserializer = test::MakeDeserializer("2");
-    SerializeResult<test::eColor> value        = deserializer.GetReader().Read<test::eColor>();
+    Result<test::eColor> value        = deserializer.GetReader().Read<test::eColor>();
     ASSERT_TRUE(value.HasValue());
     EXPECT_EQ(value.GetValue(), test::eColor::Blue);
 }
@@ -683,9 +691,9 @@ TEST(JsonReader, ReadFailureDoesNotBlockOtherReads)
     JsonDeserializer deserializer = test::MakeDeserializer(R"({"position":{"x":1,"y":2,"z":"oops"},"sibling":"ok"})");
     JsonReader       reader       = deserializer.GetReader();
 
-    SerializeResult<test::Vector3> posResult = reader.ReadField<test::Vector3>("position");
+    Result<test::Vector3> posResult = reader.ReadField<test::Vector3>("position");
     ASSERT_TRUE(posResult.HasError());
-    EXPECT_EQ(posResult.GetError(), eSerializerError::TypeMismatch);
+    EXPECT_EQ(posResult.GetError(), eSerializeError::TypeMismatch);
 
     EXPECT_EQ(reader.ReadField<std::string>("sibling").GetValue(), "ok");
 }
@@ -710,7 +718,7 @@ TEST(JsonReader, CustomTypes)
         positions.PushBack(test::Vector3 { 9.0f, 9.0f, 9.0f });
     }
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_NE(jsonOr.GetValue().find(R"("color":[255,128,0,255])"), std::string::npos);
     EXPECT_NE(jsonOr.GetValue().find(R"("version":[3,7])"), std::string::npos);
@@ -748,18 +756,18 @@ TEST(JsonReader, PersonEndToEnd)
     JsonSerializer serializer;
     serializer.GetWriter().Write(person);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
 
     JsonDeserializer              deserializer = test::MakeDeserializer(jsonOr.GetValue());
-    SerializeResult<test::Person> personResult = deserializer.GetReader().Read<test::Person>();
+    Result<test::Person> personResult = deserializer.GetReader().Read<test::Person>();
     ASSERT_TRUE(personResult.HasValue());
     EXPECT_EQ(personResult.GetValue(), person);
 }
 
 TEST(JsonReader, UnicodeAndEscapes)
 {
-    constexpr std::string_view text = "한글 \"인용\" \역슬래시\ \n줄바꿈\t탭";
+    constexpr std::string_view text = "한글 \"인용\" \\역슬래시\\ \n줄바꿈\t탭";
 
     JsonSerializer serializer;
     JsonWriter     writer = serializer.GetWriter();
@@ -767,7 +775,7 @@ TEST(JsonReader, UnicodeAndEscapes)
     writer.WriteField("text", text);
     writer.WriteField("한글키", "값");
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
 
     JsonDeserializer deserializer = test::MakeDeserializer(jsonOr.GetValue());
@@ -802,7 +810,7 @@ TEST(JsonReader, ScalarRoot)
     JsonSerializer serializer;
     serializer.GetWriter().Write("bare");
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"("bare")");
 
@@ -853,7 +861,7 @@ TEST(JsonWriter, NarrowIntegerAndFloatTypes)
     writer.WriteField("u32", static_cast<uint32_t>(4000000000u));
     writer.WriteField("f", 3.5f);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"i8":-12,"u8":200,"i16":-1234,"u16":60000,"i32":-123456,"u32":4000000000,"f":3.5})");
 }
@@ -863,7 +871,7 @@ TEST(JsonWriter, CustomAdlTakesPriorityOverPrimitiveForEnum)
     JsonSerializer serializer;
     serializer.GetWriter().Write(test::Suit::Hearts);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"("Hearts")");
 }
@@ -873,7 +881,7 @@ TEST(JsonWriter, PlainEnumWithoutAdlSpecializationStaysRawInteger)
     JsonSerializer serializer;
     serializer.GetWriter().Write(test::eColor::Blue);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), "2");
 }
@@ -885,8 +893,8 @@ TEST(JsonWriter, Pretty)
     writer.SetObject();
     writer.WriteField("a", 1);
 
-    SerializeResult<std::string> compactOr = serializer.SaveToString();
-    SerializeResult<std::string> prettyOr  = serializer.SaveToString(eJsonSaveOption::Pretty);
+    Result<std::string> compactOr = test::SaveToString(serializer);
+    Result<std::string> prettyOr  = test::SaveToString(serializer, eJsonSaveOption::Pretty);
     ASSERT_TRUE(compactOr.HasValue());
     ASSERT_TRUE(prettyOr.HasValue());
     EXPECT_EQ(compactOr.GetValue(), R"({"a":1})");
@@ -901,16 +909,16 @@ TEST(JsonWriter, WriteOptions)
     writer.SetObject();
     writer.WriteField("k", "한/글");
 
-    EXPECT_EQ(serializer.SaveToString().GetValue(), R"({"k":"한/글"})");
-    EXPECT_EQ(serializer.SaveToString(eJsonSaveOption::EscapeSlashes).GetValue(), R"({"k":"한\/글"})");
-    EXPECT_EQ(serializer.SaveToString(eJsonSaveOption::NewlineAtEnd).GetValue(), "{\"k\":\"한/글\"}\n");
+    EXPECT_EQ(test::SaveToString(serializer).GetValue(), R"({"k":"한/글"})");
+    EXPECT_EQ(test::SaveToString(serializer, eJsonSaveOption::EscapeSlashes).GetValue(), R"({"k":"한\/글"})");
+    EXPECT_EQ(test::SaveToString(serializer, eJsonSaveOption::NewlineAtEnd).GetValue(), "{\"k\":\"한/글\"}\n");
 
-    const std::string escaped = serializer.SaveToString(eJsonSaveOption::EscapeUnicode).GetValue();
+    const std::string escaped = test::SaveToString(serializer, eJsonSaveOption::EscapeUnicode).GetValue();
     EXPECT_TRUE(std::ranges::all_of(escaped, [](const char _c) { return static_cast<unsigned char>(_c) < 0x80; }));
-    EXPECT_NE(escaped.find("\u"), std::string::npos);
+    EXPECT_NE(escaped.find("\\u"), std::string::npos);
 
-    EXPECT_NE(serializer.SaveToString(eJsonSaveOption::Pretty).GetValue().find("    \"k\""), std::string::npos);
-    EXPECT_NE(serializer.SaveToString(eJsonSaveOption::PrettyTwoSpaces).GetValue().find("  \"k\""), std::string::npos);
+    EXPECT_NE(test::SaveToString(serializer, eJsonSaveOption::Pretty).GetValue().find("    \"k\""), std::string::npos);
+    EXPECT_NE(test::SaveToString(serializer, eJsonSaveOption::PrettyTwoSpaces).GetValue().find("  \"k\""), std::string::npos);
 }
 
 TEST(JsonWriter, ManualObjectField)
@@ -923,7 +931,7 @@ TEST(JsonWriter, ManualObjectField)
     nested.WriteField("a", 1);
     nested.WriteField("b", 2);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"nested":{"a":1,"b":2}})");
 }
@@ -938,7 +946,7 @@ TEST(JsonWriter, ManualArrayField)
     nested.PushBack("item");
     nested.PushBack(789);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"nested":["item",789]})");
 }
@@ -952,13 +960,13 @@ TEST(JsonWriter, NullAndNonFiniteReal)
     writer.WriteField("inf", std::numeric_limits<double>::infinity());
     writer.WriteField("nan", std::numeric_limits<double>::quiet_NaN());
 
-    EXPECT_TRUE(serializer.SaveToString().HasError());
+    EXPECT_TRUE(test::SaveToString(serializer).HasError());
 
-    SerializeResult<std::string> asNullOr = serializer.SaveToString(eJsonSaveOption::InfAndNanAsNull);
+    Result<std::string> asNullOr = test::SaveToString(serializer, eJsonSaveOption::InfAndNanAsNull);
     ASSERT_TRUE(asNullOr.HasValue());
     EXPECT_EQ(asNullOr.GetValue(), R"({"null":null,"inf":null,"nan":null})");
 
-    SerializeResult<std::string> allowOr = serializer.SaveToString(eJsonSaveOption::AllowInfAndNan);
+    Result<std::string> allowOr = test::SaveToString(serializer, eJsonSaveOption::AllowInfAndNan);
     ASSERT_TRUE(allowOr.HasValue());
     EXPECT_EQ(allowOr.GetValue(), R"({"null":null,"inf":Infinity,"nan":NaN})");
 }
@@ -974,7 +982,7 @@ TEST(JsonWriter, MoveSemantics)
 
     JsonSerializer second = std::move(first);
 
-    SerializeResult<std::string> jsonOr = second.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(second);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"moved":1})");
 }
@@ -994,7 +1002,7 @@ TEST(JsonWriter, DeepNestingViaHandleReassignment)
     }
     cursor.PushBack(42);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
 
     std::string expected;
@@ -1018,7 +1026,7 @@ TEST(JsonWriter, HandleIsFreelyCopyable)
     arr.PushBack(1);
     copy.PushBack(2);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"a":[1,2]})");
 }
@@ -1031,7 +1039,7 @@ TEST(JsonWriter, GetWriterReturnsExistingRoot)
     serializer.GetWriter().WriteField("a", 1);
     serializer.GetWriter().WriteField("b", 2);
 
-    SerializeResult<std::string> jsonOr = serializer.SaveToString();
+    Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
     EXPECT_EQ(jsonOr.GetValue(), R"({"a":1,"b":2})");
 }
@@ -1049,10 +1057,10 @@ TEST(JsonSerializer, FileRoundTrip)
     writer.SetObject();
     writer.WriteField("saved", true);
     writer.WriteField("count", 12345);
-    ASSERT_EQ(serializer.SaveToFile(path, eJsonSaveOption::Pretty), eSerializerError::None);
+    ASSERT_TRUE(serializer.SaveToFile(path, eJsonSaveOption::Pretty).IsOK());
     ASSERT_TRUE(std::filesystem::exists(path));
 
-    SerializeResult<JsonDeserializer> result = JsonDeserializer::LoadFromFile(path);
+    Result<JsonDeserializer> result = JsonDeserializer::LoadFromFile(path);
     ASSERT_TRUE(result.HasValue());
     {
         JsonReader reader = result.GetValue().GetReader();

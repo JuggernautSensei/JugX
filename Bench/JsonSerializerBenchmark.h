@@ -11,8 +11,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include <JugX/JsonDeserializer.h>
-#include <JugX/JsonSerializer.h>
+#include <JugX/JugX.h>
 
 // jug::JsonReader/JsonWriter vs rapidjson vs nlohmann::json 벤치마크.
 //

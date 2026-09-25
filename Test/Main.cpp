@@ -1,11 +1,6 @@
 ﻿#include <gtest/gtest.h>
 
-#include <JugX/ConsoleLogger.h>
-#include <JugX/EnumArray.h>
-#include <JugX/FileLogger.h>
-#include <JugX/MemoryLogger.h>
-#include <JugX/Scoped.h>
-#include <JugX/GroupLogger.h>
+#include <JugX/JugX.h>
 using namespace jug;
 
 int main()

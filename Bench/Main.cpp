@@ -1,5 +1,5 @@
 ﻿#include <benchmark/benchmark.h>
 
-#include "JsonSerializerBenchmark.h"
+#include "MathBenchmark.h"
 
 BENCHMARK_MAIN();

@@ -7,10 +7,16 @@
     <Filter Include="JsonSerializer">
       <UniqueIdentifier>{0cb878e0-cfa6-44c7-9be4-373d149859d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{5d2c7a41-8e3b-4f6a-9c1d-2b7e0a9f4c63}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="JsonSerializerBenchmark.h">
       <Filter>JsonSerializer</Filter>
+    </ClInclude>
+    <ClInclude Include="MathBenchmark.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
