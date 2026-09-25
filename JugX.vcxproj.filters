@@ -4,9 +4,6 @@
     <ClInclude Include="JugX\AABB.h">
       <Filter>Math\Geomtry</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\AffineTransform.h">
-      <Filter>Math\Geomtry</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Callable.h">
       <Filter>Callable</Filter>
     </ClInclude>
@@ -57,9 +54,6 @@
     </ClInclude>
     <ClInclude Include="JugX\OBB.h">
       <Filter>Math\Geomtry</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Octree.h">
-      <Filter>Math\AccelatorStructure</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Plane.h">
       <Filter>Math\Geomtry</Filter>
@@ -124,9 +118,6 @@
     <ClInclude Include="JugX\MemoryView.h">
       <Filter>Memroy\Memory</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Memory.h">
-      <Filter>Memroy\Memory</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\ConsoleLogger.h">
       <Filter>Log</Filter>
     </ClInclude>
@@ -162,9 +153,6 @@
     </ClInclude>
     <ClInclude Include="JugX\CoreLogger.h">
       <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Allocator.h">
-      <Filter>Memroy\Alloc</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Typedef.h">
       <Filter>Base</Filter>
@@ -202,12 +190,6 @@
     <ClInclude Include="JugX\FixedBlockMemoryPool.h">
       <Filter>Memroy\MemoryPool</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\EventDispatcher.h">
-      <Filter>Event</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Event.h">
-      <Filter>Event</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Result.h">
       <Filter>Error</Filter>
     </ClInclude>
@@ -232,9 +214,6 @@
     <ClInclude Include="JugX\Fatal.h">
       <Filter>Base</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\OsAPI.h">
-      <Filter>OS</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\MemoryHasher.h">
       <Filter>Hash\Hasher</Filter>
     </ClInclude>
@@ -244,11 +223,35 @@
     <ClInclude Include="JugX\StringHasher.h">
       <Filter>Hash\Hasher</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Hash.h">
-      <Filter>Hash\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="JugX\Platform.h">
       <Filter>Base</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\EventDispatcher.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Event.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Application.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\ApplicationEvent.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\KeyCode.h">
+      <Filter>Application</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\OsInclude.h">
+      <Filter>OS</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\OS.h">
+      <Filter>OS</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Buffer.h">
+      <Filter>Memroy\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\JsonString.h">
+      <Filter>Serializer\Json</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -297,15 +300,6 @@
     <ClCompile Include="JugX\JsonSerializer.cpp">
       <Filter>Serializer\Json</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Event.cpp">
-      <Filter>Event</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\EventDispatcher.cpp">
-      <Filter>Event</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\Memory.cpp">
-      <Filter>Memroy\Memory</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\SerializeError.cpp">
       <Filter>Serializer\Error</Filter>
     </ClCompile>
@@ -339,14 +333,8 @@
     <ClCompile Include="JugX\AABB.cpp">
       <Filter>Math\Geomtry</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\AffineTransform.cpp">
-      <Filter>Math\Geomtry</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Align.cpp">
       <Filter>Memroy\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\Allocator.cpp">
-      <Filter>Memroy\Alloc</Filter>
     </ClCompile>
     <ClCompile Include="JugX\AxisAngle.cpp">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
@@ -417,9 +405,6 @@
     <ClCompile Include="JugX\ObjectPool.cpp">
       <Filter>Memroy\MemoryPool</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Octree.cpp">
-      <Filter>Math\AccelatorStructure</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Plane.cpp">
       <Filter>Math\Geomtry</Filter>
     </ClCompile>
@@ -483,9 +468,6 @@
     <ClCompile Include="JugX\Fatal.cpp">
       <Filter>Base</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\OsAPI.cpp">
-      <Filter>OS</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\MemoryHasher.cpp">
       <Filter>Hash\Hasher</Filter>
     </ClCompile>
@@ -495,11 +477,35 @@
     <ClCompile Include="JugX\StringHasher.cpp">
       <Filter>Hash\Hasher</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Hash.cpp">
-      <Filter>Hash\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="JugX\Platform.cpp">
       <Filter>Base</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Event.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\EventDispatcher.cpp">
+      <Filter>Event</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Application.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\ApplicationEvent.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\KeyCode.cpp">
+      <Filter>Application</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\OsInclude.cpp">
+      <Filter>OS</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\OS.cpp">
+      <Filter>OS</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Buffer.cpp">
+      <Filter>Memroy\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\JsonString.cpp">
+      <Filter>Serializer\Json</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -549,9 +555,6 @@
     </Filter>
     <Filter Include="Math\LinearAlgebra\Vector">
       <UniqueIdentifier>{4683edf6-90d7-41d0-9a49-c5476473c5e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Math\AccelatorStructure">
-      <UniqueIdentifier>{9c9ab120-eb54-4a8b-b8f0-addb134b50ea}</UniqueIdentifier>
     </Filter>
     <Filter Include="Memroy\SmartPointer">
       <UniqueIdentifier>{e7bdb48c-2a32-4a33-a5e4-b2af16077232}</UniqueIdentifier>
@@ -607,17 +610,11 @@
     <Filter Include="Container\LruCache">
       <UniqueIdentifier>{b9cb76f2-cccd-47cf-b33a-efd97e2c5b90}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Event">
-      <UniqueIdentifier>{9047d9f4-1199-473b-88fd-4cdf1c4395e2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Error">
       <UniqueIdentifier>{e9380b4c-ec51-49ba-adfd-91a4d2ac8216}</UniqueIdentifier>
     </Filter>
     <Filter Include="Enum">
       <UniqueIdentifier>{d700385b-22bf-4fe2-9c97-4c257729b4e6}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="OS">
-      <UniqueIdentifier>{1a62ea88-ff7e-434e-b1d5-aff7f57da21b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Hash">
       <UniqueIdentifier>{82e296ce-906c-43ac-9117-e4937c0c7f55}</UniqueIdentifier>
@@ -627,6 +624,18 @@
     </Filter>
     <Filter Include="Hash\Utils">
       <UniqueIdentifier>{fcb604ef-7a09-4ad9-b837-b60333ae03ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{7a9e958e-5bfa-41e6-8b22-5ad5605a71bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OS">
+      <UniqueIdentifier>{43d4c947-99dd-4b00-9689-9f0adec7d5db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\Buffer">
+      <UniqueIdentifier>{bf732235-57e7-4491-af1b-00bcdf59e224}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Application">
+      <UniqueIdentifier>{fa0cfe9d-ee2f-40eb-b5d1-ad177e05b693}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

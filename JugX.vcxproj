@@ -20,13 +20,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="JugX\AABB.h" />
-    <ClInclude Include="JugX\AffineTransform.h" />
     <ClInclude Include="JugX\Align.h" />
-    <ClInclude Include="JugX\Allocator.h" />
     <ClInclude Include="JugX\Assert.h" />
+    <ClInclude Include="JugX\Buffer.h" />
     <ClInclude Include="JugX\Config.h" />
     <ClInclude Include="JugX\Error.h" />
+    <ClInclude Include="JugX\Application.h" />
     <ClInclude Include="JugX\Event.h" />
+    <ClInclude Include="JugX\ApplicationEvent.h" />
+    <ClInclude Include="JugX\JsonString.h" />
+    <ClInclude Include="JugX\KeyCode.h" />
     <ClInclude Include="JugX\EventDispatcher.h" />
     <ClInclude Include="JugX\Fatal.h" />
     <ClInclude Include="JugX\FileReader.h" />
@@ -34,7 +37,7 @@
     <ClInclude Include="JugX\JsonAdlSerializer.h" />
     <ClInclude Include="JugX\LruCache.h" />
     <ClInclude Include="JugX\NoopHasher.h" />
-    <ClInclude Include="JugX\OsAPI.h" />
+    <ClInclude Include="JugX\OS.h" />
     <ClInclude Include="JugX\pch.h" />
     <ClInclude Include="JugX\Random.h" />
     <ClInclude Include="JugX\RingBuffer.h" />
@@ -58,7 +61,6 @@
     <ClInclude Include="JugX\GroupLogger.h" />
     <ClInclude Include="JugX\Logger.h" />
     <ClInclude Include="JugX\JsonSerializer.h" />
-    <ClInclude Include="JugX\Memory.h" />
     <ClInclude Include="JugX\MemoryLogger.h" />
     <ClInclude Include="JugX\StringEncoder.h" />
     <ClInclude Include="JugX\StringFormat.h" />
@@ -81,7 +83,6 @@
     <ClInclude Include="JugX\MemoryView.h" />
     <ClInclude Include="JugX\OBB.h" />
     <ClInclude Include="JugX\ObjectPool.h" />
-    <ClInclude Include="JugX\Octree.h" />
     <ClInclude Include="JugX\Plane.h" />
     <ClInclude Include="JugX\Platform.h" />
     <ClInclude Include="JugX\Quaternion.h" />
@@ -96,18 +97,23 @@
     <ClInclude Include="JugX\SIMD.h" />
     <ClInclude Include="JugX\Sphere.h" />
     <ClInclude Include="JugX\Triangle.h" />
-    <ClInclude Include="JugX\Hash.h" />
     <ClInclude Include="JugX\TypeTraits.h" />
     <ClInclude Include="JugX\Vector.h" />
     <ClInclude Include="JugX\Vector2.h" />
     <ClInclude Include="JugX\Vector3.h" />
     <ClInclude Include="JugX\Vector4.h" />
+    <ClInclude Include="JugX\OsInclude.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="JugX\Alloc.cpp" />
     <ClCompile Include="JugX\Assert.cpp" />
+    <ClCompile Include="JugX\Buffer.cpp" />
     <ClCompile Include="JugX\ConsoleLogger.cpp" />
+    <ClCompile Include="JugX\Application.cpp" />
     <ClCompile Include="JugX\Event.cpp" />
+    <ClCompile Include="JugX\ApplicationEvent.cpp" />
+    <ClCompile Include="JugX\JsonString.cpp" />
+    <ClCompile Include="JugX\KeyCode.cpp" />
     <ClCompile Include="JugX\EventDispatcher.cpp" />
     <ClCompile Include="JugX\Fatal.cpp" />
     <ClCompile Include="JugX\FileReader.cpp" />
@@ -120,11 +126,10 @@
     <ClCompile Include="JugX\JsonDeserializer.cpp" />
     <ClCompile Include="JugX\JsonSerializer.cpp" />
     <ClCompile Include="JugX\Logger.cpp" />
-    <ClCompile Include="JugX\Memory.cpp" />
     <ClCompile Include="JugX\MemoryArena.cpp" />
     <ClCompile Include="JugX\MemoryHasher.cpp" />
     <ClCompile Include="JugX\MemoryLogger.cpp" />
-    <ClCompile Include="JugX\OsAPI.cpp" />
+    <ClCompile Include="JugX\OS.cpp" />
     <ClCompile Include="JugX\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -142,9 +147,7 @@
     <ClCompile Include="JugX\Timer.cpp" />
     <ClCompile Include="JugX\TimeStamp.cpp" />
     <ClCompile Include="JugX\AABB.cpp" />
-    <ClCompile Include="JugX\AffineTransform.cpp" />
     <ClCompile Include="JugX\Align.cpp" />
-    <ClCompile Include="JugX\Allocator.cpp" />
     <ClCompile Include="JugX\AxisAngle.cpp" />
     <ClCompile Include="JugX\Callable.cpp" />
     <ClCompile Include="JugX\Collision.cpp" />
@@ -159,7 +162,6 @@
     <ClCompile Include="JugX\Handle.cpp" />
     <ClCompile Include="JugX\HandleAllocator.cpp" />
     <ClCompile Include="JugX\HandleStorage.cpp" />
-    <ClCompile Include="JugX\Hash.cpp" />
     <ClCompile Include="JugX\Interval.cpp" />
     <ClCompile Include="JugX\JsonAdlSerializer.cpp" />
     <ClCompile Include="JugX\LruCache.cpp" />
@@ -170,7 +172,6 @@
     <ClCompile Include="JugX\NoopHasher.cpp" />
     <ClCompile Include="JugX\OBB.cpp" />
     <ClCompile Include="JugX\ObjectPool.cpp" />
-    <ClCompile Include="JugX\Octree.cpp" />
     <ClCompile Include="JugX\Plane.cpp" />
     <ClCompile Include="JugX\Platform.cpp" />
     <ClCompile Include="JugX\Quaternion.cpp" />
@@ -192,6 +193,7 @@
     <ClCompile Include="JugX\Vector2.cpp" />
     <ClCompile Include="JugX\Vector3.cpp" />
     <ClCompile Include="JugX\Vector4.cpp" />
+    <ClCompile Include="JugX\OsInclude.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="JugX\Matrix.inl" />
@@ -251,10 +253,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Tmp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)Build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)Tmp\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>true</VcpkgEnabled>
@@ -297,6 +301,9 @@
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>"C:\Users\Ahnjiwoo\AppData\Local\Python\bin\python.exe" "$(ProjectDir)Scripts\generate_header.py"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -314,6 +321,9 @@
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>"C:\Users\Ahnjiwoo\AppData\Local\Python\bin\python.exe" "$(ProjectDir)Scripts\generate_header.py"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
