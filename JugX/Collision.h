@@ -846,6 +846,42 @@ namespace collision_detail
         const AABB&    _aabb,
         const FRUSTUM& _frustum)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            // 평면 6개를 SoA (4개 + 2개) 로 전치해 한 번에 판정한다. 같은 절두체로 도는 루프면 전치는 루프 밖으로 빠진다.
+            // 남는 두 레인은 영평면이라 dist + r = 0 -> 바깥 아님.
+            const float* pPlane = reinterpret_cast<const float*>(_frustum.planes.GetPtr());
+            simd::M128   nx0    = simd::Load(pPlane);
+            simd::M128   ny0    = simd::Load(pPlane + 4);
+            simd::M128   nz0    = simd::Load(pPlane + 8);
+            simd::M128   d0     = simd::Load(pPlane + 12);
+            simd::Transpose4(nx0, ny0, nz0, d0);
+            simd::M128 nx1 = simd::Load(pPlane + 16);
+            simd::M128 ny1 = simd::Load(pPlane + 20);
+            simd::M128 nz1 = simd::Zero();
+            simd::M128 d1  = simd::Zero();
+            simd::Transpose4(nx1, ny1, nz1, d1);
+
+            const float*     pBox = reinterpret_cast<const float*>(&_aabb);
+            const simd::M128 c    = simd::Load(pBox);                  // cx cy cz ex
+            const simd::M128 e    = simd::Abs(simd::Load(pBox + 2));   // cz ex ey ez
+            const simd::M128 cx   = simd::Splat<0>(c);
+            const simd::M128 cy   = simd::Splat<1>(c);
+            const simd::M128 cz   = simd::Splat<2>(c);
+            const simd::M128 ex   = simd::Splat<1>(e);
+            const simd::M128 ey   = simd::Splat<2>(e);
+            const simd::M128 ez   = simd::Splat<3>(e);
+
+            // dist + r < 0 이면 평면 바깥으로 완전히 밀려남
+            const simd::M128 dist0 = simd::MultAdd(nx0, cx, simd::MultAdd(ny0, cy, simd::MultAdd(nz0, cz, d0)));
+            const simd::M128 dist1 = simd::MultAdd(nx1, cx, simd::MultAdd(ny1, cy, simd::MultAdd(nz1, cz, d1)));
+            const simd::M128 r0    = simd::MultAdd(simd::Abs(nx0), ex, simd::MultAdd(simd::Abs(ny0), ey, simd::Mult(simd::Abs(nz0), ez)));
+            const simd::M128 r1    = simd::MultAdd(simd::Abs(nx1), ex, simd::MultAdd(simd::Abs(ny1), ey, simd::Mult(simd::Abs(nz1), ez)));
+            const simd::M128 out   = simd::Or(simd::CmpLt(simd::Add(dist0, r0), simd::Zero()), simd::CmpLt(simd::Add(dist1, r1), simd::Zero()));
+            return !simd::AnyTrue(out);
+        }
+#endif
         const VECTOR3 extents = Abs(_aabb.extends);
         for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
         {

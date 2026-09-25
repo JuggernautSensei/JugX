@@ -12,28 +12,21 @@ JUG_MATH_API constexpr MATRIX JUG_VECTORCALL MATRIX::MakeRotation(
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        // DirectXMath XMMatrixRotationQuaternion 과 같은 셔플
-        const simd::M128 q  = _q.ToM128();
-        const simd::M128 q0 = simd::Add(q, q);
-        const simd::M128 q1 = simd::Mult(q, q0);   // 2xx 2yy 2zz 2ww
+        // 단위 사원수에서 1 - 2(yy + zz) = 2xx + 2ww - 1 이므로 행 i = q[i] * 2q + w * P_i - e_i
+        //   P_0 = (2w, 2z, -2y), P_1 = (-2z, 2w, 2x), P_2 = (2y, -2x, 2w)
+        // DirectXMath XMMatrixRotationQuaternion 보다 셔플이 적다.
+        const simd::M128 q   = _q.ToM128();
+        const simd::M128 q2  = simd::Add(q, q);
+        const simd::M128 q2z = simd::ZeroW(q2);   // 2x 2y 2z 0
+        const simd::M128 w   = simd::Splat<3>(q);
 
-        // 대각: 1 - 2(yy + zz), 1 - 2(xx + zz), 1 - 2(xx + yy), 0
-        const simd::M128 d0   = simd::ZeroW(simd::Shuffle<1, 0, 0, 3>(q1));
-        const simd::M128 d1   = simd::ZeroW(simd::Shuffle<2, 2, 1, 3>(q1));
-        const simd::M128 diag = simd::Sub(simd::Sub(simd::Set(1.f, 1.f, 1.f, 0.f), d0), d1);
+        const simd::M128 p0 = simd::Xor(simd::Shuffle2<3, 2, 1, 3>(q2, q2z), simd::Set(0.f, 0.f, -0.f, 0.f));   //  2w  2z -2y 0
+        const simd::M128 p1 = simd::Xor(simd::Shuffle2<2, 3, 0, 3>(q2, q2z), simd::Set(-0.f, 0.f, 0.f, 0.f));   // -2z  2w  2x 0
+        const simd::M128 p2 = simd::Xor(simd::Shuffle<1, 0, 3, 3>(q2), simd::Set(0.f, -0.f, 0.f, 0.f));         //  2y -2x  2w 2w
 
-        // 비대각: (2xz, 2xy, 2yz) ± (2wy, 2wz, 2wx)
-        const simd::M128 a    = simd::Mult(simd::Shuffle<0, 0, 1, 3>(q), simd::Shuffle<2, 1, 2, 3>(q0));
-        const simd::M128 b    = simd::Mult(simd::Splat<3>(q), simd::Shuffle<1, 2, 0, 3>(q0));
-        const simd::M128 plus = simd::Add(a, b);
-        const simd::M128 minu = simd::Sub(a, b);
-
-        const simd::M128 v0 = simd::Shuffle<0, 2, 3, 1>(simd::Shuffle2<1, 2, 0, 1>(plus, minu));   // 2(xy+wz) 2(xz-wy) 2(xy-wz) 2(yz+wx)
-        const simd::M128 v1 = simd::Shuffle<0, 2, 0, 2>(simd::Shuffle2<0, 0, 2, 2>(plus, minu));   // 2(xz+wy) 2(yz-wx) ...
-
-        const simd::M128 row0 = simd::Shuffle<0, 2, 3, 1>(simd::Shuffle2<0, 3, 0, 1>(diag, v0));
-        const simd::M128 row1 = simd::Shuffle<2, 0, 3, 1>(simd::Shuffle2<1, 3, 2, 3>(diag, v0));
-        const simd::M128 row2 = simd::Shuffle2<0, 1, 2, 3>(v1, diag);
+        const simd::M128 row0 = simd::MultAdd(simd::Splat<0>(q), q2z, simd::MultSub(w, p0, simd::Set(1.f, 0.f, 0.f, 0.f)));
+        const simd::M128 row1 = simd::MultAdd(simd::Splat<1>(q), q2z, simd::MultSub(w, p1, simd::Set(0.f, 1.f, 0.f, 0.f)));
+        const simd::M128 row2 = simd::ZeroW(simd::MultAdd(simd::Splat<2>(q), q2z, simd::MultSub(w, p2, simd::Set(0.f, 0.f, 1.f, 0.f))));
         return MakeFromM128(row0, row1, row2, simd::Set(0.f, 0.f, 0.f, 1.f));
     }
 #endif

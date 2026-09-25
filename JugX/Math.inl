@@ -563,7 +563,7 @@ namespace math_detail
 
         const float absa   = Abs(_x);
         const float tmp    = (((((((c7 * absa + c6) * absa + c5) * absa + c4) * absa + c3) * absa + c2) * absa + c1) * absa + c0);
-        const float tmp2   = tmp * Sqrt(1.f - absa);
+        const float tmp2   = tmp * Sqrt(Max(1.f - absa, 0.f));   // |x| 가 반올림으로 1 을 살짝 넘어도 NaN 이 안 나게
         const float negate = static_cast<float>(_x < 0.f);
         const float tmp3   = tmp2 - 2.f * negate * tmp2;
         return negate * kPI + tmp3;
@@ -683,7 +683,7 @@ namespace math_detail
 [[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
 {
 #ifdef JUG_SIMD_AVAILABLE
-    JUG_SIMD_PATH(simd::GetX(simd::SinCos1(_x)));
+    JUG_SIMD_PATH(simd::GetX(simd::Sin(simd::SetAll(_x))));
 #endif
     return math_detail::Sin(_x);
 }
@@ -691,7 +691,7 @@ namespace math_detail
 [[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
 {
 #ifdef JUG_SIMD_AVAILABLE
-    JUG_SIMD_PATH(simd::GetY(simd::SinCos1(_x)));
+    JUG_SIMD_PATH(simd::GetX(simd::Cos(simd::SetAll(_x))));
 #endif
     return math_detail::Cos(_x);
 }
@@ -718,24 +718,15 @@ JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCo
     return s / c;
 }
 
+// DirectXMath XMScalarACos / XMScalarASin 과 같은 7차 다항식. constexpr 과 런타임이 같은 식을 쓴다.
 [[nodiscard]] JUG_MATH_API constexpr float ACos(const float _x)
 {
-    if (std::is_constant_evaluated())
-    {
-        return math_detail::ACos(_x);
-    }
-
-    return ::acosf(_x);
+    return math_detail::ACos(_x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float ASin(const float _x)
 {
-    if (std::is_constant_evaluated())
-    {
-        return kHalfPI - math_detail::ACos(_x);
-    }
-
-    return ::asinf(_x);
+    return kHalfPI - math_detail::ACos(_x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float ATan2(const float _y, const float _x)

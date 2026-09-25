@@ -491,6 +491,26 @@ JUG_MATH_API constexpr QUATERNION& QUATERNION::operator/=(
     const QUATERNION _y,
     const float      _t)
 {
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        // 최단 경로 선택을 분기 없이: dot 의 부호 비트를 _y 에 뒤집어 씌운다
+        const simd::M128 x        = _x.ToM128();
+        const simd::M128 dot      = simd::Dot4V(x, _y.ToM128());
+        const simd::M128 y        = simd::Xor(_y.ToM128(), simd::And(dot, simd::SetAll(-0.f)));
+        const float      cosOmega = simd::GetX(simd::Abs(dot));
+        if (cosOmega > kAlmostOne)   // 거의 같은 회전 - sin(omega) 로 나누면 불안정
+        {
+            return Normalize(QUATERNION::MakeFromM128(simd::Lerp(x, y, _t)));
+        }
+
+        // sin(omega), sin((1 - t) * omega), sin(t * omega) 를 한 번에
+        const float      omega = ACos(cosOmega);
+        const simd::M128 s     = simd::Sin(simd::Mult(simd::SetAll(omega), simd::Set(1.f, 1.f - _t, _t, 0.f)));
+        const simd::M128 scale = simd::Div(s, simd::Splat<0>(s));
+        return QUATERNION::MakeFromM128(simd::MultAdd(x, simd::Splat<1>(scale), simd::Mult(y, simd::Splat<2>(scale))));
+    }
+#endif
     float cosOmega = Dot(_x, _y);
 
     // 최단 경로 선택

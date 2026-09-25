@@ -746,6 +746,7 @@ namespace matrix_detail
         const __m256 b2  = _mm256_broadcast_ps(reinterpret_cast<const __m128*>(_y[2].GetPtr()));
         const __m256 b3  = _mm256_broadcast_ps(reinterpret_cast<const __m128*>(_y[3].GetPtr()));
 
+        // FMA 가 있으면 곱셈 1 + FMA 3 체인이 명령이 가장 적다 (행 둘이 독립이라 지연은 겹친다)
         __m256 r01 = _mm256_mul_ps(_mm256_shuffle_ps(x01, x01, 0x00), b0);
         __m256 r23 = _mm256_mul_ps(_mm256_shuffle_ps(x23, x23, 0x00), b0);
         r01        = _mm256_fmadd_ps(_mm256_shuffle_ps(x01, x01, 0x55), b1, r01);
@@ -765,29 +766,15 @@ namespace matrix_detail
         const simd::M128 b2 = _y[2].ToM128();
         const simd::M128 b3 = _y[3].ToM128();
 
+        // (x*b0 + z*b2) + (y*b1 + w*b3) 트리
         const simd::M128 a0   = _x[0].ToM128();
-        simd::M128       row0 = simd::Mult(simd::Splat<0>(a0), b0);
-        row0                  = simd::MultAdd(simd::Splat<1>(a0), b1, row0);
-        row0                  = simd::MultAdd(simd::Splat<2>(a0), b2, row0);
-        row0                  = simd::MultAdd(simd::Splat<3>(a0), b3, row0);
-
+        const simd::M128 row0 = simd::Add(simd::MultAdd(simd::Splat<2>(a0), b2, simd::Mult(simd::Splat<0>(a0), b0)), simd::MultAdd(simd::Splat<3>(a0), b3, simd::Mult(simd::Splat<1>(a0), b1)));
         const simd::M128 a1   = _x[1].ToM128();
-        simd::M128       row1 = simd::Mult(simd::Splat<0>(a1), b0);
-        row1                  = simd::MultAdd(simd::Splat<1>(a1), b1, row1);
-        row1                  = simd::MultAdd(simd::Splat<2>(a1), b2, row1);
-        row1                  = simd::MultAdd(simd::Splat<3>(a1), b3, row1);
-
+        const simd::M128 row1 = simd::Add(simd::MultAdd(simd::Splat<2>(a1), b2, simd::Mult(simd::Splat<0>(a1), b0)), simd::MultAdd(simd::Splat<3>(a1), b3, simd::Mult(simd::Splat<1>(a1), b1)));
         const simd::M128 a2   = _x[2].ToM128();
-        simd::M128       row2 = simd::Mult(simd::Splat<0>(a2), b0);
-        row2                  = simd::MultAdd(simd::Splat<1>(a2), b1, row2);
-        row2                  = simd::MultAdd(simd::Splat<2>(a2), b2, row2);
-        row2                  = simd::MultAdd(simd::Splat<3>(a2), b3, row2);
-
+        const simd::M128 row2 = simd::Add(simd::MultAdd(simd::Splat<2>(a2), b2, simd::Mult(simd::Splat<0>(a2), b0)), simd::MultAdd(simd::Splat<3>(a2), b3, simd::Mult(simd::Splat<1>(a2), b1)));
         const simd::M128 a3   = _x[3].ToM128();
-        simd::M128       row3 = simd::Mult(simd::Splat<0>(a3), b0);
-        row3                  = simd::MultAdd(simd::Splat<1>(a3), b1, row3);
-        row3                  = simd::MultAdd(simd::Splat<2>(a3), b2, row3);
-        row3                  = simd::MultAdd(simd::Splat<3>(a3), b3, row3);
+        const simd::M128 row3 = simd::Add(simd::MultAdd(simd::Splat<2>(a3), b2, simd::Mult(simd::Splat<0>(a3), b0)), simd::MultAdd(simd::Splat<3>(a3), b3, simd::Mult(simd::Splat<1>(a3), b1)));
 
         return MATRIX::MakeFromM128(row0, row1, row2, row3);
     }
@@ -939,122 +926,59 @@ JUG_MATH_API constexpr MATRIX& MATRIX::operator/=(
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        const simd::M128 row0 = _mtx[0].ToM128();
-        const simd::M128 row1 = _mtx[1].ToM128();
-        const simd::M128 row2 = _mtx[2].ToM128();
-        const simd::M128 row3 = _mtx[3].ToM128();
+        // 2x2 블록 방법 (Eric Zhang, "Fast 4x4 Matrix Inverse with SSE SIMD"). DirectXMath 의 여인수 전개보다 연산이 30% 넘게 적다.
+        //     | A B |    2x2 블록은 레지스터 하나에 (m00 m01 m10 m11) 로 담는다. X# 는 수반 행렬.
+        // M = | C D |    M^-1 = 1/|M| * | X Y |  의 각 블록을 수반 행렬 꼴로 구한 뒤 마지막 셔플에서 되돌린다.
+        //                               | Z W |
+        const simd::M128 r0 = _mtx[0].ToM128();
+        const simd::M128 r1 = _mtx[1].ToM128();
+        const simd::M128 r2 = _mtx[2].ToM128();
+        const simd::M128 r3 = _mtx[3].ToM128();
 
-        const simd::M128 t1 = simd::Shuffle2<0, 1, 0, 1>(row0, row1);
-        const simd::M128 t3 = simd::Shuffle2<2, 3, 2, 3>(row0, row1);
-        const simd::M128 t2 = simd::Shuffle2<0, 1, 0, 1>(row2, row3);
-        const simd::M128 t4 = simd::Shuffle2<2, 3, 2, 3>(row2, row3);
+        const simd::M128 a = simd::Shuffle2<0, 1, 0, 1>(r0, r1);
+        const simd::M128 b = simd::Shuffle2<2, 3, 2, 3>(r0, r1);
+        const simd::M128 c = simd::Shuffle2<0, 1, 0, 1>(r2, r3);
+        const simd::M128 d = simd::Shuffle2<2, 3, 2, 3>(r2, r3);
 
-        const simd::M128 mt0 = simd::Shuffle2<0, 2, 0, 2>(t1, t2);
-        const simd::M128 mt1 = simd::Shuffle2<1, 3, 1, 3>(t1, t2);
-        const simd::M128 mt2 = simd::Shuffle2<0, 2, 0, 2>(t3, t4);
-        const simd::M128 mt3 = simd::Shuffle2<1, 3, 1, 3>(t3, t4);
+        // (|A| |B| |C| |D|)
+        const simd::M128 detSub = simd::NegMultAdd(simd::Shuffle2<1, 3, 1, 3>(r0, r2), simd::Shuffle2<0, 2, 0, 2>(r1, r3), simd::Mult(simd::Shuffle2<0, 2, 0, 2>(r0, r2), simd::Shuffle2<1, 3, 1, 3>(r1, r3)));
+        const simd::M128 detA   = simd::Splat<0>(detSub);
+        const simd::M128 detB   = simd::Splat<1>(detSub);
+        const simd::M128 detC   = simd::Splat<2>(detSub);
+        const simd::M128 detD   = simd::Splat<3>(detSub);
 
-        simd::M128 v00 = simd::Shuffle<0, 0, 1, 1>(mt2);
-        simd::M128 v10 = simd::Shuffle<2, 3, 2, 3>(mt3);
-        simd::M128 v01 = simd::Shuffle<0, 0, 1, 1>(mt0);
-        simd::M128 v11 = simd::Shuffle<2, 3, 2, 3>(mt1);
-        simd::M128 v02 = simd::Shuffle2<0, 2, 0, 2>(mt2, mt0);
-        simd::M128 v12 = simd::Shuffle2<1, 3, 1, 3>(mt3, mt1);
+        // D#C, A#B
+        const simd::M128 dc = simd::NegMultAdd(simd::Shuffle<1, 1, 2, 2>(d), simd::Shuffle<2, 3, 0, 1>(c), simd::Mult(simd::Shuffle<3, 3, 0, 0>(d), c));
+        const simd::M128 ab = simd::NegMultAdd(simd::Shuffle<1, 1, 2, 2>(a), simd::Shuffle<2, 3, 0, 1>(b), simd::Mult(simd::Shuffle<3, 3, 0, 0>(a), b));
 
-        simd::M128 d0 = simd::Mult(v00, v10);
-        simd::M128 d1 = simd::Mult(v01, v11);
-        simd::M128 d2 = simd::Mult(v02, v12);
+        // X# = |D|A - B(D#C),   W# = |A|D - C(A#B)
+        simd::M128 x = simd::NegMultAdd(simd::Shuffle<1, 0, 3, 2>(b), simd::Shuffle<2, 1, 2, 1>(dc), simd::MultSub(detD, a, simd::Mult(b, simd::Shuffle<0, 3, 0, 3>(dc))));
+        simd::M128 w = simd::NegMultAdd(simd::Shuffle<1, 0, 3, 2>(c), simd::Shuffle<2, 1, 2, 1>(ab), simd::MultSub(detA, d, simd::Mult(c, simd::Shuffle<0, 3, 0, 3>(ab))));
 
-        v00 = simd::Shuffle<2, 3, 2, 3>(mt2);
-        v10 = simd::Shuffle<0, 0, 1, 1>(mt3);
-        v01 = simd::Shuffle<2, 3, 2, 3>(mt0);
-        v11 = simd::Shuffle<0, 0, 1, 1>(mt1);
-        v02 = simd::Shuffle2<1, 3, 1, 3>(mt2, mt0);
-        v12 = simd::Shuffle2<0, 2, 0, 2>(mt3, mt1);
+        // Y# = |B|C - D(A#B)#,  Z# = |C|B - A(D#C)#
+        simd::M128 y = simd::MultAdd(simd::Shuffle<1, 0, 3, 2>(d), simd::Shuffle<2, 1, 2, 1>(ab), simd::MultSub(detB, c, simd::Mult(d, simd::Shuffle<3, 0, 3, 0>(ab))));
+        simd::M128 z = simd::MultAdd(simd::Shuffle<1, 0, 3, 2>(a), simd::Shuffle<2, 1, 2, 1>(dc), simd::MultSub(detC, b, simd::Mult(a, simd::Shuffle<3, 0, 3, 0>(dc))));
 
-        d0 = simd::NegMultAdd(v00, v10, d0);
-        d1 = simd::NegMultAdd(v01, v11, d1);
-        d2 = simd::NegMultAdd(v02, v12, d2);
-
-        // c0, c2, c4, c6
-        simd::M128 v11b = simd::Shuffle2<1, 3, 1, 1>(d0, d2);
-        v00             = simd::Shuffle<1, 2, 0, 1>(mt1);
-        simd::M128 v10b = simd::Shuffle2<2, 0, 3, 0>(v11b, d0);
-        v01             = simd::Shuffle<2, 0, 1, 0>(mt0);
-        v11b            = simd::Shuffle2<1, 2, 1, 2>(v11b, d0);
-        simd::M128 v13a = simd::Shuffle2<1, 3, 3, 3>(d1, d2);
-        v02             = simd::Shuffle<1, 2, 0, 1>(mt3);
-        simd::M128 v12b = simd::Shuffle2<2, 0, 3, 0>(v13a, d1);
-        simd::M128 v03a = simd::Shuffle<2, 0, 1, 0>(mt2);
-        v13a            = simd::Shuffle2<1, 2, 1, 2>(v13a, d1);
-
-        simd::M128 c0 = simd::Mult(v00, v10b);
-        simd::M128 c2 = simd::Mult(v01, v11b);
-        simd::M128 c4 = simd::Mult(v02, v12b);
-        simd::M128 c6 = simd::Mult(v03a, v13a);
-
-        v11b = simd::Shuffle2<0, 1, 0, 0>(d0, d2);
-        v00  = simd::Shuffle<2, 3, 1, 2>(mt1);
-        v10b = simd::Shuffle2<3, 0, 1, 2>(d0, v11b);
-        v01  = simd::Shuffle<3, 2, 3, 1>(mt0);
-        v11b = simd::Shuffle2<2, 1, 2, 0>(d0, v11b);
-        v13a = simd::Shuffle2<0, 1, 2, 2>(d1, d2);
-        v02  = simd::Shuffle<2, 3, 1, 2>(mt3);
-        v12b = simd::Shuffle2<3, 0, 1, 2>(d1, v13a);
-        v03a = simd::Shuffle<3, 2, 3, 1>(mt2);
-        v13a = simd::Shuffle2<2, 1, 2, 0>(d1, v13a);
-
-        c0 = simd::NegMultAdd(v00, v10b, c0);
-        c2 = simd::NegMultAdd(v01, v11b, c2);
-        c4 = simd::NegMultAdd(v02, v12b, c4);
-        c6 = simd::NegMultAdd(v03a, v13a, c6);
-
-        // c1, c3, c5, c7
-        v00             = simd::Shuffle<3, 0, 3, 0>(mt1);
-        simd::M128 v10c = simd::Shuffle2<2, 2, 0, 1>(d0, d2);
-        v10c            = simd::Shuffle<0, 3, 2, 0>(v10c);
-        v01             = simd::Shuffle<1, 3, 0, 2>(mt0);
-        simd::M128 v11c = simd::Shuffle2<0, 3, 0, 1>(d0, d2);
-        v11c            = simd::Shuffle<3, 0, 1, 2>(v11c);
-        v02             = simd::Shuffle<3, 0, 3, 0>(mt3);
-        simd::M128 v12c = simd::Shuffle2<2, 2, 2, 3>(d1, d2);
-        v12c            = simd::Shuffle<0, 3, 2, 0>(v12c);
-        v03a            = simd::Shuffle<1, 3, 0, 2>(mt2);
-        simd::M128 v13c = simd::Shuffle2<0, 3, 2, 3>(d1, d2);
-        v13c            = simd::Shuffle<3, 0, 1, 2>(v13c);
-
-        v00  = simd::Mult(v00, v10c);
-        v01  = simd::Mult(v01, v11c);
-        v02  = simd::Mult(v02, v12c);
-        v03a = simd::Mult(v03a, v13c);
-
-        const simd::M128 c1 = simd::Sub(c0, v00);
-        c0                  = simd::Add(c0, v00);
-        const simd::M128 c3 = simd::Add(c2, v01);
-        c2                  = simd::Sub(c2, v01);
-        const simd::M128 c5 = simd::Sub(c4, v02);
-        c4                  = simd::Add(c4, v02);
-        const simd::M128 c7 = simd::Add(c6, v03a);
-        c6                  = simd::Sub(c6, v03a);
-
-        c0 = simd::Shuffle<0, 2, 1, 3>(simd::Shuffle2<0, 2, 1, 3>(c0, c1));
-        c2 = simd::Shuffle<0, 2, 1, 3>(simd::Shuffle2<0, 2, 1, 3>(c2, c3));
-        c4 = simd::Shuffle<0, 2, 1, 3>(simd::Shuffle2<0, 2, 1, 3>(c4, c5));
-        c6 = simd::Shuffle<0, 2, 1, 3>(simd::Shuffle2<0, 2, 1, 3>(c6, c7));
-
-        const simd::M128 detV = simd::Dot4V(c0, mt0);
-        const float      det  = simd::GetX(detV);
+        // |M| = |A||D| + |B||C| - tr((A#B)(D#C))
+        const simd::M128 tr   = simd::SumAll(simd::Mult(ab, simd::Shuffle<0, 2, 1, 3>(dc)));
+        const simd::M128 detM = simd::Sub(simd::MultAdd(detB, detC, simd::Mult(detA, detD)), tr);
+        const float      det  = simd::GetX(detM);
         if (_outDetOrNull)
         {
             *_outDetOrNull = det;
         }
         if (det == 0.f)
         {
-            return MathConstants<MATRIX>::kZero;
+            return MATRIX::kZero;
         }
 
-        const simd::M128 invDetV = simd::Div(simd::SetAll(1.f), detV);
-        return MATRIX::MakeFromM128(simd::Mult(c0, invDetV), simd::Mult(c2, invDetV), simd::Mult(c4, invDetV), simd::Mult(c6, invDetV));
+        // (1/|M|, -1/|M|, -1/|M|, 1/|M|) 를 곱하고, 수반 행렬 셔플과 행 배치 셔플을 한 번에
+        const simd::M128 rDetM = simd::Div(simd::Set(1.f, -1.f, -1.f, 1.f), detM);
+        x                      = simd::Mult(x, rDetM);
+        y                      = simd::Mult(y, rDetM);
+        z                      = simd::Mult(z, rDetM);
+        w                      = simd::Mult(w, rDetM);
+        return MATRIX::MakeFromM128(simd::Shuffle2<3, 1, 3, 1>(x, y), simd::Shuffle2<2, 0, 2, 0>(x, y), simd::Shuffle2<3, 1, 3, 1>(z, w), simd::Shuffle2<2, 0, 2, 0>(z, w));
     }
 #endif
     const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2], m03 = _mtx[0][3];
@@ -1124,12 +1048,20 @@ JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        const simd::M128 v   = _v.ToM128();
-        simd::M128       ret = simd::Mult(simd::Splat<0>(v), _mtx[0].ToM128());
-        ret                  = simd::MultAdd(simd::Splat<1>(v), _mtx[1].ToM128(), ret);
-        ret                  = simd::MultAdd(simd::Splat<2>(v), _mtx[2].ToM128(), ret);
-        ret                  = simd::MultAdd(simd::Splat<3>(v), _mtx[3].ToM128(), ret);
+        const simd::M128 v = _v.ToM128();
+#    if defined(JUG_MATH_SIMD_FMA)
+        // FMA 면 체인이 명령이 가장 적다
+        simd::M128 ret = simd::Mult(simd::Splat<0>(v), _mtx[0].ToM128());
+        ret            = simd::MultAdd(simd::Splat<1>(v), _mtx[1].ToM128(), ret);
+        ret            = simd::MultAdd(simd::Splat<2>(v), _mtx[2].ToM128(), ret);
+        ret            = simd::MultAdd(simd::Splat<3>(v), _mtx[3].ToM128(), ret);
         return VECTOR4::MakeFromM128(ret);
+#    else
+        // FMA 가 없으면 명령 수가 같으니 덧셈 트리로 지연을 줄인다
+        const simd::M128 xz = simd::MultAdd(simd::Splat<2>(v), _mtx[2].ToM128(), simd::Mult(simd::Splat<0>(v), _mtx[0].ToM128()));
+        const simd::M128 yw = simd::MultAdd(simd::Splat<3>(v), _mtx[3].ToM128(), simd::Mult(simd::Splat<1>(v), _mtx[1].ToM128()));
+        return VECTOR4::MakeFromM128(simd::Add(xz, yw));
+#    endif
     }
 #endif
     return VECTOR4 {
@@ -1148,10 +1080,16 @@ JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        const simd::M128 p   = _point.ToM128();
-        simd::M128       ret = simd::MultAdd(simd::Splat<0>(p), _mtx[0].ToM128(), _mtx[3].ToM128());
-        ret                  = simd::MultAdd(simd::Splat<1>(p), _mtx[1].ToM128(), ret);
-        ret                  = simd::MultAdd(simd::Splat<2>(p), _mtx[2].ToM128(), ret);
+        const simd::M128 p = _point.ToM128();
+#    if defined(JUG_MATH_SIMD_FMA)
+        simd::M128 ret = simd::MultAdd(simd::Splat<0>(p), _mtx[0].ToM128(), _mtx[3].ToM128());
+        ret            = simd::MultAdd(simd::Splat<1>(p), _mtx[1].ToM128(), ret);
+        ret            = simd::MultAdd(simd::Splat<2>(p), _mtx[2].ToM128(), ret);
+#    else
+        const simd::M128 xw  = simd::MultAdd(simd::Splat<0>(p), _mtx[0].ToM128(), _mtx[3].ToM128());
+        const simd::M128 yz  = simd::MultAdd(simd::Splat<2>(p), _mtx[2].ToM128(), simd::Mult(simd::Splat<1>(p), _mtx[1].ToM128()));
+        const simd::M128 ret = simd::Add(xw, yz);
+#    endif
         return VECTOR3::MakeFromM128(simd::Div(ret, simd::Splat<3>(ret)));
     }
 #endif
@@ -1168,11 +1106,9 @@ JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        const simd::M128 v   = _v.ToM128();
-        simd::M128       ret = simd::Mult(simd::Splat<0>(v), _mtx[0].ToM128());
-        ret                  = simd::MultAdd(simd::Splat<1>(v), _mtx[1].ToM128(), ret);
-        ret                  = simd::MultAdd(simd::Splat<2>(v), _mtx[2].ToM128(), ret);
-        return VECTOR3::MakeFromM128(ret);
+        const simd::M128 v  = _v.ToM128();
+        const simd::M128 xz = simd::MultAdd(simd::Splat<2>(v), _mtx[2].ToM128(), simd::Mult(simd::Splat<0>(v), _mtx[0].ToM128()));
+        return VECTOR3::MakeFromM128(simd::MultAdd(simd::Splat<1>(v), _mtx[1].ToM128(), xz));
     }
 #endif
     return Xform(VECTOR4 { _v, 0.f }, _mtx).ToVector3();

@@ -918,24 +918,28 @@ inline void JUG_VECTORCALL Transpose4(
 }
 
 // 길이 0 이면 0 (DirectXMath 와 같은 의미). w 도 같은 길이로 나뉜다.
+// rsqrt + 뉴턴 1회로 나눗셈·제곱근 장치를 쓰지 않는다 (상대오차 ~3e-7, 정확한 경로의 두세 배 처리량).
+// 길이² 가 정규 float 보다 작으면 (|v| < 1e-19, 0 포함) rsqrt 가 무한대라 정확한 경로로 간다 - 거의 안 타는 분기.
 [[nodiscard]] inline M128 JUG_VECTORCALL Normalize3(
     const M128 _a)
 {
-    const M128 lenSq  = Dot3V(_a, _a);
-    const M128 len    = Sqrt(lenSq);
-    const M128 scaled = Div(_a, len);
-    const M128 valid  = CmpNe(lenSq, Zero());
-    return And(scaled, valid);
+    const M128 lenSq = Dot3V(_a, _a);
+    if (GetX(lenSq) < 1.17549435e-38f)
+    {
+        return And(Div(_a, Sqrt(lenSq)), CmpNe(lenSq, Zero()));
+    }
+    return Mult(_a, RSqrt(lenSq));
 }
 
 [[nodiscard]] inline M128 JUG_VECTORCALL Normalize4(
     const M128 _a)
 {
-    const M128 lenSq  = Dot4V(_a, _a);
-    const M128 len    = Sqrt(lenSq);
-    const M128 scaled = Div(_a, len);
-    const M128 valid  = CmpNe(lenSq, Zero());
-    return And(scaled, valid);
+    const M128 lenSq = Dot4V(_a, _a);
+    if (GetX(lenSq) < 1.17549435e-38f)
+    {
+        return And(Div(_a, Sqrt(lenSq)), CmpNe(lenSq, Zero()));
+    }
+    return Mult(_a, RSqrt(lenSq));
 }
 
 // =======================================================
@@ -1001,6 +1005,53 @@ inline void JUG_VECTORCALL SinCos(
     _outCos = Mult(k, cosSign);
 }
 
+
+// sin 만 (DirectXMath XMVectorSin). 구간 축소는 SinCos 와 같고 cos 다항식을 뺀 것
+[[nodiscard]] inline M128 JUG_VECTORCALL Sin(
+    const M128 _x)
+{
+    const M128 quotient = Round(Mult(_x, SetAll(0.159154943f)));
+    M128       x        = NegMultAdd(quotient, SetAll(6.283185307f), _x);
+
+    const M128 sign    = And(x, SetAll(-0.f));
+    const M128 c       = Or(SetAll(3.141592654f), sign);
+    const M128 absx    = AndNot(SetAll(-0.f), x);
+    const M128 rflx    = Sub(c, x);
+    const M128 inRange = CmpLe(absx, SetAll(1.570796327f));
+    x                  = Select(inRange, x, rflx);
+
+    const M128 x2 = Mult(x, x);
+    M128       s  = MultAdd(SetAll(-2.3889859e-08f), x2, SetAll(2.7525562e-06f));
+    s             = MultAdd(s, x2, SetAll(-0.00019840874f));
+    s             = MultAdd(s, x2, SetAll(0.0083333310f));
+    s             = MultAdd(s, x2, SetAll(-0.16666667f));
+    s             = MultAdd(s, x2, SetAll(1.f));
+    return Mult(s, x);
+}
+
+// cos 만 (DirectXMath XMVectorCos)
+[[nodiscard]] inline M128 JUG_VECTORCALL Cos(
+    const M128 _x)
+{
+    const M128 quotient = Round(Mult(_x, SetAll(0.159154943f)));
+    M128       x        = NegMultAdd(quotient, SetAll(6.283185307f), _x);
+
+    const M128 sign    = And(x, SetAll(-0.f));
+    const M128 c       = Or(SetAll(3.141592654f), sign);
+    const M128 absx    = AndNot(SetAll(-0.f), x);
+    const M128 rflx    = Sub(c, x);
+    const M128 inRange = CmpLe(absx, SetAll(1.570796327f));
+    x                  = Select(inRange, x, rflx);
+    const M128 cosSign = Select(inRange, SetAll(1.f), SetAll(-1.f));
+
+    const M128 x2 = Mult(x, x);
+    M128       k  = MultAdd(SetAll(-2.6051615e-07f), x2, SetAll(2.4760495e-05f));
+    k             = MultAdd(k, x2, SetAll(-0.0013888378f));
+    k             = MultAdd(k, x2, SetAll(0.041666638f));
+    k             = MultAdd(k, x2, SetAll(-0.5f));
+    k             = MultAdd(k, x2, SetAll(1.f));
+    return Mult(k, cosSign);
+}
 
 // 스칼라 각 하나의 (sin, cos, sin, cos). sin 과 cos 다항식을 한 레지스터의 서로 다른 레인에서 같이 돌려서
 // SinCos(SetAll(x)) 보다 다항식 연산이 절반이다. 식은 SinCos 와 같다.
