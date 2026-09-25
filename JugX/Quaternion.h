@@ -458,6 +458,16 @@ JUG_MATH_API constexpr QUATERNION& QUATERNION::operator/=(
     const QUATERNION _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        // t = 2 (q.xyz x v), v' = v + w t + q.xyz x t. Cross3 는 w 레인을 무시한다.
+        const simd::M128 q = _q.ToM128();
+        const simd::M128 v = _v.ToM128();
+        const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
+        return VECTOR3::MakeFromM128(simd::Add(simd::MultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
+    }
+#endif
     const VECTOR3 img = _q.GetImaginary();
     const VECTOR3 t   = Cross(img, _v) * 2.f;
     return _v + t * _q.GetW() + Cross(img, t);
@@ -468,6 +478,16 @@ JUG_MATH_API constexpr QUATERNION& QUATERNION::operator/=(
     const QUATERNION _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        // t = 2 (q.xyz x v), v' = v - w t + q.xyz x t. Cross3 는 w 레인을 무시한다.
+        const simd::M128 q = _q.ToM128();
+        const simd::M128 v = _v.ToM128();
+        const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
+        return VECTOR3::MakeFromM128(simd::Add(simd::NegMultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
+    }
+#endif
     const VECTOR3 img = _q.GetImaginary();
     const VECTOR3 t   = Cross(img, _v) * 2.f;
     return _v - t * _q.GetW() + Cross(img, t);
