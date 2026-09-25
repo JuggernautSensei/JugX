@@ -44,10 +44,12 @@ struct VECTOR<T, 3>
         return ret;
     }
 
-    [[nodiscard]] simd::M128 ToM128() const
+    // 요소 셋으로 조립한다 (w = 0). LoadFloat3 로 읽으면 스칼라로 막 만든 임시값·상수에서
+    // 작은 store 여러 개를 큰 load 하나로 읽게 돼 store-forwarding 이 실패한다.
+    [[nodiscard]] simd::M128 JUG_VECTORCALL ToM128() const
         requires std::is_floating_point_v<T>
     {
-        return simd::LoadFloat3(e.data());
+        return simd::Set(e[0], e[1], e[2], 0.f);
     }
 #endif
 
@@ -214,19 +216,9 @@ struct VECTOR<T, 3>
 
     [[nodiscard]] JUG_MATH_API constexpr VECTOR<T, 2> ToVector2() const
     {
-        return VECTOR<T, 2> { x, y };
+        return VECTOR<T, 2> { e[0], e[1] };
     }
 
-    const static VECTOR kZero;
-    const static VECTOR kOne;
-    const static VECTOR kRight;
-    const static VECTOR kUp;
-    const static VECTOR kForward;
-    const static VECTOR kUnitX;
-    const static VECTOR kUnitY;
-    const static VECTOR kUnitZ;
-    const static VECTOR kMax;
-    const static VECTOR kMin;
 
     constexpr static size_t kDim = 3;
 
@@ -268,40 +260,20 @@ static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
 //  Constants
 // =======================================================
 
+// 클래스 템플릿의 static 상수는 clang/gcc 에서 constexpr 로 못 쓴다 - MathConstants 로만 둔다.
 template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kZero { T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kOne { T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kRight = { T { 1 }, T { 0 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUp = { T { 0 }, T { 1 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kForward = { T { 0 }, T { 0 }, T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitX = { T { 1 }, T { 0 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitY = { T { 0 }, T { 1 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kUnitZ = { T { 0 }, T { 0 }, T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kMax { MathConstants<T>::kMax };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 3> VECTOR<T, 3>::kMin { MathConstants<T>::kMin };
-
-template<>
-struct MathConstants<VECTOR3>
+struct MathConstants<VECTOR<T, 3>>
 {
-    constexpr static VECTOR3 kZero    = VECTOR3::kZero;
-    constexpr static VECTOR3 kOne     = VECTOR3::kOne;
-    constexpr static VECTOR3 kRight   = VECTOR3::kRight;
-    constexpr static VECTOR3 kUp      = VECTOR3::kUp;
-    constexpr static VECTOR3 kForward = VECTOR3::kForward;
-    constexpr static VECTOR3 kUnitX   = VECTOR3::kUnitX;
-    constexpr static VECTOR3 kUnitY   = VECTOR3::kUnitY;
-    constexpr static VECTOR3 kUnitZ   = VECTOR3::kUnitZ;
-    constexpr static VECTOR3 kMax     = VECTOR3::kMax;
-    constexpr static VECTOR3 kMin     = VECTOR3::kMin;
+    constexpr static VECTOR<T, 3> kZero    = VECTOR<T, 3> { T { 0 } };
+    constexpr static VECTOR<T, 3> kOne     = VECTOR<T, 3> { T { 1 } };
+    constexpr static VECTOR<T, 3> kRight   = VECTOR<T, 3> { T { 1 }, T { 0 }, T { 0 } };
+    constexpr static VECTOR<T, 3> kUp      = VECTOR<T, 3> { T { 0 }, T { 1 }, T { 0 } };
+    constexpr static VECTOR<T, 3> kForward= VECTOR<T, 3> { T { 0 }, T { 0 }, T { 1 } };
+    constexpr static VECTOR<T, 3> kUnitX   = VECTOR<T, 3> { T { 1 }, T { 0 }, T { 0 } };
+    constexpr static VECTOR<T, 3> kUnitY   = VECTOR<T, 3> { T { 0 }, T { 1 }, T { 0 } };
+    constexpr static VECTOR<T, 3> kUnitZ   = VECTOR<T, 3> { T { 0 }, T { 0 }, T { 1 } };
+    constexpr static VECTOR<T, 3> kMax     = VECTOR<T, 3> { MathConstants<T>::kMax };
+    constexpr static VECTOR<T, 3> kMin     = VECTOR<T, 3> { MathConstants<T>::kMin };
 };
 
 }   // namespace jug

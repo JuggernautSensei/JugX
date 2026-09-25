@@ -190,14 +190,6 @@ struct VECTOR<T, 2>
         return e.data();
     }
 
-    const static VECTOR kZero;
-    const static VECTOR kOne;
-    const static VECTOR kRight;
-    const static VECTOR kUp;
-    const static VECTOR kUnitX;
-    const static VECTOR kUnitY;
-    const static VECTOR kMax;
-    const static VECTOR kMin;
 
     constexpr static size_t kDim = 2;
 
@@ -234,34 +226,18 @@ static_assert(PodT<VECTOR2>, "VECTOR2 must be POD type.");
 //  Constants
 // =======================================================
 
+// 클래스 템플릿의 static 상수는 clang/gcc 에서 constexpr 로 못 쓴다 - MathConstants 로만 둔다.
 template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kZero { T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kOne { T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kRight = { T { 1 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kUp = { T { 0 }, T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kUnitX = { T { 1 }, T { 0 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kUnitY = { T { 0 }, T { 1 } };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kMax { MathConstants<T>::kMax };
-template<VectorScalarT T>
-inline constexpr VECTOR<T, 2> VECTOR<T, 2>::kMin { MathConstants<T>::kMin };
-
-template<>
-struct MathConstants<VECTOR2>
+struct MathConstants<VECTOR<T, 2>>
 {
-    constexpr static VECTOR2 kZero  = VECTOR2::kZero;
-    constexpr static VECTOR2 kOne   = VECTOR2::kOne;
-    constexpr static VECTOR2 kRight = VECTOR2::kRight;
-    constexpr static VECTOR2 kUp    = VECTOR2::kUp;
-    constexpr static VECTOR2 kUnitX = VECTOR2::kUnitX;
-    constexpr static VECTOR2 kUnitY = VECTOR2::kUnitY;
-    constexpr static VECTOR2 kMax   = VECTOR2::kMax;
-    constexpr static VECTOR2 kMin   = VECTOR2::kMin;
+    constexpr static VECTOR<T, 2> kZero    = VECTOR<T, 2> { T { 0 } };
+    constexpr static VECTOR<T, 2> kOne     = VECTOR<T, 2> { T { 1 } };
+    constexpr static VECTOR<T, 2> kRight   = VECTOR<T, 2> { T { 1 }, T { 0 } };
+    constexpr static VECTOR<T, 2> kUp      = VECTOR<T, 2> { T { 0 }, T { 1 } };
+    constexpr static VECTOR<T, 2> kUnitX   = VECTOR<T, 2> { T { 1 }, T { 0 } };
+    constexpr static VECTOR<T, 2> kUnitY   = VECTOR<T, 2> { T { 0 }, T { 1 } };
+    constexpr static VECTOR<T, 2> kMax     = VECTOR<T, 2> { MathConstants<T>::kMax };
+    constexpr static VECTOR<T, 2> kMin     = VECTOR<T, 2> { MathConstants<T>::kMin };
 };
 
 }   // namespace jug

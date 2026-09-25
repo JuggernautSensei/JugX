@@ -29,10 +29,11 @@ concept VectorT = VectorTraits<V>::kIsVector;
 template<typename V>
 concept FloatingPointVectorT = VectorT<V> && std::floating_point<typename VectorTraits<V>::Scalar>;
 
-
 // =======================================================
 //  Method
 // =======================================================
+
+// VECTOR4 는 아래에 레지스터 전용 오버로드가 따로 있다 (요소를 쓰는 함수는 VECTOR4 로 인스턴스화되지 않는다).
 
 template<VectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V operator*(
@@ -166,24 +167,14 @@ template<FloatingPointVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V ToRad(
     const V _v)
 {
-    V ret = _v;
-    for (size_t i = 0; i < V::kDim; ++i)
-    {
-        ret[i] = ToRad(_v[i]);
-    }
-    return ret;
+    return _v * kDeg2Rad;
 }
 
 template<FloatingPointVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V ToDeg(
     const V _v)
 {
-    V ret = _v;
-    for (size_t i = 0; i < V::kDim; ++i)
-    {
-        ret[i] = ToDeg(_v[i]);
-    }
-    return ret;
+    return _v * kRad2Deg;
 }
 
 template<FloatingPointVectorT V>
@@ -243,16 +234,24 @@ template<FloatingPointVectorT V>
     return Sqrt(LengthSq(_v));
 }
 
+// 영벡터의 정규화는 영벡터로 정의한다 (DirectXMath 와 같은 의미 - 길이가 정확히 0 일 때만).
 template<FloatingPointVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Normalize(
     const V _v)
 {
     const float lenSq = LengthSq(_v);
-    if (IsZeroApprox(lenSq))   // fallback. 영벡터에 대한 정규화는 영벡터로 정의한다.
+    if (lenSq == 0.f)
     {
         return Zero<V>();
     }
-    return _v * RSqrt(lenSq);
+
+    const float len = Sqrt(lenSq);
+    V           ret = _v;
+    for (size_t i = 0; i < V::kDim; ++i)
+    {
+        ret[i] = _v[i] / len;
+    }
+    return ret;
 }
 
 template<FloatingPointVectorT V>
@@ -352,166 +351,144 @@ template<FloatingPointVectorT V>
     return _onto * (Dot(_v, _onto) * RcpSafe(lenSq));
 }
 
-#ifdef JUG_SIMD_AVAILABLE
+// =======================================================
+//  VECTOR3 (SIMD)
+// =======================================================
 
-[[nodiscard]] constexpr VECTOR4 operator/(
-    const float   _scalar,
-    const VECTOR4 _v)
-{
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Div(simd::SetAll(_scalar), _v.ToM128()));
-    }
-    return operator/ <VECTOR4>(_scalar, _v);
-}
-
-[[nodiscard]] constexpr VECTOR3 Normalize(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR3 Normalize(
     const VECTOR3 _v)
 {
-    if (!std::is_constant_evaluated())
-    {
-        const simd::M128 value = _v.ToM128();
-        const simd::M128 lenSq = simd::Dot4V(value, value);
-        const simd::M128 valid = simd::CmpGe(lenSq, simd::SetAll(kEpsilon));
-        return VECTOR3::MakeFromM128(simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid));
-    }
+    JUG_SIMD_PATH(VECTOR3::MakeFromM128(simd::Normalize3(_v.ToM128())));
     return Normalize<VECTOR3>(_v);
 }
 
-[[nodiscard]] constexpr float Dot(
+// =======================================================
+//  VECTOR4
+// =======================================================
+
+[[nodiscard]] JUG_MATH_API constexpr float JUG_VECTORCALL Dot(
     const VECTOR4 _x,
     const VECTOR4 _y)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return simd::Dot4(_x.ToM128(), _y.ToM128());
-    }
-    return Dot<VECTOR4>(_x, _y);
+    JUG_SIMD_PATH(simd::Dot4(_x.v, _y.v));
+    return _x[0] * _y[0] + _x[1] * _y[1] + _x[2] * _y[2] + _x[3] * _y[3];
 }
 
-[[nodiscard]] constexpr float LengthSq(
+[[nodiscard]] JUG_MATH_API constexpr float JUG_VECTORCALL LengthSq(
     const VECTOR4 _v)
 {
     return Dot(_v, _v);
 }
 
-[[nodiscard]] constexpr float Length(
+[[nodiscard]] JUG_MATH_API constexpr float JUG_VECTORCALL Length(
     const VECTOR4 _v)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return simd::Length4(_v.ToM128());
-    }
-    return Sqrt(LengthSq<VECTOR4>(_v));
+    JUG_SIMD_PATH(simd::Length4(_v.v));
+    return Sqrt(LengthSq(_v));
 }
 
-[[nodiscard]] constexpr VECTOR4 Normalize(
+// 영벡터의 정규화는 영벡터 (DirectXMath 와 같은 의미)
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Normalize(
     const VECTOR4 _v)
 {
-    if (!std::is_constant_evaluated())
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Normalize4(_v.v)));
+    const float lenSq = LengthSq(_v);
+    if (lenSq == 0.f)
     {
-        const simd::M128 value = _v.ToM128();
-        const simd::M128 lenSq = simd::Dot4V(value, value);
-        const simd::M128 valid = simd::CmpGe(lenSq, simd::SetAll(kEpsilon));
-        return VECTOR4::MakeFromM128(simd::And(simd::Div(value, simd::Sqrt(lenSq)), valid));
+        return MathConstants<VECTOR4>::kZero;
     }
-    return Normalize<VECTOR4>(_v);
+    const float len = Sqrt(lenSq);
+    return VECTOR4 { _v[0] / len, _v[1] / len, _v[2] / len, _v[3] / len };
 }
 
-[[nodiscard]] constexpr float DistanceSq(
+[[nodiscard]] JUG_MATH_API constexpr float JUG_VECTORCALL DistanceSq(
     const VECTOR4 _x,
     const VECTOR4 _y)
 {
     return LengthSq(_x - _y);
 }
 
-[[nodiscard]] constexpr float Distance(
+[[nodiscard]] JUG_MATH_API constexpr float JUG_VECTORCALL Distance(
     const VECTOR4 _x,
     const VECTOR4 _y)
 {
     return Length(_x - _y);
 }
 
-[[nodiscard]] constexpr VECTOR4 Min(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Min(
     const VECTOR4 _x,
     const VECTOR4 _y)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Min(_x.ToM128(), _y.ToM128()));
-    }
-    return Min<VECTOR4>(_x, _y);
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Min(_x.v, _y.v)));
+    return VECTOR4 { Min(_x[0], _y[0]), Min(_x[1], _y[1]), Min(_x[2], _y[2]), Min(_x[3], _y[3]) };
 }
 
-[[nodiscard]] constexpr VECTOR4 Max(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Max(
     const VECTOR4 _x,
     const VECTOR4 _y)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Max(_x.ToM128(), _y.ToM128()));
-    }
-    return Max<VECTOR4>(_x, _y);
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Max(_x.v, _y.v)));
+    return VECTOR4 { Max(_x[0], _y[0]), Max(_x[1], _y[1]), Max(_x[2], _y[2]), Max(_x[3], _y[3]) };
 }
 
-[[nodiscard]] constexpr VECTOR4 Clamp(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Clamp(
     const VECTOR4 _v,
     const VECTOR4 _min,
     const VECTOR4 _max)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Clamp(_v.ToM128(), _min.ToM128(), _max.ToM128()));
-    }
-    return Clamp<VECTOR4>(_v, _min, _max);
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Clamp(_v.v, _min.v, _max.v)));
+    return VECTOR4 { Clamp(_v[0], _min[0], _max[0]), Clamp(_v[1], _min[1], _max[1]), Clamp(_v[2], _min[2], _max[2]), Clamp(_v[3], _min[3], _max[3]) };
 }
 
-[[nodiscard]] constexpr VECTOR4 Abs(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Saturate(
     const VECTOR4 _v)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Abs(_v.ToM128()));
-    }
-    return Abs<VECTOR4>(_v);
+    return Clamp(_v, MathConstants<VECTOR4>::kZero, MathConstants<VECTOR4>::kOne);
 }
 
-[[nodiscard]] constexpr VECTOR4 Lerp(
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Abs(
+    const VECTOR4 _v)
+{
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Abs(_v.v)));
+    return VECTOR4 { Abs(_v[0]), Abs(_v[1]), Abs(_v[2]), Abs(_v[3]) };
+}
+
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Rcp(
+    const VECTOR4 _v)
+{
+    return 1.f / _v;
+}
+
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL RcpSafe(
+    const VECTOR4 _v)
+{
+    return VECTOR4 { RcpSafe(_v[0]), RcpSafe(_v[1]), RcpSafe(_v[2]), RcpSafe(_v[3]) };
+}
+
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 JUG_VECTORCALL Lerp(
     const VECTOR4 _x,
     const VECTOR4 _y,
     const float   _t)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return VECTOR4::MakeFromM128(simd::Lerp(_x.ToM128(), _y.ToM128(), _t));
-    }
-    return Lerp<VECTOR4>(_x, _y, _t);
+    JUG_SIMD_PATH(VECTOR4::MakeFromM128(simd::Lerp(_x.v, _y.v, _t)));
+    return _x + (_y - _x) * _t;
 }
 
-[[nodiscard]] constexpr bool IsEqualApprox(
+[[nodiscard]] JUG_MATH_API constexpr bool JUG_VECTORCALL IsEqualApprox(
     const VECTOR4 _x,
     const VECTOR4 _y,
     const float   _epsilon = kEpsilon)
 {
-    if (!std::is_constant_evaluated())
-    {
-        const simd::M128 diff = simd::Abs(simd::Sub(_x.ToM128(), _y.ToM128()));
-        return simd::AllTrue(simd::CmpLt(diff, simd::SetAll(_epsilon)));
-    }
-    return IsEqualApprox<VECTOR4>(_x, _y, _epsilon);
+    JUG_SIMD_PATH(simd::AllTrue(simd::CmpLt(simd::Abs(simd::Sub(_x.v, _y.v)), simd::SetAll(_epsilon))));
+    return IsEqualApprox(_x[0], _y[0], _epsilon) && IsEqualApprox(_x[1], _y[1], _epsilon) && IsEqualApprox(_x[2], _y[2], _epsilon) && IsEqualApprox(_x[3], _y[3], _epsilon);
 }
 
-[[nodiscard]] constexpr bool IsZeroApprox(
+[[nodiscard]] JUG_MATH_API constexpr bool JUG_VECTORCALL IsZeroApprox(
     const VECTOR4 _v,
     const float   _epsilon = kEpsilon)
 {
-    if (!std::is_constant_evaluated())
-    {
-        return simd::AllTrue(simd::CmpLt(simd::Abs(_v.ToM128()), simd::SetAll(_epsilon)));
-    }
-    return IsZeroApprox<VECTOR4>(_v, _epsilon);
+    JUG_SIMD_PATH(simd::AllTrue(simd::CmpLt(simd::Abs(_v.v), simd::SetAll(_epsilon))));
+    return IsZeroApprox(_v[0], _epsilon) && IsZeroApprox(_v[1], _epsilon) && IsZeroApprox(_v[2], _epsilon) && IsZeroApprox(_v[3], _epsilon);
 }
-
-#endif   // JUG_SIMD_AVAILABLE
 
 }   // namespace jug

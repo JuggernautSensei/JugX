@@ -144,21 +144,7 @@ struct FRUSTUM
 
     const static FRUSTUM kZero;
 
-    JUG_DISABLE_ANON_WARNING_BEGIN
-    union
-    {
-        struct
-        {
-            PLANE right;
-            PLANE left;
-            PLANE up;
-            PLANE down;
-            PLANE farZ;
-            PLANE nearZ;
-        };
-        DIRECT_ENUM_ARRAY<eFrustumPlane, PLANE> planes;
-    };
-    JUG_DISABLE_ANON_WARNING_END
+    DIRECT_ENUM_ARRAY<eFrustumPlane, PLANE> planes;
 };
 static_assert(PodT<FRUSTUM>, "FRUSTUM must be POD type.");
 

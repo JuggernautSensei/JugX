@@ -4,11 +4,39 @@
 namespace jug
 {
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeRotation(
+JUG_MATH_API constexpr MATRIX JUG_VECTORCALL MATRIX::MakeRotation(
     const QUATERNION _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
 
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        // DirectXMath XMMatrixRotationQuaternion 과 같은 셔플
+        const simd::M128 q  = _q.ToM128();
+        const simd::M128 q0 = simd::Add(q, q);
+        const simd::M128 q1 = simd::Mult(q, q0);   // 2xx 2yy 2zz 2ww
+
+        // 대각: 1 - 2(yy + zz), 1 - 2(xx + zz), 1 - 2(xx + yy), 0
+        const simd::M128 d0   = simd::ZeroW(simd::Shuffle<1, 0, 0, 3>(q1));
+        const simd::M128 d1   = simd::ZeroW(simd::Shuffle<2, 2, 1, 3>(q1));
+        const simd::M128 diag = simd::Sub(simd::Sub(simd::Set(1.f, 1.f, 1.f, 0.f), d0), d1);
+
+        // 비대각: (2xz, 2xy, 2yz) ± (2wy, 2wz, 2wx)
+        const simd::M128 a    = simd::Mult(simd::Shuffle<0, 0, 1, 3>(q), simd::Shuffle<2, 1, 2, 3>(q0));
+        const simd::M128 b    = simd::Mult(simd::Splat<3>(q), simd::Shuffle<1, 2, 0, 3>(q0));
+        const simd::M128 plus = simd::Add(a, b);
+        const simd::M128 minu = simd::Sub(a, b);
+
+        const simd::M128 v0 = simd::Shuffle<0, 2, 3, 1>(simd::Shuffle2<1, 2, 0, 1>(plus, minu));   // 2(xy+wz) 2(xz-wy) 2(xy-wz) 2(yz+wx)
+        const simd::M128 v1 = simd::Shuffle<0, 2, 0, 2>(simd::Shuffle2<0, 0, 2, 2>(plus, minu));   // 2(xz+wy) 2(yz-wx) ...
+
+        const simd::M128 row0 = simd::Shuffle<0, 2, 3, 1>(simd::Shuffle2<0, 3, 0, 1>(diag, v0));
+        const simd::M128 row1 = simd::Shuffle<2, 0, 3, 1>(simd::Shuffle2<1, 3, 2, 3>(diag, v0));
+        const simd::M128 row2 = simd::Shuffle2<0, 1, 2, 3>(v1, diag);
+        return MakeFromM128(row0, row1, row2, simd::Set(0.f, 0.f, 0.f, 1.f));
+    }
+#endif
     const float x = _q[0];
     const float y = _q[1];
     const float z = _q[2];
@@ -26,14 +54,27 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeRotation(
     };
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeSRT(
+JUG_MATH_API constexpr MATRIX JUG_VECTORCALL MATRIX::MakeSRT(
     const VECTOR3    _scale,
     const QUATERNION _rotation,
     const VECTOR3    _translation)
 {
     JUG_ASSERT(IsNormalized(_rotation), "QUATERNION must be normalized");
-    JUG_ASSERT(!IsZeroApprox(_scale.x) && !IsZeroApprox(_scale.y) && !IsZeroApprox(_scale.z), "Scale cannot have a zero component.");
+    JUG_ASSERT(!IsZeroApprox(_scale[0]) && !IsZeroApprox(_scale[1]) && !IsZeroApprox(_scale[2]), "Scale cannot have a zero component.");
 
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        // 회전 행렬의 행마다 스케일을 곱하고 이동을 넣는다 (DirectXMath 는 스케일 행렬과 행렬 곱을 한다)
+        const MATRIX     rot = MakeRotation(_rotation);
+        const simd::M128 s   = _scale.ToM128();
+        return MakeFromM128(
+            simd::Mult(rot[0].ToM128(), simd::Splat<0>(s)),
+            simd::Mult(rot[1].ToM128(), simd::Splat<1>(s)),
+            simd::Mult(rot[2].ToM128(), simd::Splat<2>(s)),
+            simd::Insert<3>(_translation.ToM128(), 1.f));
+    }
+#endif
     const float sx = _scale[0], sy = _scale[1], sz = _scale[2];
     const float xx = _rotation[0] * _rotation[0], yy = _rotation[1] * _rotation[1], zz = _rotation[2] * _rotation[2];
     const float xy = _rotation[0] * _rotation[1], xz = _rotation[0] * _rotation[2], yz = _rotation[1] * _rotation[2];
@@ -47,13 +88,13 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeSRT(
     };
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeInvSRT(
+JUG_MATH_API constexpr MATRIX JUG_VECTORCALL MATRIX::MakeInvSRT(
     const VECTOR3    _scale,
     const QUATERNION _rotation,
     const VECTOR3    _translation)
 {
     JUG_ASSERT(IsNormalized(_rotation), "Rotation must be normalized.");
-    JUG_ASSERT(!IsZeroApprox(_scale.x) && !IsZeroApprox(_scale.y) && !IsZeroApprox(_scale.z), "Scale cannot have a zero component.");
+    JUG_ASSERT(!IsZeroApprox(_scale[0]) && !IsZeroApprox(_scale[1]) && !IsZeroApprox(_scale[2]), "Scale cannot have a zero component.");
 
     const float sx = _scale[0], sy = _scale[1], sz = _scale[2];
     const float isx = 1.f / sx, isy = 1.f / sy, isz = 1.f / sz;
@@ -80,18 +121,18 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeInvSRT(
     };
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeViewLookTo(
+JUG_MATH_API constexpr MATRIX JUG_VECTORCALL MATRIX::MakeViewLookTo(
     const VECTOR3    _eye,
     const QUATERNION _rotation)
 {
     return MakeInvSRT(One<VECTOR3>(), _rotation, _eye);
 }
 
-JUG_MATH_API constexpr void Decompose(
-    const MATRIX& _mtx,
-    VECTOR3*      _pOutScaleOrNull,
-    QUATERNION*   _pOutRotationOrNull,
-    VECTOR3*      _pOutTranslationOrNull)
+JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(
+    const MATRIX _mtx,
+    VECTOR3*     _pOutScaleOrNull,
+    QUATERNION*  _pOutRotationOrNull,
+    VECTOR3*     _pOutTranslationOrNull)
 {
     // S
     if (_pOutRotationOrNull || _pOutScaleOrNull)
@@ -101,10 +142,7 @@ JUG_MATH_API constexpr void Decompose(
         const float sz = Length(_mtx[2]);
         if (_pOutScaleOrNull)
         {
-            VECTOR3& scale = *_pOutScaleOrNull;
-            scale[0]       = sx;
-            scale[1]       = sy;
-            scale[2]       = sz;
+            *_pOutScaleOrNull = VECTOR3 { sx, sy, sz };
         }
 
         // R
@@ -119,10 +157,7 @@ JUG_MATH_API constexpr void Decompose(
     // T
     if (_pOutTranslationOrNull)
     {
-        VECTOR3& translation = *_pOutTranslationOrNull;
-        translation[0]       = _mtx[3][0];
-        translation[1]       = _mtx[3][1];
-        translation[2]       = _mtx[3][2];
+        *_pOutTranslationOrNull = _mtx[3].ToVector3();
     }
 }
 

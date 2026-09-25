@@ -52,17 +52,8 @@ struct PLANE
 
     const static PLANE kZero;
 
-    JUG_DISABLE_ANON_WARNING_BEGIN
-    union
-    {
-        struct
-        {
-            VECTOR3 normal;
-            float   d;
-        };
-        VECTOR4 v;
-    };
-    JUG_DISABLE_ANON_WARNING_END
+    VECTOR3 normal;
+    float   d;
 };
 
 static_assert(PodT<PLANE>, "PLANE must be POD type.");

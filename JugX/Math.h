@@ -1,6 +1,8 @@
 ﻿#pragma once
+#include <cfloat>
 #include <numbers>
 
+#include "SIMD.h"
 #include "TypeTraits.h"
 
 namespace jug
@@ -211,6 +213,7 @@ constexpr static float kInvLogNat2 = 1.4426950408889634f;
 [[nodiscard]] JUG_MATH_API constexpr float Sin(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Cos(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float Tan(float _x);
+JUG_MATH_API constexpr void                SinCos(float _x, float& _outSin, float& _outCos);
 [[nodiscard]] JUG_MATH_API constexpr float ACos(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float ASin(float _x);
 [[nodiscard]] JUG_MATH_API constexpr float ATan2(float _y, float _x);

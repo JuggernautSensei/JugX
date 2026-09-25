@@ -82,6 +82,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(BenchArch)'=='AVX2'">
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)AVX2\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)AVX2\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(BenchArch)'=='AVX2'">
+    <ClCompile>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnabled>true</VcpkgEnabled>
     <VcpkgEnableManifest>true</VcpkgEnableManifest>

@@ -71,11 +71,11 @@ struct MathBenchInput
             {
                 for (size_t c = 0; c < 3; ++c)
                 {
-                    mtxA[i][r][c] = RandomFloat(rng, -1.f, 1.f) + (r == c ? 3.f : 0.f);
-                    mtxB[i][r][c] = RandomFloat(rng, -1.f, 1.f);
+                    mtxA[i][r].Set(c, RandomFloat(rng, -1.f, 1.f) + (r == c ? 3.f : 0.f));
+                    mtxB[i][r].Set(c, RandomFloat(rng, -1.f, 1.f));
                 }
-                mtxA[i][r][3] = r == 3 ? RandomFloat(rng, 1.f, 2.f) : RandomFloat(rng, -0.2f, 0.2f);
-                mtxB[i][r][3] = RandomFloat(rng, -1.f, 1.f);
+                mtxA[i][r].Set(3, r == 3 ? RandomFloat(rng, 1.f, 2.f) : RandomFloat(rng, -0.2f, 0.2f));
+                mtxB[i][r].Set(3, RandomFloat(rng, -1.f, 1.f));
             }
 
             v3a[i]    = jug::VECTOR3 { RandomFloat(rng, -1.f, 1.f), RandomFloat(rng, -1.f, 1.f), RandomFloat(rng, -1.f, 1.f) };

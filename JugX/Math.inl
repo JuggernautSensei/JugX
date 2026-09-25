@@ -116,7 +116,15 @@ template<ArithmeticT T>
 template<ArithmeticT T>
 [[nodiscard]] JUG_MATH_API constexpr T Abs(T _x)
 {
-    return _x < Zero<T>() ? -_x : _x;
+    if constexpr (std::is_same_v<T, float>)
+    {
+        // 부호 비트만 지운다. 삼항식은 MSVC 가 분기로 만든다.
+        return std::bit_cast<float>(std::bit_cast<uint32_t>(_x) & ~kFloatSignMask);
+    }
+    else
+    {
+        return _x < Zero<T>() ? -_x : _x;
+    }
 }
 
 template<ArithmeticT T>
@@ -541,48 +549,6 @@ namespace math_detail
 
 namespace math_detail
 {
-    [[nodiscard]] JUG_MATH_API constexpr float Cos(
-        const float _x)
-    {
-        const float scaled = _x * 2.f * (1.f / kPI);
-        const float real   = Floor(scaled);
-        const float xx     = _x - real * kHalfPI;
-        const int   bits   = static_cast<int>(real) & 3;
-
-        constexpr float kSinC2  = -0.16666667163372039794921875f;
-        constexpr float kSinC4  = 8.333347737789154052734375e-3f;
-        constexpr float kSinC6  = -1.9842604524455964565277099609375e-4f;
-        constexpr float kSinC8  = 2.760012648650445044040679931640625e-6f;
-        constexpr float kSinC10 = -2.50293279435709337121807038784027099609375e-8f;
-
-        constexpr float kCosC2  = -0.5f;
-        constexpr float kCosC4  = 4.166664183139801025390625e-2f;
-        constexpr float kCosC6  = -1.388833043165504932403564453125e-3f;
-        constexpr float kCosC8  = 2.47562347794882953166961669921875e-5f;
-        constexpr float kCosC10 = -2.59630184018533327616751194000244140625e-7f;
-
-        float c0  = xx;
-        float c2  = kSinC2;
-        float c4  = kSinC4;
-        float c6  = kSinC6;
-        float c8  = kSinC8;
-        float c10 = kSinC10;
-
-        if (bits == 0 || bits == 2)
-        {
-            c0  = 1.f;
-            c2  = kCosC2;
-            c4  = kCosC4;
-            c6  = kCosC6;
-            c8  = kCosC8;
-            c10 = kCosC10;
-        }
-
-        const float xsq = xx * xx;
-        const float r   = ((((c10 * xsq + c8) * xsq + c6) * xsq + c4) * xsq + c2) * xsq + 1.f;
-        return (bits == 1 || bits == 2) ? -(r * c0) : (r * c0);
-    }
-
     [[nodiscard]] JUG_MATH_API constexpr float ACos(
         const float _x)
     {
@@ -637,34 +603,133 @@ namespace math_detail
     }
 }   // namespace math_detail
 
-[[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
+// DirectXMath XMScalarSin / XMScalarCos / XMScalarSinCos 와 같은 식 (constexpr 과 SIMD 없는 환경 전용).
+// 런타임은 분기 없는 simd::SinCos 를 쓴다 - 여기의 구간 접기 분기는 임의 각도에서 절반이 예측 실패한다.
+namespace math_detail
 {
-    if (std::is_constant_evaluated())
+    [[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
     {
-        return math_detail::Cos(_x - kHalfPI);
+        // DirectXMath XMScalarSin 과 같은 식. x = 2pi * quotient + y, y 는 [-pi, pi]
+        float quotient = kInv2PI * _x;
+        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
+        float y        = _x - k2PI * quotient;
+
+        // sin(y) = sin(x) 를 유지하며 [-pi/2, pi/2] 로 접는다
+        if (y > kHalfPI)
+        {
+            y = kPI - y;
+        }
+        else if (y < -kHalfPI)
+        {
+            y = -kPI - y;
+        }
+
+        // 11차 minimax
+        const float y2 = y * y;
+        return (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.f) * y;
     }
 
-    return ::sinf(_x);
+    [[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
+    {
+        // DirectXMath XMScalarCos 와 같은 식
+        float quotient = kInv2PI * _x;
+        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
+        float y        = _x - k2PI * quotient;
+
+        // cos(y) = sign * cos(x) 로 [-pi/2, pi/2] 에 접는다
+        float sign = 1.f;
+        if (y > kHalfPI)
+        {
+            y    = kPI - y;
+            sign = -1.f;
+        }
+        else if (y < -kHalfPI)
+        {
+            y    = -kPI - y;
+            sign = -1.f;
+        }
+
+        // 10차 minimax
+        const float y2 = y * y;
+        const float p  = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.f;
+        return sign * p;
+    }
+
+    JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCos)
+    {
+        // DirectXMath XMScalarSinCos 와 같은 식. 구간 축소를 한 번만 한다
+        float quotient = kInv2PI * _x;
+        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
+        float y        = _x - k2PI * quotient;
+
+        float sign = 1.f;
+        if (y > kHalfPI)
+        {
+            y    = kPI - y;
+            sign = -1.f;
+        }
+        else if (y < -kHalfPI)
+        {
+            y    = -kPI - y;
+            sign = -1.f;
+        }
+
+        const float y2 = y * y;
+        _outSin        = (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.f) * y;
+        _outCos        = sign * (((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.f);
+    }
+}   // namespace math_detail
+
+[[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
+{
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        simd::M128 s;
+        simd::M128 c;
+        simd::SinCos(simd::SetAll(_x), s, c);
+        return simd::GetX(s);
+    }
+#endif
+    return math_detail::Sin(_x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
 {
-    if (std::is_constant_evaluated())
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
     {
-        return math_detail::Cos(_x);
+        simd::M128 s;
+        simd::M128 c;
+        simd::SinCos(simd::SetAll(_x), s, c);
+        return simd::GetX(c);
     }
+#endif
+    return math_detail::Cos(_x);
+}
 
-    return ::cosf(_x);
+JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCos)
+{
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        simd::M128 s;
+        simd::M128 c;
+        simd::SinCos(simd::SetAll(_x), s, c);
+        _outSin = simd::GetX(s);
+        _outCos = simd::GetX(c);
+        return;
+    }
+#endif
+    math_detail::SinCos(_x, _outSin, _outCos);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Tan(const float _x)
 {
-    if (std::is_constant_evaluated())
-    {
-        return math_detail::Cos(_x - kHalfPI) / math_detail::Cos(_x);
-    }
-
-    return ::tanf(_x);
+    float s = 0.f;
+    float c = 0.f;
+    SinCos(_x, s, c);
+    return s / c;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float ACos(const float _x)

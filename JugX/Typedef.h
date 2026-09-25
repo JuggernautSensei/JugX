@@ -7,7 +7,9 @@
 #include <set>
 #include <span>
 #include <vector>
-#include <parallel_hashmap/phmap.h>
+#ifndef __CUDACC__   // nvcc 가 거친 phmap 은 MSVC 호스트 컴파일에서 깨진다. CUDA TU 에선 해시 컨테이너를 쓰지 않는다.
+#    include <parallel_hashmap/phmap.h>
+#endif
 
 namespace jug
 {
@@ -61,6 +63,7 @@ using RbSet = std::set<T, Cmp, Alloc>;
 template<typename K, typename V, typename Cmp = std::less<K>, typename Alloc = Allocator<std::pair<const K, V>>>
 using RbMap = std::map<K, V, Cmp, Alloc>;
 
+#ifndef __CUDACC__
 template<typename T>
 using Hasher = phmap::priv::hash_default_hash<T>;
 
@@ -72,6 +75,7 @@ using HashMap = phmap::parallel_flat_hash_map<K, V, H, E, Alloc>;
 
 template<typename K, typename V, typename H = Hasher<K>, typename E = EqualTo<K>, typename Alloc = Allocator<std::pair<const K, V>>>
 using HashSet = phmap::parallel_flat_hash_set<K, H, E, Alloc>;
+#endif
 
 template<typename T, size_t kExtent = std::dynamic_extent>
 using Span = std::span<T, kExtent>;
