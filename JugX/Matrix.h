@@ -918,6 +918,68 @@ JUG_MATH_API constexpr MATRIX& MATRIX::operator/=(
     return s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
 }
 
+namespace matrix_detail
+{
+    // constexpr / SIMD 없음 전용 (Multiply 와 같은 이유로 SIMD 함수에서 뺐다)
+    [[nodiscard]] JUG_MATH_API constexpr MATRIX Inverse(
+        const MATRIX& _mtx,
+        float*        _outDetOrNull)
+    {
+        const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2], m03 = _mtx[0][3];
+        const float m10 = _mtx[1][0], m11 = _mtx[1][1], m12 = _mtx[1][2], m13 = _mtx[1][3];
+        const float m20 = _mtx[2][0], m21 = _mtx[2][1], m22 = _mtx[2][2], m23 = _mtx[2][3];
+        const float m30 = _mtx[3][0], m31 = _mtx[3][1], m32 = _mtx[3][2], m33 = _mtx[3][3];
+
+        const float s0 = m00 * m11 - m10 * m01;
+        const float s1 = m00 * m12 - m10 * m02;
+        const float s2 = m00 * m13 - m10 * m03;
+        const float s3 = m01 * m12 - m11 * m02;
+        const float s4 = m01 * m13 - m11 * m03;
+        const float s5 = m02 * m13 - m12 * m03;
+        const float c5 = m22 * m33 - m32 * m23;
+        const float c4 = m21 * m33 - m31 * m23;
+        const float c3 = m21 * m32 - m31 * m22;
+        const float c2 = m20 * m33 - m30 * m23;
+        const float c1 = m20 * m32 - m30 * m22;
+        const float c0 = m20 * m31 - m30 * m21;
+
+        const float det = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
+        if (_outDetOrNull)
+        {
+            *_outDetOrNull = det;
+        }
+        if (det == 0.f)
+        {
+            return MathConstants<MATRIX>::kZero;
+        }
+        const float invDet = 1.f / det;
+
+        // clang-format off
+        return MATRIX {
+            ( m11 * c5 - m12 * c4 + m13 * c3) * invDet,
+            (-m01 * c5 + m02 * c4 - m03 * c3) * invDet,
+            ( m31 * s5 - m32 * s4 + m33 * s3) * invDet,
+            (-m21 * s5 + m22 * s4 - m23 * s3) * invDet,
+
+            (-m10 * c5 + m12 * c2 - m13 * c1) * invDet,
+            ( m00 * c5 - m02 * c2 + m03 * c1) * invDet,
+            (-m30 * s5 + m32 * s2 - m33 * s1) * invDet,
+            ( m20 * s5 - m22 * s2 + m23 * s1) * invDet,
+
+            ( m10 * c4 - m11 * c2 + m13 * c0) * invDet,
+            (-m00 * c4 + m01 * c2 - m03 * c0) * invDet,
+            ( m30 * s4 - m31 * s2 + m33 * s0) * invDet,
+            (-m20 * s4 + m21 * s2 - m23 * s0) * invDet,
+
+            (-m10 * c3 + m11 * c1 - m12 * c0) * invDet,
+            ( m00 * c3 - m01 * c1 + m02 * c0) * invDet,
+            (-m30 * s3 + m31 * s1 - m32 * s0) * invDet,
+            ( m20 * s3 - m21 * s1 + m22 * s0) * invDet
+        };
+        // clang-format on
+    }
+}   // namespace matrix_detail
+
 // 역행렬이 없으면 (행렬식이 정확히 0) 영행렬
 [[nodiscard]] JUG_MATH_API constexpr MATRIX JUG_VECTORCALL Inverse(
     const MATRIX _mtx,
@@ -981,58 +1043,7 @@ JUG_MATH_API constexpr MATRIX& MATRIX::operator/=(
         return MATRIX::MakeFromM128(simd::Shuffle2<3, 1, 3, 1>(x, y), simd::Shuffle2<2, 0, 2, 0>(x, y), simd::Shuffle2<3, 1, 3, 1>(z, w), simd::Shuffle2<2, 0, 2, 0>(z, w));
     }
 #endif
-    const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2], m03 = _mtx[0][3];
-    const float m10 = _mtx[1][0], m11 = _mtx[1][1], m12 = _mtx[1][2], m13 = _mtx[1][3];
-    const float m20 = _mtx[2][0], m21 = _mtx[2][1], m22 = _mtx[2][2], m23 = _mtx[2][3];
-    const float m30 = _mtx[3][0], m31 = _mtx[3][1], m32 = _mtx[3][2], m33 = _mtx[3][3];
-
-    const float s0 = m00 * m11 - m10 * m01;
-    const float s1 = m00 * m12 - m10 * m02;
-    const float s2 = m00 * m13 - m10 * m03;
-    const float s3 = m01 * m12 - m11 * m02;
-    const float s4 = m01 * m13 - m11 * m03;
-    const float s5 = m02 * m13 - m12 * m03;
-    const float c5 = m22 * m33 - m32 * m23;
-    const float c4 = m21 * m33 - m31 * m23;
-    const float c3 = m21 * m32 - m31 * m22;
-    const float c2 = m20 * m33 - m30 * m23;
-    const float c1 = m20 * m32 - m30 * m22;
-    const float c0 = m20 * m31 - m30 * m21;
-
-    const float det = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
-    if (_outDetOrNull)
-    {
-        *_outDetOrNull = det;
-    }
-    if (det == 0.f)
-    {
-        return MathConstants<MATRIX>::kZero;
-    }
-    const float invDet = 1.f / det;
-
-    // clang-format off
-    return MATRIX {
-        ( m11 * c5 - m12 * c4 + m13 * c3) * invDet,
-        (-m01 * c5 + m02 * c4 - m03 * c3) * invDet,
-        ( m31 * s5 - m32 * s4 + m33 * s3) * invDet,
-        (-m21 * s5 + m22 * s4 - m23 * s3) * invDet,
-
-        (-m10 * c5 + m12 * c2 - m13 * c1) * invDet,
-        ( m00 * c5 - m02 * c2 + m03 * c1) * invDet,
-        (-m30 * s5 + m32 * s2 - m33 * s1) * invDet,
-        ( m20 * s5 - m22 * s2 + m23 * s1) * invDet,
-
-        ( m10 * c4 - m11 * c2 + m13 * c0) * invDet,
-        (-m00 * c4 + m01 * c2 - m03 * c0) * invDet,
-        ( m30 * s4 - m31 * s2 + m33 * s0) * invDet,
-        (-m20 * s4 + m21 * s2 - m23 * s0) * invDet,
-
-        (-m10 * c3 + m11 * c1 - m12 * c0) * invDet,
-        ( m00 * c3 - m01 * c1 + m02 * c0) * invDet,
-        (-m30 * s3 + m31 * s1 - m32 * s0) * invDet,
-        ( m20 * s3 - m21 * s1 + m22 * s0) * invDet
-    };
-    // clang-format on
+    return matrix_detail::Inverse(_mtx, _outDetOrNull);
 }
 
 JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(

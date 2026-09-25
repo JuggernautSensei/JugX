@@ -127,6 +127,45 @@ JUG_MATH_API constexpr void JUG_VECTORCALL Decompose(
     QUATERNION*  _pOutRotationOrNull,
     VECTOR3*     _pOutTranslationOrNull)
 {
+#ifdef JUG_SIMD_AVAILABLE
+    if (!std::is_constant_evaluated())
+    {
+        if (_pOutRotationOrNull || _pOutScaleOrNull)
+        {
+            // 행 길이 셋을 전치해서 한 번에: (|r0|, |r1|, |r2|, 0)
+            const simd::M128 r0 = _mtx[0].ToM128();
+            const simd::M128 r1 = _mtx[1].ToM128();
+            const simd::M128 r2 = _mtx[2].ToM128();
+            simd::M128       x  = simd::Mult(r0, r0);
+            simd::M128       y  = simd::Mult(r1, r1);
+            simd::M128       z  = simd::Mult(r2, r2);
+            simd::M128       w  = simd::Zero();
+            simd::Transpose4(x, y, z, w);
+            const simd::M128 scale = simd::Sqrt(simd::Add(simd::Add(x, y), simd::Add(z, w)));
+            if (_pOutScaleOrNull)
+            {
+                *_pOutScaleOrNull = VECTOR3::MakeFromM128(scale);
+            }
+
+            if (_pOutRotationOrNull)
+            {
+                JUG_ASSERT(!IsZeroApprox(simd::GetX(scale)) && !IsZeroApprox(simd::GetY(scale)) && !IsZeroApprox(simd::GetZ(scale)), "Scale components cannot be zero");
+                const simd::M128 inv = simd::Div(simd::SetAll(1.f), scale);
+                *_pOutRotationOrNull = QUATERNION::MakeFromMatrix(MATRIX::MakeFromM128(
+                    simd::Mult(r0, simd::Splat<0>(inv)),
+                    simd::Mult(r1, simd::Splat<1>(inv)),
+                    simd::Mult(r2, simd::Splat<2>(inv)),
+                    simd::Set(0.f, 0.f, 0.f, 1.f)));
+            }
+        }
+
+        if (_pOutTranslationOrNull)
+        {
+            *_pOutTranslationOrNull = _mtx[3].ToVector3();
+        }
+        return;
+    }
+#endif
     // S
     if (_pOutRotationOrNull || _pOutScaleOrNull)
     {

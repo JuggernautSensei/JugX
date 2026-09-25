@@ -495,18 +495,27 @@ JUG_MATH_API constexpr QUATERNION& QUATERNION::operator/=(
     if (!std::is_constant_evaluated())
     {
         // 최단 경로 선택을 분기 없이: dot 의 부호 비트를 _y 에 뒤집어 씌운다
-        const simd::M128 x        = _x.ToM128();
-        const simd::M128 dot      = simd::Dot4V(x, _y.ToM128());
-        const simd::M128 y        = simd::Xor(_y.ToM128(), simd::And(dot, simd::SetAll(-0.f)));
-        const float      cosOmega = simd::GetX(simd::Abs(dot));
-        if (cosOmega > kAlmostOne)   // 거의 같은 회전 - sin(omega) 로 나누면 불안정
+        const simd::M128 x   = _x.ToM128();
+        const simd::M128 dot = simd::Dot4V(x, _y.ToM128());
+        const simd::M128 y   = simd::Xor(_y.ToM128(), simd::And(dot, simd::SetAll(-0.f)));
+        const simd::M128 c   = simd::Abs(dot);   // cos(omega), 모든 레인
+        if (simd::GetX(c) > kAlmostOne)          // 거의 같은 회전 - sin(omega) 로 나누면 불안정
         {
             return Normalize(QUATERNION::MakeFromM128(simd::Lerp(x, y, _t)));
         }
 
+        // omega = acos(c) = sqrt(1 - c) * P(c). ACos 와 같은 7차 다항식인데 c >= 0 이라 부호 처리가 없고 벡터 그대로 쓴다.
+        const simd::M128 c2    = simd::Mult(c, c);
+        const simd::M128 c4    = simd::Mult(c2, c2);
+        const simd::M128 p01   = simd::MultAdd(simd::SetAll(-0.2145988016f), c, simd::SetAll(1.5707963050f));
+        const simd::M128 p23   = simd::MultAdd(simd::SetAll(-0.0501743046f), c, simd::SetAll(0.0889789874f));
+        const simd::M128 p45   = simd::MultAdd(simd::SetAll(-0.0170881256f), c, simd::SetAll(0.0308918810f));
+        const simd::M128 p67   = simd::MultAdd(simd::SetAll(-0.0012624911f), c, simd::SetAll(0.0066700901f));
+        const simd::M128 poly  = simd::MultAdd(simd::MultAdd(p67, c2, p45), c4, simd::MultAdd(p23, c2, p01));
+        const simd::M128 omega = simd::Mult(simd::Sqrt(simd::Sub(simd::SetAll(1.f), c)), poly);
+
         // sin(omega), sin((1 - t) * omega), sin(t * omega) 를 한 번에
-        const float      omega = ACos(cosOmega);
-        const simd::M128 s     = simd::Sin(simd::Mult(simd::SetAll(omega), simd::Set(1.f, 1.f - _t, _t, 0.f)));
+        const simd::M128 s     = simd::Sin(simd::Mult(omega, simd::Set(1.f, 1.f - _t, _t, 0.f)));
         const simd::M128 scale = simd::Div(s, simd::Splat<0>(s));
         return QUATERNION::MakeFromM128(simd::MultAdd(x, simd::Splat<1>(scale), simd::Mult(y, simd::Splat<2>(scale))));
     }

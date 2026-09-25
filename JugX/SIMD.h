@@ -966,91 +966,76 @@ inline void JUG_VECTORCALL Transpose4(
 //  Trigonometry
 // =======================================================
 
-// sin, cos 를 한 번에. DirectXMath XMVectorSinCos 와 같은 식:
-// [-pi, pi] 로 줄이고, |x| > pi/2 면 x = sign(x)*pi - x 로 접어 cos 부호를 뒤집은 뒤
-// sin 은 11차, cos 는 10차 minimax 다항식.
+// x = q*pi + r (|r| <= pi/2) 로 줄이고 q 의 홀짝을 부호 비트로 돌려준다. sin(x) = (-1)^q sin(r), cos(x) = (-1)^q cos(r) 이라
+// DirectXMath 처럼 [-pi, pi] 로 줄인 뒤 반사·부호 선택을 할 필요 없이 결과에 부호만 xor 하면 된다.
+// q 는 1.5*2^23 을 더해 정수로 반올림하고 (|x| < 2^22*pi), 그때 가수 최하위 비트가 곧 q 의 홀짝이다.
+[[nodiscard]] inline M128 JUG_VECTORCALL ReduceAngle(
+    const M128 _x,
+    M128&      _outSign)
+{
+    const M128 magic = SetAll(12582912.f);
+    const M128 t     = MultAdd(_x, SetAll(0.318309886f), magic);
+#        if defined(JUG_MATH_SIMD_NEON)
+    _outSign = vreinterpretq_f32_u32(vshlq_n_u32(vreinterpretq_u32_f32(t), 31));
+#        elif defined(JUG_MATH_SIMD_SSE)
+    _outSign = _mm_castsi128_ps(_mm_slli_epi32(_mm_castps_si128(t), 31));
+#        endif
+    return NegMultAdd(Sub(t, magic), SetAll(3.141592654f), _x);
+}
+
+// sin, cos 를 한 번에. 다항식은 DirectXMath XMVectorSinCos 와 같은 계수 (sin 11차, cos 10차 minimax) 를
+// Horner 대신 r^4 로 반씩 나눠 (Estrin) 계산해 곱셈-덧셈 의존 사슬을 5단에서 3단으로 줄였다.
 inline void JUG_VECTORCALL SinCos(
     const M128 _x,
     M128&      _outSin,
     M128&      _outCos)
 {
-    // x - 2pi * round(x / 2pi)
-    const M128 quotient = Round(Mult(_x, SetAll(0.159154943f)));
-    M128       x        = NegMultAdd(quotient, SetAll(6.283185307f), _x);
+    M128       sign;
+    const M128 r  = ReduceAngle(_x, sign);
+    const M128 r2 = Mult(r, r);
+    const M128 r4 = Mult(r2, r2);
 
-    const M128 sign    = And(x, SetAll(-0.f));
-    const M128 c       = Or(SetAll(3.141592654f), sign);   // sign(x) * pi
-    const M128 absx    = AndNot(SetAll(-0.f), x);
-    const M128 rflx    = Sub(c, x);
-    const M128 inRange = CmpLe(absx, SetAll(1.570796327f));
-    x                  = Select(inRange, x, rflx);
-    const M128 cosSign = Select(inRange, SetAll(1.f), SetAll(-1.f));
+    // sin(r) = r * ((1 + s1 r^2) + r^4 ((s2 + s3 r^2) + r^4 (s4 + s5 r^2)))
+    const M128 s01 = MultAdd(SetAll(-0.16666667f), r2, SetAll(1.f));
+    const M128 s23 = MultAdd(SetAll(-0.00019840874f), r2, SetAll(0.0083333310f));
+    const M128 s45 = MultAdd(SetAll(-2.3889859e-08f), r2, SetAll(2.7525562e-06f));
+    _outSin        = Xor(Mult(MultAdd(MultAdd(s45, r4, s23), r4, s01), r), sign);
 
-    const M128 x2 = Mult(x, x);
-
-    // sin
-    M128 s = MultAdd(SetAll(-2.3889859e-08f), x2, SetAll(2.7525562e-06f));
-    s      = MultAdd(s, x2, SetAll(-0.00019840874f));
-    s      = MultAdd(s, x2, SetAll(0.0083333310f));
-    s      = MultAdd(s, x2, SetAll(-0.16666667f));
-    s      = MultAdd(s, x2, SetAll(1.f));
-    _outSin = Mult(s, x);
-
-    // cos
-    M128 k = MultAdd(SetAll(-2.6051615e-07f), x2, SetAll(2.4760495e-05f));
-    k      = MultAdd(k, x2, SetAll(-0.0013888378f));
-    k      = MultAdd(k, x2, SetAll(0.041666638f));
-    k      = MultAdd(k, x2, SetAll(-0.5f));
-    k      = MultAdd(k, x2, SetAll(1.f));
-    _outCos = Mult(k, cosSign);
+    // cos(r) = (1 + c1 r^2) + r^4 ((c2 + c3 r^2) + r^4 (c4 + c5 r^2))
+    const M128 c01 = MultAdd(SetAll(-0.5f), r2, SetAll(1.f));
+    const M128 c23 = MultAdd(SetAll(-0.0013888378f), r2, SetAll(0.041666638f));
+    const M128 c45 = MultAdd(SetAll(-2.6051615e-07f), r2, SetAll(2.4760495e-05f));
+    _outCos        = Xor(MultAdd(MultAdd(c45, r4, c23), r4, c01), sign);
 }
 
-
-// sin 만 (DirectXMath XMVectorSin). 구간 축소는 SinCos 와 같고 cos 다항식을 뺀 것
+// sin 만 (DirectXMath XMVectorSin). SinCos 에서 cos 다항식을 뺀 것
 [[nodiscard]] inline M128 JUG_VECTORCALL Sin(
     const M128 _x)
 {
-    const M128 quotient = Round(Mult(_x, SetAll(0.159154943f)));
-    M128       x        = NegMultAdd(quotient, SetAll(6.283185307f), _x);
+    M128       sign;
+    const M128 r  = ReduceAngle(_x, sign);
+    const M128 r2 = Mult(r, r);
+    const M128 r4 = Mult(r2, r2);
 
-    const M128 sign    = And(x, SetAll(-0.f));
-    const M128 c       = Or(SetAll(3.141592654f), sign);
-    const M128 absx    = AndNot(SetAll(-0.f), x);
-    const M128 rflx    = Sub(c, x);
-    const M128 inRange = CmpLe(absx, SetAll(1.570796327f));
-    x                  = Select(inRange, x, rflx);
-
-    const M128 x2 = Mult(x, x);
-    M128       s  = MultAdd(SetAll(-2.3889859e-08f), x2, SetAll(2.7525562e-06f));
-    s             = MultAdd(s, x2, SetAll(-0.00019840874f));
-    s             = MultAdd(s, x2, SetAll(0.0083333310f));
-    s             = MultAdd(s, x2, SetAll(-0.16666667f));
-    s             = MultAdd(s, x2, SetAll(1.f));
-    return Mult(s, x);
+    const M128 s01 = MultAdd(SetAll(-0.16666667f), r2, SetAll(1.f));
+    const M128 s23 = MultAdd(SetAll(-0.00019840874f), r2, SetAll(0.0083333310f));
+    const M128 s45 = MultAdd(SetAll(-2.3889859e-08f), r2, SetAll(2.7525562e-06f));
+    return Xor(Mult(MultAdd(MultAdd(s45, r4, s23), r4, s01), r), sign);
 }
 
 // cos 만 (DirectXMath XMVectorCos)
 [[nodiscard]] inline M128 JUG_VECTORCALL Cos(
     const M128 _x)
 {
-    const M128 quotient = Round(Mult(_x, SetAll(0.159154943f)));
-    M128       x        = NegMultAdd(quotient, SetAll(6.283185307f), _x);
+    M128       sign;
+    const M128 r  = ReduceAngle(_x, sign);
+    const M128 r2 = Mult(r, r);
+    const M128 r4 = Mult(r2, r2);
 
-    const M128 sign    = And(x, SetAll(-0.f));
-    const M128 c       = Or(SetAll(3.141592654f), sign);
-    const M128 absx    = AndNot(SetAll(-0.f), x);
-    const M128 rflx    = Sub(c, x);
-    const M128 inRange = CmpLe(absx, SetAll(1.570796327f));
-    x                  = Select(inRange, x, rflx);
-    const M128 cosSign = Select(inRange, SetAll(1.f), SetAll(-1.f));
-
-    const M128 x2 = Mult(x, x);
-    M128       k  = MultAdd(SetAll(-2.6051615e-07f), x2, SetAll(2.4760495e-05f));
-    k             = MultAdd(k, x2, SetAll(-0.0013888378f));
-    k             = MultAdd(k, x2, SetAll(0.041666638f));
-    k             = MultAdd(k, x2, SetAll(-0.5f));
-    k             = MultAdd(k, x2, SetAll(1.f));
-    return Mult(k, cosSign);
+    const M128 c01 = MultAdd(SetAll(-0.5f), r2, SetAll(1.f));
+    const M128 c23 = MultAdd(SetAll(-0.0013888378f), r2, SetAll(0.041666638f));
+    const M128 c45 = MultAdd(SetAll(-2.6051615e-07f), r2, SetAll(2.4760495e-05f));
+    return Xor(MultAdd(MultAdd(c45, r4, c23), r4, c01), sign);
 }
 
 // 스칼라 각 하나의 (sin, cos, sin, cos). sin 과 cos 다항식을 한 레지스터의 서로 다른 레인에서 같이 돌려서
@@ -1058,26 +1043,17 @@ inline void JUG_VECTORCALL SinCos(
 [[nodiscard]] inline M128 JUG_VECTORCALL SinCos1(
     const float _x)
 {
-    const M128 x        = SetAll(_x);
-    const M128 quotient = Round(Mult(x, SetAll(0.159154943f)));
-    M128       y        = NegMultAdd(quotient, SetAll(6.283185307f), x);
-
-    const M128 sign    = And(y, SetAll(-0.f));
-    const M128 c       = Or(SetAll(3.141592654f), sign);
-    const M128 absy    = AndNot(SetAll(-0.f), y);
-    const M128 rfly    = Sub(c, y);
-    const M128 inRange = CmpLe(absy, SetAll(1.570796327f));
-    y                  = Select(inRange, y, rfly);
-    const M128 cosSign = Select(inRange, SetAll(1.f), SetAll(-1.f));
+    M128       sign;
+    const M128 r  = ReduceAngle(SetAll(_x), sign);
+    const M128 r2 = Mult(r, r);
+    const M128 r4 = Mult(r2, r2);
 
     // 짝수 레인 sin 계수, 홀수 레인 cos 계수
-    const M128 y2 = Mult(y, y);
-    M128       p  = MultAdd(Set(-2.3889859e-08f, -2.6051615e-07f, -2.3889859e-08f, -2.6051615e-07f), y2, Set(2.7525562e-06f, 2.4760495e-05f, 2.7525562e-06f, 2.4760495e-05f));
-    p             = MultAdd(p, y2, Set(-0.00019840874f, -0.0013888378f, -0.00019840874f, -0.0013888378f));
-    p             = MultAdd(p, y2, Set(0.0083333310f, 0.041666638f, 0.0083333310f, 0.041666638f));
-    p             = MultAdd(p, y2, Set(-0.16666667f, -0.5f, -0.16666667f, -0.5f));
-    p             = MultAdd(p, y2, SetAll(1.f));
-    return Mult(p, Blend<0b1010>(y, cosSign));   // sin 레인 * y, cos 레인 * 부호
+    const M128 p01 = MultAdd(Set(-0.16666667f, -0.5f, -0.16666667f, -0.5f), r2, SetAll(1.f));
+    const M128 p23 = MultAdd(Set(-0.00019840874f, -0.0013888378f, -0.00019840874f, -0.0013888378f), r2, Set(0.0083333310f, 0.041666638f, 0.0083333310f, 0.041666638f));
+    const M128 p45 = MultAdd(Set(-2.3889859e-08f, -2.6051615e-07f, -2.3889859e-08f, -2.6051615e-07f), r2, Set(2.7525562e-06f, 2.4760495e-05f, 2.7525562e-06f, 2.4760495e-05f));
+    const M128 p   = MultAdd(MultAdd(p45, r4, p23), r4, p01);
+    return Xor(Mult(p, Blend<0b1010>(r, SetAll(1.f))), sign);   // sin 레인에만 r 을 곱한다
 }
 
 }   // namespace jug::simd

@@ -841,6 +841,25 @@ namespace collision_detail
         return Abs(dist) <= r;
     }
 
+    // constexpr / SIMD 없음 전용. SIMD 함수 본문을 작게 둬야 MSVC 가 인라인한다 (죽은 스칼라 경로도 인라인 비용에 잡힌다).
+    [[nodiscard]] JUG_MATH_API constexpr bool IntersectScalar(
+        const AABB&    _aabb,
+        const FRUSTUM& _frustum)
+    {
+        const VECTOR3 extents = Abs(_aabb.extends);
+        for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
+        {
+            const PLANE plane = _frustum.planes[i];
+            const float dist  = Distance(plane, _aabb.center);
+            const float r     = Dot(extents, Abs(plane.normal));
+            if (dist < -r)   // 평면 바깥으로 완전히 밀려남
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // 보수적 판정.
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
         const AABB&    _aabb,
@@ -849,13 +868,38 @@ namespace collision_detail
 #ifdef JUG_SIMD_AVAILABLE
         if (!std::is_constant_evaluated())
         {
+            const float* pPlane = reinterpret_cast<const float*>(_frustum.planes.GetPtr());
+            const float* pBox   = reinterpret_cast<const float*>(&_aabb);
+#    if defined(JUG_MATH_SIMD_FMA)
+            // 평면 6개를 256비트 하나에 SoA 로 전치한다. 레인 순서는 (0 2 4 - | 1 3 5 -), 남는 두 레인은 영평면이라
+            // dist + r = 0 -> 바깥 아님. 같은 절두체로 도는 루프면 전치는 루프 밖으로 빠진다.
+            const __m256 p01  = _mm256_loadu_ps(pPlane);
+            const __m256 p23  = _mm256_loadu_ps(pPlane + 8);
+            const __m256 p45  = _mm256_loadu_ps(pPlane + 16);
+            const __m256 lo   = _mm256_unpacklo_ps(p01, p23);                    // 0x 2x 0y 2y | 1x 3x 1y 3y
+            const __m256 hi   = _mm256_unpackhi_ps(p01, p23);                    // 0z 2z 0d 2d | 1z 3z 1d 3d
+            const __m256 lo45 = _mm256_unpacklo_ps(p45, _mm256_setzero_ps());   // 4x  0 4y  0 | 5x  0 5y  0
+            const __m256 hi45 = _mm256_unpackhi_ps(p45, _mm256_setzero_ps());   // 4z  0 4d  0 | 5z  0 5d  0
+            const __m256 nx   = _mm256_shuffle_ps(lo, lo45, 0x44);
+            const __m256 ny   = _mm256_shuffle_ps(lo, lo45, 0xee);
+            const __m256 nz   = _mm256_shuffle_ps(hi, hi45, 0x44);
+            const __m256 d    = _mm256_shuffle_ps(hi, hi45, 0xee);
+
+            // dist + r < 0 이면 평면 바깥으로 완전히 밀려남
+            const __m256 sign = _mm256_set1_ps(-0.f);
+            const __m256 dist = _mm256_fmadd_ps(nx, _mm256_broadcast_ss(pBox), _mm256_fmadd_ps(ny, _mm256_broadcast_ss(pBox + 1), _mm256_fmadd_ps(nz, _mm256_broadcast_ss(pBox + 2), d)));
+            const __m256 ex   = _mm256_andnot_ps(sign, _mm256_broadcast_ss(pBox + 3));
+            const __m256 ey   = _mm256_andnot_ps(sign, _mm256_broadcast_ss(pBox + 4));
+            const __m256 ez   = _mm256_andnot_ps(sign, _mm256_broadcast_ss(pBox + 5));
+            const __m256 r    = _mm256_fmadd_ps(_mm256_andnot_ps(sign, nx), ex, _mm256_fmadd_ps(_mm256_andnot_ps(sign, ny), ey, _mm256_mul_ps(_mm256_andnot_ps(sign, nz), ez)));
+            return _mm256_movemask_ps(_mm256_cmp_ps(_mm256_add_ps(dist, r), _mm256_setzero_ps(), _CMP_LT_OQ)) == 0;
+#    else
             // 평면 6개를 SoA (4개 + 2개) 로 전치해 한 번에 판정한다. 같은 절두체로 도는 루프면 전치는 루프 밖으로 빠진다.
             // 남는 두 레인은 영평면이라 dist + r = 0 -> 바깥 아님.
-            const float* pPlane = reinterpret_cast<const float*>(_frustum.planes.GetPtr());
-            simd::M128   nx0    = simd::Load(pPlane);
-            simd::M128   ny0    = simd::Load(pPlane + 4);
-            simd::M128   nz0    = simd::Load(pPlane + 8);
-            simd::M128   d0     = simd::Load(pPlane + 12);
+            simd::M128 nx0 = simd::Load(pPlane);
+            simd::M128 ny0 = simd::Load(pPlane + 4);
+            simd::M128 nz0 = simd::Load(pPlane + 8);
+            simd::M128 d0  = simd::Load(pPlane + 12);
             simd::Transpose4(nx0, ny0, nz0, d0);
             simd::M128 nx1 = simd::Load(pPlane + 16);
             simd::M128 ny1 = simd::Load(pPlane + 20);
@@ -863,7 +907,6 @@ namespace collision_detail
             simd::M128 d1  = simd::Zero();
             simd::Transpose4(nx1, ny1, nz1, d1);
 
-            const float*     pBox = reinterpret_cast<const float*>(&_aabb);
             const simd::M128 c    = simd::Load(pBox);                  // cx cy cz ex
             const simd::M128 e    = simd::Abs(simd::Load(pBox + 2));   // cz ex ey ez
             const simd::M128 cx   = simd::Splat<0>(c);
@@ -880,20 +923,10 @@ namespace collision_detail
             const simd::M128 r1    = simd::MultAdd(simd::Abs(nx1), ex, simd::MultAdd(simd::Abs(ny1), ey, simd::Mult(simd::Abs(nz1), ez)));
             const simd::M128 out   = simd::Or(simd::CmpLt(simd::Add(dist0, r0), simd::Zero()), simd::CmpLt(simd::Add(dist1, r1), simd::Zero()));
             return !simd::AnyTrue(out);
+#    endif
         }
 #endif
-        const VECTOR3 extents = Abs(_aabb.extends);
-        for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
-        {
-            const PLANE plane = _frustum.planes[i];
-            const float dist  = Distance(plane, _aabb.center);
-            const float r     = Dot(extents, Abs(plane.normal));
-            if (dist < -r)   // 평면 바깥으로 완전히 밀려남
-            {
-                return false;
-            }
-        }
-        return true;
+        return IntersectScalar(_aabb, _frustum);
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(

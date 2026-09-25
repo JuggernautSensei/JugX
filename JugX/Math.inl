@@ -561,8 +561,11 @@ namespace math_detail
         constexpr float c6 = 0.0066700901f;
         constexpr float c7 = -0.0012624911f;
 
+        // Horner 대신 x^2, x^4 로 나눠 (Estrin) 곱셈-덧셈 의존 사슬을 7단에서 3단으로
         const float absa   = Abs(_x);
-        const float tmp    = (((((((c7 * absa + c6) * absa + c5) * absa + c4) * absa + c3) * absa + c2) * absa + c1) * absa + c0);
+        const float absa2  = absa * absa;
+        const float absa4  = absa2 * absa2;
+        const float tmp    = ((c7 * absa + c6) * absa2 + (c5 * absa + c4)) * absa4 + ((c3 * absa + c2) * absa2 + (c1 * absa + c0));
         const float tmp2   = tmp * Sqrt(Max(1.f - absa, 0.f));   // |x| 가 반올림으로 1 을 살짝 넘어도 NaN 이 안 나게
         const float negate = static_cast<float>(_x < 0.f);
         const float tmp3   = tmp2 - 2.f * negate * tmp2;
