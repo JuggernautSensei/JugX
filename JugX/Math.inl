@@ -683,13 +683,7 @@ namespace math_detail
 [[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
 {
 #ifdef JUG_SIMD_AVAILABLE
-    if (!std::is_constant_evaluated())
-    {
-        simd::M128 s;
-        simd::M128 c;
-        simd::SinCos(simd::SetAll(_x), s, c);
-        return simd::GetX(s);
-    }
+    JUG_SIMD_PATH(simd::GetX(simd::SinCos1(_x)));
 #endif
     return math_detail::Sin(_x);
 }
@@ -697,13 +691,7 @@ namespace math_detail
 [[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
 {
 #ifdef JUG_SIMD_AVAILABLE
-    if (!std::is_constant_evaluated())
-    {
-        simd::M128 s;
-        simd::M128 c;
-        simd::SinCos(simd::SetAll(_x), s, c);
-        return simd::GetX(c);
-    }
+    JUG_SIMD_PATH(simd::GetY(simd::SinCos1(_x)));
 #endif
     return math_detail::Cos(_x);
 }
@@ -713,11 +701,9 @@ JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCo
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        simd::M128 s;
-        simd::M128 c;
-        simd::SinCos(simd::SetAll(_x), s, c);
-        _outSin = simd::GetX(s);
-        _outCos = simd::GetX(c);
+        const simd::M128 sc = simd::SinCos1(_x);
+        _outSin             = simd::GetX(sc);
+        _outCos             = simd::GetY(sc);
         return;
     }
 #endif

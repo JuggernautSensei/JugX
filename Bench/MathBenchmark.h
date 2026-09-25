@@ -302,6 +302,40 @@ static void BM_DXM_Vec3Normalize(benchmark::State& _state)
 }
 BENCHMARK(BM_DXM_Vec3Normalize);
 
+static void BM_Jug_Vec3Length(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.f[i] = jug::Length(g_mathIn.v3a[i]);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_Vec3Length);
+
+static void BM_DXM_Vec3Length(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat(&g_mathOut.xf[i], DirectX::XMVector3Length(DirectX::XMLoadFloat3(&g_mathIn.xv3a[i])));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.f[i] = jug::Length(g_mathIn.v3a[i]);
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.f, g_mathOut.xf, kMathCount);
+}
+BENCHMARK(BM_DXM_Vec3Length);
+
 static void BM_Jug_Vec4Normalize(benchmark::State& _state)
 {
     for (auto _: _state)
@@ -752,6 +786,190 @@ static void BM_DXM_MatrixViewLookTo(benchmark::State& _state)
 }
 BENCHMARK(BM_DXM_MatrixViewLookTo);
 
+static void BM_Jug_MatrixRotationX(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotationX(g_mathIn.angle[i]);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_MatrixRotationX);
+
+static void BM_DXM_MatrixRotationX(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat4x4A(&g_mathOut.xmtx[i], DirectX::XMMatrixRotationX(g_mathIn.angle[i]));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotationX(g_mathIn.angle[i]);
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
+}
+BENCHMARK(BM_DXM_MatrixRotationX);
+
+static void BM_Jug_MatrixRotationAxis(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.dir[i], g_mathIn.angle[i]);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_MatrixRotationAxis);
+
+static void BM_DXM_MatrixRotationAxis(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat4x4A(&g_mathOut.xmtx[i], DirectX::XMMatrixRotationNormal(DirectX::XMLoadFloat3(&g_mathIn.xdir[i]), g_mathIn.angle[i]));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.dir[i], g_mathIn.angle[i]);
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
+}
+BENCHMARK(BM_DXM_MatrixRotationAxis);
+
+static void BM_Jug_MatrixRotationPYR(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.euler[i]);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_MatrixRotationPYR);
+
+static void BM_DXM_MatrixRotationPYR(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat4x4A(&g_mathOut.xmtx[i], DirectX::XMMatrixRotationRollPitchYawFromVector(DirectX::XMLoadFloat3(&g_mathIn.xeuler[i])));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.euler[i]);
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
+}
+BENCHMARK(BM_DXM_MatrixRotationPYR);
+
+static void BM_Jug_MatrixOrtho(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_MatrixOrtho);
+
+static void BM_DXM_MatrixOrtho(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat4x4A(&g_mathOut.xmtx[i], DirectX::XMMatrixOrthographicOffCenterLH(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.mtx[i] = jug::MATRIX::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f);
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
+}
+BENCHMARK(BM_DXM_MatrixOrtho);
+
+static void BM_Jug_MatrixDecompose(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            jug::Decompose(g_mathIn.srt[i], &g_mathOut.v3[i], &g_mathOut.q[i], &g_mathOut.box[i].center);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_MatrixDecompose);
+
+static void BM_DXM_MatrixDecompose(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMVECTOR s;
+            DirectX::XMVECTOR r;
+            DirectX::XMVECTOR t;
+            DirectX::XMMatrixDecompose(&s, &r, &t, DirectX::XMLoadFloat4x4A(&g_mathIn.xsrt[i]));
+            DirectX::XMStoreFloat3(&g_mathOut.xv3[i], s);
+            DirectX::XMStoreFloat4A(&g_mathOut.xq[i], r);
+            DirectX::XMStoreFloat3(&g_mathOut.xbox[i].Center, t);
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            jug::Decompose(g_mathIn.srt[i], &g_mathOut.v3[i], &g_mathOut.q[i], &g_mathOut.box[i].center);
+    }
+    // 회전은 q 와 -q 가 같으니 부호를 맞춘 뒤 비교
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+        const jug::QUATERNION q    = g_mathOut.q[i];
+        const float           sign = q[0] * g_mathOut.xq[i].x + q[1] * g_mathOut.xq[i].y + q[2] * g_mathOut.xq[i].z + q[3] * g_mathOut.xq[i].w;
+        g_mathOut.q[i]             = sign < 0.f ? -q : q;
+    }
+    _state.counters["err"] = std::max({ MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3),
+                                        MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4) });
+}
+BENCHMARK(BM_DXM_MatrixDecompose);
+
 static void BM_Jug_QuatFromMatrix(benchmark::State& _state)
 {
     for (auto _: _state)
@@ -962,6 +1180,40 @@ static void BM_DXM_QuatRotate(benchmark::State& _state)
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
 BENCHMARK(BM_DXM_QuatRotate);
+
+static void BM_Jug_QuatNormalize(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            g_mathOut.q[i] = jug::Normalize(jug::QUATERNION { g_mathIn.v4a[i] });
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+}
+BENCHMARK(BM_Jug_QuatNormalize);
+
+static void BM_DXM_QuatNormalize(benchmark::State& _state)
+{
+    for (auto _: _state)
+    {
+        for (size_t i = 0; i < kMathCount; ++i)
+        {
+            DirectX::XMStoreFloat4A(&g_mathOut.xq[i], DirectX::XMQuaternionNormalize(DirectX::XMLoadFloat4A(&g_mathIn.xv4a[i])));
+        }
+        benchmark::ClobberMemory();
+    }
+    _state.SetItemsProcessed(_state.iterations() * kMathCount);
+
+    for (size_t i = 0; i < kMathCount; ++i)
+    {
+            g_mathOut.q[i] = jug::Normalize(jug::QUATERNION { g_mathIn.v4a[i] });
+    }
+    _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
+}
+BENCHMARK(BM_DXM_QuatNormalize);
 
 // ===========================================
 //  Bounding Volume

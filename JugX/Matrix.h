@@ -67,6 +67,12 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeTranslation(
         const VECTOR3 _translation)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            return MakeFromM128(simd::Set(1.f, 0.f, 0.f, 0.f), simd::Set(0.f, 1.f, 0.f, 0.f), simd::Set(0.f, 0.f, 1.f, 0.f), simd::Blend<0b1000>(_translation.ToM128(), simd::SetAll(1.f)));
+        }
+#endif
         return MATRIX {
             VECTOR4 { 1.f, 0.f, 0.f, 0.f },
             VECTOR4 { 0.f, 1.f, 0.f, 0.f },
@@ -78,6 +84,14 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeScale(
         const VECTOR3 _scale)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            const simd::M128 s    = _scale.ToM128();
+            const simd::M128 zero = simd::Zero();
+            return MakeFromM128(simd::Blend<0b0001>(zero, s), simd::Blend<0b0010>(zero, s), simd::Blend<0b0100>(zero, s), simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         return MATRIX {
             { _scale[0],       0.f,       0.f, 0.f },
             {       0.f, _scale[1],       0.f, 0.f },
@@ -89,6 +103,15 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeRotationX(
         const float _rad)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            const simd::M128 sc = simd::SinCos1(_rad);   // s c s c
+            const simd::M128 r1 = simd::Blend<0b0110>(simd::Zero(), sc);                                                                          // 0  c s 0
+            const simd::M128 r2 = simd::Xor(simd::Blend<0b0110>(simd::Zero(), simd::Shuffle<0, 0, 1, 0>(sc)), simd::Set(0.f, -0.f, 0.f, 0.f));   // 0 -s c 0
+            return MakeFromM128(simd::Set(1.f, 0.f, 0.f, 0.f), r1, r2, simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         float s = 0.f;
         float c = 0.f;
         SinCos(_rad, s, c);
@@ -103,6 +126,15 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeRotationY(
         const float _rad)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            const simd::M128 sc = simd::SinCos1(_rad);   // s c s c
+            const simd::M128 r0 = simd::Xor(simd::Blend<0b0101>(simd::Zero(), simd::Shuffle<1, 0, 0, 0>(sc)), simd::Set(0.f, 0.f, -0.f, 0.f));   // c 0 -s 0
+            const simd::M128 r2 = simd::Blend<0b0101>(simd::Zero(), simd::Shuffle<0, 0, 1, 0>(sc));                                              // s 0  c 0
+            return MakeFromM128(r0, simd::Set(0.f, 1.f, 0.f, 0.f), r2, simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         float s = 0.f;
         float c = 0.f;
         SinCos(_rad, s, c);
@@ -117,6 +149,15 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeRotationZ(
         const float _rad)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            const simd::M128 sc = simd::SinCos1(_rad);   // s c s c
+            const simd::M128 r0 = simd::Blend<0b0011>(simd::Zero(), simd::Shuffle<1, 0, 0, 0>(sc));                                     //  c s 0 0
+            const simd::M128 r1 = simd::Xor(simd::Blend<0b0011>(simd::Zero(), sc), simd::Set(-0.f, 0.f, 0.f, 0.f));                    // -s c 0 0
+            return MakeFromM128(r0, r1, simd::Set(0.f, 0.f, 1.f, 0.f), simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         float s = 0.f;
         float c = 0.f;
         SinCos(_rad, s, c);
@@ -131,6 +172,27 @@ struct alignas(16) MATRIX
     [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL MakeRotation(
         const VECTOR3 _pyrRad)
     {
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            // 세 각의 sin/cos 를 한 번에. A = (sp*sy, cp, sp*cy, 0), B = (cy, 0, -sy, 0) 로 두면
+            // r0 = sr*A + cr*B, r1 = cr*A - sr*B, r2 = (cp*sy, -sp, cp*cy, 0)
+            simd::M128 s;
+            simd::M128 c;
+            simd::SinCos(_pyrRad.ToM128(), s, c);
+            const simd::M128 spcp = simd::Shuffle2<0, 0, 0, 0>(s, c);                                                      // sp sp cp cp
+            const simd::M128 sycy = simd::Shuffle2<1, 1, 1, 1>(s, c);                                                      // sy sy cy cy
+            const simd::M128 t    = simd::Blend<0b1010>(simd::Shuffle<0, 0, 2, 2>(sycy), simd::Set(0.f, 1.f, 0.f, 0.f));   // sy 1 cy 0
+            const simd::M128 a    = simd::Mult(simd::Shuffle<0, 2, 0, 2>(spcp), t);
+            const simd::M128 b    = simd::Mult(simd::Shuffle<2, 0, 0, 0>(sycy), simd::Set(1.f, 0.f, -1.f, 0.f));
+            const simd::M128 sr   = simd::Splat<2>(s);
+            const simd::M128 cr   = simd::Splat<2>(c);
+            const simd::M128 r0   = simd::MultAdd(sr, a, simd::Mult(cr, b));
+            const simd::M128 r1   = simd::NegMultAdd(sr, b, simd::Mult(cr, a));
+            const simd::M128 r2   = simd::Mult(simd::Mult(simd::Shuffle<2, 0, 2, 2>(spcp), simd::Set(1.f, -1.f, 1.f, 0.f)), t);
+            return MakeFromM128(r0, r1, r2, simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         float sx = 0.f, cx = 0.f;
         float sy = 0.f, cy = 0.f;
         float sz = 0.f, cz = 0.f;
@@ -156,6 +218,21 @@ struct alignas(16) MATRIX
     {
         JUG_ASSERT(IsNormalized(_axis), "Rotation axis must be normalized");
 
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            // 행 = n[i] * (1 - c) * n + (대각은 c, 나머지는 s * n 의 반대칭 행렬)
+            const simd::M128 sc = simd::SinCos1(_rad);   // s c s c
+            const simd::M128 n  = _axis.ToM128();
+            const simd::M128 c  = simd::Splat<1>(sc);
+            const simd::M128 tn = simd::Mult(simd::Sub(simd::SetAll(1.f), c), n);
+            const simd::M128 sn = simd::Mult(simd::Splat<0>(sc), n);   // sx sy sz 0
+            const simd::M128 e0 = simd::Blend<0b0001>(simd::Xor(simd::Shuffle<3, 2, 1, 3>(sn), simd::Set(0.f, 0.f, -0.f, 0.f)), c);   //   c  sz -sy 0
+            const simd::M128 e1 = simd::Blend<0b0010>(simd::Xor(simd::Shuffle<2, 3, 0, 3>(sn), simd::Set(-0.f, 0.f, 0.f, 0.f)), c);   // -sz   c  sx 0
+            const simd::M128 e2 = simd::Blend<0b0100>(simd::Xor(simd::Shuffle<1, 0, 3, 3>(sn), simd::Set(0.f, -0.f, 0.f, 0.f)), c);   //  sy -sx   c 0
+            return MakeFromM128(simd::MultAdd(simd::Splat<0>(n), tn, e0), simd::MultAdd(simd::Splat<1>(n), tn, e1), simd::MultAdd(simd::Splat<2>(n), tn, e2), simd::Set(0.f, 0.f, 0.f, 1.f));
+        }
+#endif
         const float x = _axis[0];
         const float y = _axis[1];
         const float z = _axis[2];
@@ -352,6 +429,22 @@ struct alignas(16) MATRIX
         JUG_ASSERT(_nearZ > 0.f && _farZ > _nearZ, "Invalid near/far plane");
         JUG_ASSERT(!IsZeroApprox(_aspectRatio), "Aspect ratio must not be zero");
 
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            // 나눗셈 셋 (cot/aspect, cot, f/(f-n)) 을 벡터 나눗셈 한 번으로
+            const simd::M128 sc   = simd::SinCos1(_fovYRad * 0.5f);   // s c s c
+            const simd::M128 num  = simd::Blend<0b0100>(simd::Splat<1>(sc), simd::SetAll(_farZ));
+            const simd::M128 den  = simd::Blend<0b0100>(simd::Mult(simd::Splat<0>(sc), simd::Set(_aspectRatio, 1.f, 1.f, 1.f)), simd::SetAll(_farZ - _nearZ));
+            const simd::M128 q    = simd::Div(num, den);   // xs ys range -
+            const simd::M128 zero = simd::Zero();
+            return MakeFromM128(
+                simd::Blend<0b0001>(zero, q),
+                simd::Blend<0b0010>(zero, q),
+                simd::Blend<0b1000>(simd::Blend<0b0100>(zero, q), simd::SetAll(1.f)),
+                simd::Blend<0b0100>(zero, simd::Mult(q, simd::SetAll(-_nearZ))));
+        }
+#endif
         float s = 0.f;
         float c = 0.f;
         SinCos(_fovYRad * 0.5f, s, c);
@@ -400,6 +493,17 @@ struct alignas(16) MATRIX
         JUG_ASSERT(!IsEqualApprox(_bottom, _top), "Invalid view volume height");
         JUG_ASSERT(_farZ > _nearZ, "Invalid near/far plane");
 
+#ifdef JUG_SIMD_AVAILABLE
+        if (!std::is_constant_evaluated())
+        {
+            // 역수 셋을 벡터 나눗셈 한 번으로
+            const simd::M128 rcp  = simd::Div(simd::SetAll(1.f), simd::Set(_right - _left, _top - _bottom, _farZ - _nearZ, 1.f));   // invW invH range 1
+            const simd::M128 two  = simd::Add(rcp, rcp);
+            const simd::M128 zero = simd::Zero();
+            const simd::M128 r3   = simd::Blend<0b1000>(simd::Negate(simd::Mult(simd::Set(_left + _right, _top + _bottom, _nearZ, 0.f), rcp)), simd::SetAll(1.f));
+            return MakeFromM128(simd::Blend<0b0001>(zero, two), simd::Blend<0b0010>(zero, two), simd::Blend<0b0100>(zero, rcp), r3);
+        }
+#endif
         const float invW  = 1.f / (_right - _left);
         const float invH  = 1.f / (_top - _bottom);
         const float range = 1.f / (_farZ - _nearZ);

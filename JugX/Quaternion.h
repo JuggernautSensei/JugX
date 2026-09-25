@@ -75,10 +75,8 @@ struct alignas(16) QUATERNION
 #ifdef JUG_SIMD_AVAILABLE
         if (!std::is_constant_evaluated())
         {
-            simd::M128 s;
-            simd::M128 c;
-            simd::SinCos(simd::SetAll(_rad * 0.5f), s, c);
-            return MakeFromM128(simd::Blend<0b1000>(simd::Mult(_axis.ToM128(), s), c));   // (axis * sin, cos)
+            const simd::M128 sc = simd::SinCos1(_rad * 0.5f);   // s c s c
+            return MakeFromM128(simd::Mult(simd::Shuffle<0, 0, 0, 1>(sc), simd::Blend<0b1000>(_axis.ToM128(), simd::SetAll(1.f))));   // (axis * sin, cos)
         }
 #endif
         float s = 0.f;

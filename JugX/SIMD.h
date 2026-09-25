@@ -1001,7 +1001,46 @@ inline void JUG_VECTORCALL SinCos(
     _outCos = Mult(k, cosSign);
 }
 
+
+// 스칼라 각 하나의 (sin, cos, sin, cos). sin 과 cos 다항식을 한 레지스터의 서로 다른 레인에서 같이 돌려서
+// SinCos(SetAll(x)) 보다 다항식 연산이 절반이다. 식은 SinCos 와 같다.
+[[nodiscard]] inline M128 JUG_VECTORCALL SinCos1(
+    const float _x)
+{
+    const M128 x        = SetAll(_x);
+    const M128 quotient = Round(Mult(x, SetAll(0.159154943f)));
+    M128       y        = NegMultAdd(quotient, SetAll(6.283185307f), x);
+
+    const M128 sign    = And(y, SetAll(-0.f));
+    const M128 c       = Or(SetAll(3.141592654f), sign);
+    const M128 absy    = AndNot(SetAll(-0.f), y);
+    const M128 rfly    = Sub(c, y);
+    const M128 inRange = CmpLe(absy, SetAll(1.570796327f));
+    y                  = Select(inRange, y, rfly);
+    const M128 cosSign = Select(inRange, SetAll(1.f), SetAll(-1.f));
+
+    // 짝수 레인 sin 계수, 홀수 레인 cos 계수
+    const M128 y2 = Mult(y, y);
+    M128       p  = MultAdd(Set(-2.3889859e-08f, -2.6051615e-07f, -2.3889859e-08f, -2.6051615e-07f), y2, Set(2.7525562e-06f, 2.4760495e-05f, 2.7525562e-06f, 2.4760495e-05f));
+    p             = MultAdd(p, y2, Set(-0.00019840874f, -0.0013888378f, -0.00019840874f, -0.0013888378f));
+    p             = MultAdd(p, y2, Set(0.0083333310f, 0.041666638f, 0.0083333310f, 0.041666638f));
+    p             = MultAdd(p, y2, Set(-0.16666667f, -0.5f, -0.16666667f, -0.5f));
+    p             = MultAdd(p, y2, SetAll(1.f));
+    return Mult(p, Blend<0b1010>(y, cosSign));   // sin 레인 * y, cos 레인 * 부호
+}
+
 }   // namespace jug::simd
 
 #    endif   // JUG_SIMD_AVAILABLE
 #endif       // !defined(__CUDA_ARCH__)
+
+// constexpr 평가가 아닐 때만 SIMD 경로로 반환한다
+#ifdef JUG_SIMD_AVAILABLE
+#    define JUG_SIMD_PATH(...)                 \
+        if (!std::is_constant_evaluated()) \
+        {                                  \
+            return __VA_ARGS__;            \
+        }
+#else
+#    define JUG_SIMD_PATH(...)
+#endif

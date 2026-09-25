@@ -4,17 +4,6 @@
 #include "SIMD.h"
 #include "Vector3.h"
 
-// constexpr 평가가 아닐 때만 SIMD 경로로 반환한다
-#ifdef JUG_SIMD_AVAILABLE
-#    define JUG_SIMD_PATH(...)                 \
-        if (!std::is_constant_evaluated()) \
-        {                                  \
-            return __VA_ARGS__;            \
-        }
-#else
-#    define JUG_SIMD_PATH(...)
-#endif
-
 namespace jug
 {
 
