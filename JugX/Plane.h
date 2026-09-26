@@ -105,7 +105,7 @@ struct MathConstants<PLANE>
     {
         return MathConstants<VECTOR3>::kZero;
     }
-
+        
     const VECTOR3 cross31 = Cross(_z.normal, _x.normal);
     const VECTOR3 cross12 = Cross(_x.normal, _y.normal);
     return (cross23 * -_x.d + cross31 * -_y.d + cross12 * -_z.d) / denom;

@@ -31,6 +31,9 @@
     <ClInclude Include="JugX\Matrix.h">
       <Filter>Math\LinearAlgebra\Matrix</Filter>
     </ClInclude>
+    <ClInclude Include="JugX\MatrixReg.h">
+      <Filter>Math\LinearAlgebra\Matrix</Filter>
+    </ClInclude>
     <ClInclude Include="JugX\AxisAngle.h">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
     </ClInclude>
@@ -44,6 +47,9 @@
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Vector4.h">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\VectorReg.h">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Triangle.h">
@@ -74,6 +80,9 @@
       <Filter>Math\Misc</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Quaternion.h">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\QuaternionReg.h">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
     </ClInclude>
     <ClInclude Include="JugX\ResourcePool.h">
@@ -396,6 +405,9 @@
     <ClCompile Include="JugX\Matrix.cpp">
       <Filter>Math\LinearAlgebra\Matrix</Filter>
     </ClCompile>
+    <ClCompile Include="JugX\MatrixReg.cpp">
+      <Filter>Math\LinearAlgebra\Matrix</Filter>
+    </ClCompile>
     <ClCompile Include="JugX\MemoryView.cpp">
       <Filter>Memroy\Memory</Filter>
     </ClCompile>
@@ -409,6 +421,9 @@
       <Filter>Math\Geomtry</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Quaternion.cpp">
+      <Filter>Math\LinearAlgebra\Quaternion</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\QuaternionReg.cpp">
       <Filter>Math\LinearAlgebra\Quaternion</Filter>
     </ClCompile>
     <ClCompile Include="JugX\RGBA.cpp">
@@ -460,6 +475,9 @@
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Vector4.cpp">
+      <Filter>Math\LinearAlgebra\Vector</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\VectorReg.cpp">
       <Filter>Math\LinearAlgebra\Vector</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Tag.cpp">

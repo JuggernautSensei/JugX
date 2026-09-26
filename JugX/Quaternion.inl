@@ -4,37 +4,37 @@
 namespace jug
 {
 
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION JUG_VECTORCALL QUATERNION::MakeFromMatrix(
-    const MATRIX _mtx)
+// Shepperd
+[[nodiscard]] JUG_MATH_API constexpr QUATERNION QUATERNION::MakeFromMatrix(
+    const MATRIX& _mtx)
 {
-    const float m00 = _mtx[0].GetX(), m01 = _mtx[0].GetY(), m02 = _mtx[0].GetZ();
-    const float m10 = _mtx[1].GetX(), m11 = _mtx[1].GetY(), m12 = _mtx[1].GetZ();
-    const float m20 = _mtx[2].GetX(), m21 = _mtx[2].GetY(), m22 = _mtx[2].GetZ();
+    const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2];
+    const float m10 = _mtx[1][0], m11 = _mtx[1][1], m12 = _mtx[1][2];
+    const float m20 = _mtx[2][0], m21 = _mtx[2][1], m22 = _mtx[2][2];
 
     const float trace = m00 + m11 + m22;
-
     if (trace > 0.f)
     {
-        const float s    = Sqrt(trace + 1.f) * 2.f;   // s = 4w
+        const float s    = Sqrt(trace + 1.f) * 2.f;   // 4w
         const float invS = 1.f / s;
         return QUATERNION { (m12 - m21) * invS, (m20 - m02) * invS, (m01 - m10) * invS, s * 0.25f };
     }
 
     if (m00 > m11 && m00 > m22)
     {
-        const float s    = Sqrt(1.f + m00 - m11 - m22) * 2.f;   // s = 4x
+        const float s    = Sqrt(1.f + m00 - m11 - m22) * 2.f;   // 4x
         const float invS = 1.f / s;
         return QUATERNION { s * 0.25f, (m01 + m10) * invS, (m02 + m20) * invS, (m12 - m21) * invS };
     }
 
     if (m11 > m22)
     {
-        const float s    = Sqrt(1.f + m11 - m00 - m22) * 2.f;   // s = 4y
+        const float s    = Sqrt(1.f + m11 - m00 - m22) * 2.f;   // 4y
         const float invS = 1.f / s;
         return QUATERNION { (m01 + m10) * invS, s * 0.25f, (m12 + m21) * invS, (m20 - m02) * invS };
     }
 
-    const float s    = Sqrt(1.f + m22 - m00 - m11) * 2.f;   // s = 4z
+    const float s    = Sqrt(1.f + m22 - m00 - m11) * 2.f;   // 4z
     const float invS = 1.f / s;
     return QUATERNION { (m02 + m20) * invS, (m12 + m21) * invS, s * 0.25f, (m01 - m10) * invS };
 }

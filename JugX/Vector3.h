@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include <concepts>
 
-#include "SIMD.h"
 #include "Vector2.h"
 
 namespace jug
@@ -27,31 +26,11 @@ struct VECTOR<T, 3>
     {
     }
 
-    // Broadcast
     explicit JUG_MATH_API constexpr VECTOR(
         const T _value)
         : e { _value, _value, _value }
     {
     }
-
-#ifdef JUG_SIMD_AVAILABLE
-    [[nodiscard]] static VECTOR MakeFromM128(
-        const simd::M128 _value)
-        requires std::is_floating_point_v<T>
-    {
-        VECTOR ret;
-        simd::StoreFloat3(ret.e.data(), _value);
-        return ret;
-    }
-
-    // 요소 셋으로 조립한다 (w = 0). LoadFloat3 로 읽으면 스칼라로 막 만든 임시값·상수에서
-    // 작은 store 여러 개를 큰 load 하나로 읽게 돼 store-forwarding 이 실패한다.
-    [[nodiscard]] simd::M128 JUG_VECTORCALL ToM128() const
-        requires std::is_floating_point_v<T>
-    {
-        return simd::Set(e[0], e[1], e[2], 0.f);
-    }
-#endif
 
     [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-() const
     {
@@ -218,7 +197,6 @@ struct VECTOR<T, 3>
     {
         return VECTOR<T, 2> { e[0], e[1] };
     }
-
 
     constexpr static size_t kDim = 3;
 

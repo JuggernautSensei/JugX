@@ -922,7 +922,7 @@ namespace collision_detail
             const simd::M128 r0    = simd::MultAdd(simd::Abs(nx0), ex, simd::MultAdd(simd::Abs(ny0), ey, simd::Mult(simd::Abs(nz0), ez)));
             const simd::M128 r1    = simd::MultAdd(simd::Abs(nx1), ex, simd::MultAdd(simd::Abs(ny1), ey, simd::Mult(simd::Abs(nz1), ez)));
             const simd::M128 out   = simd::Or(simd::CmpLt(simd::Add(dist0, r0), simd::Zero()), simd::CmpLt(simd::Add(dist1, r1), simd::Zero()));
-            return !simd::AnyTrue(out);
+            return simd::MoveMask(out) == 0;
 #    endif
         }
 #endif

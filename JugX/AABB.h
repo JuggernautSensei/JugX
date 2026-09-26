@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Corner.h"
-#include "Matrix.h"
+#include "MatrixReg.h"
 #include "EnumArray.h"
 
 namespace jug
@@ -115,35 +115,42 @@ struct MathConstants<AABB>
 }
 
 // 아핀 행렬 전용 (Arvo). 중심은 w 로 나누지 않는다 (DirectXMath BoundingBox::Transform 과 같음).
-[[nodiscard]] JUG_MATH_API constexpr AABB JUG_VECTORCALL Xform(
-    const AABB&  _aabb,
-    const MATRIX _mtx)
+[[nodiscard]] inline AABB JUG_VECTORCALL Xform(
+    const AABB&      _aabb,
+    const MATRIX_REG _mtx)
+{
+    // center(12) + extends(12) 를 16바이트 두 번에 읽고, 16 + 8바이트 두 번에 쓴다
+    const float*     pIn = reinterpret_cast<const float*>(&_aabb);
+    const simd::M128 c   = simd::Load(pIn);                  // cx cy cz ex
+    const simd::M128 e   = simd::Abs(simd::Load(pIn + 2));   // cz ex ey ez
+
+    const simd::M128 r0 = _mtx.r[0].v;
+    const simd::M128 r1 = _mtx.r[1].v;
+    const simd::M128 r2 = _mtx.r[2].v;
+
+    simd::M128 center = simd::MultAdd(simd::Splat<0>(c), r0, _mtx.r[3].v);
+    center            = simd::MultAdd(simd::Splat<1>(c), r1, center);
+    center            = simd::MultAdd(simd::Splat<2>(c), r2, center);
+
+    simd::M128 ext = simd::Mult(simd::Splat<1>(e), simd::Abs(r0));
+    ext            = simd::MultAdd(simd::Splat<2>(e), simd::Abs(r1), ext);
+    ext            = simd::MultAdd(simd::Splat<3>(e), simd::Abs(r2), ext);
+
+    AABB   ret;
+    float* pOut = reinterpret_cast<float*>(&ret);
+    simd::Store(pOut, simd::Blend<0b1000>(center, simd::Splat<0>(ext)));   // cx cy cz ex
+    simd::StoreFloat2(pOut + 4, simd::Shuffle<1, 2, 2, 3>(ext));             // ey ez
+    return ret;
+}
+
+[[nodiscard]] JUG_MATH_API constexpr AABB Xform(
+    const AABB&   _aabb,
+    const MATRIX& _mtx)
 {
 #ifdef JUG_SIMD_AVAILABLE
     if (!std::is_constant_evaluated())
     {
-        // center(12) + extends(12) 를 16바이트 두 번에 읽고, 16 + 8바이트 두 번에 쓴다
-        const float*     pIn = reinterpret_cast<const float*>(&_aabb);
-        const simd::M128 c   = simd::Load(pIn);                  // cx cy cz ex
-        const simd::M128 e   = simd::Abs(simd::Load(pIn + 2));   // cz ex ey ez
-
-        const simd::M128 r0 = _mtx[0].ToM128();
-        const simd::M128 r1 = _mtx[1].ToM128();
-        const simd::M128 r2 = _mtx[2].ToM128();
-
-        simd::M128 center = simd::MultAdd(simd::Splat<0>(c), r0, _mtx[3].ToM128());
-        center            = simd::MultAdd(simd::Splat<1>(c), r1, center);
-        center            = simd::MultAdd(simd::Splat<2>(c), r2, center);
-
-        simd::M128 ext = simd::Mult(simd::Splat<1>(e), simd::Abs(r0));
-        ext            = simd::MultAdd(simd::Splat<2>(e), simd::Abs(r1), ext);
-        ext            = simd::MultAdd(simd::Splat<3>(e), simd::Abs(r2), ext);
-
-        AABB   ret;
-        float* pOut = reinterpret_cast<float*>(&ret);
-        simd::Store(pOut, simd::Blend<0b1000>(center, simd::Splat<0>(ext)));   // cx cy cz ex
-        simd::StoreFloat2(pOut + 4, simd::Shuffle<1, 2, 2, 3>(ext));             // ey ez
-        return ret;
+        return Xform(_aabb, Load(_mtx));
     }
 #endif
     const VECTOR3 e       = Abs(_aabb.extends);

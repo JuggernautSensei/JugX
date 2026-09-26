@@ -22,7 +22,6 @@ struct VECTOR<T, 2>
     {
     }
 
-    // Broadcast
     explicit JUG_MATH_API constexpr VECTOR(
         const T _value)
         : e { _value, _value }
@@ -189,7 +188,6 @@ struct VECTOR<T, 2>
     {
         return e.data();
     }
-
 
     constexpr static size_t kDim = 2;
 

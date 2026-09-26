@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -14,9 +14,9 @@
 
 // jug 수학 vs DirectXMath 벤치마크.
 //
-//   입력은 jug 타입으로 한 번 만들고, 같은 값을 DirectXMath 저장 타입(XMFLOAT3 / XMFLOAT4A / XMFLOAT4X4A)에
-//   그대로 복사해 둠. 양쪽 다 "배열에서 로드 -> 연산 -> 배열에 저장" 을 kMathCount 번 돌리니 메모리 트래픽이 같음.
-//   DirectXMath 쪽 XMLoad/XMStore 도 측정에 포함 - 저장된 데이터를 다룰 때 실제로 내는 비용이라서.
+//   입력은 jug 저장 타입으로 한 번 만들고, 같은 값을 DirectXMath 저장 타입(XMFLOAT3 / XMFLOAT4A / XMFLOAT4X4A)에
+//   그대로 복사해 둠. 양쪽 다 "배열에서 Load -> 연산 타입으로 계산 -> 배열에 Store" 를 kMathCount 번 돌린다
+//   (jug Load/Store, DirectXMath XMLoad*/XMStore*). 저장된 데이터를 다룰 때 실제로 내는 비용이라서 측정에 포함.
 //
 //   BM_DXM_* 는 측정이 끝난 뒤 같은 입력으로 jug 를 한 번 더 돌려 결과를 비교하고, 최대 상대 오차를 err 카운터로
 //   리포트함. err 가 크면 두 함수가 같은 일을 안 하는 것 (곱셈 순서, 평면 방향 등) - 속도보다 이걸 먼저 볼 것.
@@ -71,11 +71,11 @@ struct MathBenchInput
             {
                 for (size_t c = 0; c < 3; ++c)
                 {
-                    mtxA[i][r].Set(c, RandomFloat(rng, -1.f, 1.f) + (r == c ? 3.f : 0.f));
-                    mtxB[i][r].Set(c, RandomFloat(rng, -1.f, 1.f));
+                    mtxA[i][r][c] = RandomFloat(rng, -1.f, 1.f) + (r == c ? 3.f : 0.f);
+                    mtxB[i][r][c] = RandomFloat(rng, -1.f, 1.f);
                 }
-                mtxA[i][r].Set(3, r == 3 ? RandomFloat(rng, 1.f, 2.f) : RandomFloat(rng, -0.2f, 0.2f));
-                mtxB[i][r].Set(3, RandomFloat(rng, -1.f, 1.f));
+                mtxA[i][r][3] = r == 3 ? RandomFloat(rng, 1.f, 2.f) : RandomFloat(rng, -0.2f, 0.2f);
+                mtxB[i][r][3] = RandomFloat(rng, -1.f, 1.f);
             }
 
             v3a[i]    = jug::VECTOR3 { RandomFloat(rng, -1.f, 1.f), RandomFloat(rng, -1.f, 1.f), RandomFloat(rng, -1.f, 1.f) };
@@ -206,7 +206,7 @@ static void BM_Jug_Vec3Dot(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.f[i] = jug::Dot(g_mathIn.v3a[i], g_mathIn.v3b[i]);
+            g_mathOut.f[i] = jug::Dot(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.v3b[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -228,7 +228,7 @@ static void BM_DXM_Vec3Dot(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.f[i] = jug::Dot(g_mathIn.v3a[i], g_mathIn.v3b[i]);
+        g_mathOut.f[i] = jug::Dot(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.v3b[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.f, g_mathOut.xf, kMathCount);
 }
@@ -240,7 +240,7 @@ static void BM_Jug_Vec3Cross(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v3[i] = jug::Cross(g_mathIn.v3a[i], g_mathIn.v3b[i]);
+            g_mathOut.v3[i] = jug::Store(jug::Cross(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.v3b[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -262,7 +262,7 @@ static void BM_DXM_Vec3Cross(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v3[i] = jug::Cross(g_mathIn.v3a[i], g_mathIn.v3b[i]);
+        g_mathOut.v3[i] = jug::Store(jug::Cross(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.v3b[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
@@ -274,7 +274,7 @@ static void BM_Jug_Vec3Normalize(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v3[i] = jug::Normalize(g_mathIn.v3a[i]);
+            g_mathOut.v3[i] = jug::Store(jug::Normalize(jug::Load(g_mathIn.v3a[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -296,7 +296,7 @@ static void BM_DXM_Vec3Normalize(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v3[i] = jug::Normalize(g_mathIn.v3a[i]);
+        g_mathOut.v3[i] = jug::Store(jug::Normalize(jug::Load(g_mathIn.v3a[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
@@ -308,7 +308,7 @@ static void BM_Jug_Vec3Length(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.f[i] = jug::Length(g_mathIn.v3a[i]);
+            g_mathOut.f[i] = jug::Length(jug::Load(g_mathIn.v3a[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -330,7 +330,7 @@ static void BM_DXM_Vec3Length(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.f[i] = jug::Length(g_mathIn.v3a[i]);
+            g_mathOut.f[i] = jug::Length(jug::Load(g_mathIn.v3a[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.f, g_mathOut.xf, kMathCount);
 }
@@ -342,7 +342,7 @@ static void BM_Jug_Vec4Normalize(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v4[i] = jug::Normalize(g_mathIn.v4a[i]);
+            g_mathOut.v4[i] = jug::Store(jug::Normalize(jug::Load(g_mathIn.v4a[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -364,7 +364,7 @@ static void BM_DXM_Vec4Normalize(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v4[i] = jug::Normalize(g_mathIn.v4a[i]);
+        g_mathOut.v4[i] = jug::Store(jug::Normalize(jug::Load(g_mathIn.v4a[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v4[0].GetPtr(), &g_mathOut.xv4[0].x, kMathCount * 4);
 }
@@ -376,7 +376,7 @@ static void BM_Jug_Vec4Lerp(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v4[i] = jug::Lerp(g_mathIn.v4a[i], g_mathIn.v4b[i], 0.3f);
+            g_mathOut.v4[i] = jug::Store(jug::Lerp(jug::Load(g_mathIn.v4a[i]), jug::Load(g_mathIn.v4b[i]), 0.3f));
         }
         benchmark::ClobberMemory();
     }
@@ -398,7 +398,7 @@ static void BM_DXM_Vec4Lerp(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v4[i] = jug::Lerp(g_mathIn.v4a[i], g_mathIn.v4b[i], 0.3f);
+        g_mathOut.v4[i] = jug::Store(jug::Lerp(jug::Load(g_mathIn.v4a[i]), jug::Load(g_mathIn.v4b[i]), 0.3f));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v4[0].GetPtr(), &g_mathOut.xv4[0].x, kMathCount * 4);
 }
@@ -414,7 +414,7 @@ static void BM_Jug_MatrixMultiply(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = g_mathIn.mtxA[i] * g_mathIn.mtxB[i];
+            g_mathOut.mtx[i] = jug::Store(jug::Load(g_mathIn.mtxA[i]) * jug::Load(g_mathIn.mtxB[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -436,7 +436,7 @@ static void BM_DXM_MatrixMultiply(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = g_mathIn.mtxA[i] * g_mathIn.mtxB[i];
+        g_mathOut.mtx[i] = jug::Store(jug::Load(g_mathIn.mtxA[i]) * jug::Load(g_mathIn.mtxB[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -448,7 +448,7 @@ static void BM_Jug_MatrixTranspose(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::Transpose(g_mathIn.mtxA[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::Transpose(jug::Load(g_mathIn.mtxA[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -470,7 +470,7 @@ static void BM_DXM_MatrixTranspose(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::Transpose(g_mathIn.mtxA[i]);
+        g_mathOut.mtx[i] = jug::Store(jug::Transpose(jug::Load(g_mathIn.mtxA[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -482,7 +482,7 @@ static void BM_Jug_MatrixInverse(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::Inverse(g_mathIn.mtxA[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::Inverse(jug::Load(g_mathIn.mtxA[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -504,7 +504,7 @@ static void BM_DXM_MatrixInverse(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::Inverse(g_mathIn.mtxA[i]);
+        g_mathOut.mtx[i] = jug::Store(jug::Inverse(jug::Load(g_mathIn.mtxA[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -516,7 +516,7 @@ static void BM_Jug_MatrixDeterminant(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.f[i] = jug::Determinant(g_mathIn.mtxA[i]);
+            g_mathOut.f[i] = jug::Determinant(jug::Load(g_mathIn.mtxA[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -538,7 +538,7 @@ static void BM_DXM_MatrixDeterminant(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.f[i] = jug::Determinant(g_mathIn.mtxA[i]);
+        g_mathOut.f[i] = jug::Determinant(jug::Load(g_mathIn.mtxA[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.f, g_mathOut.xf, kMathCount);
 }
@@ -550,7 +550,7 @@ static void BM_Jug_Vec4Xform(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v4[i] = jug::Xform(g_mathIn.v4a[i], g_mathIn.mtxA[i]);
+            g_mathOut.v4[i] = jug::Store(jug::Xform(jug::Load(g_mathIn.v4a[i]), jug::Load(g_mathIn.mtxA[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -572,7 +572,7 @@ static void BM_DXM_Vec4Xform(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v4[i] = jug::Xform(g_mathIn.v4a[i], g_mathIn.mtxA[i]);
+        g_mathOut.v4[i] = jug::Store(jug::Xform(jug::Load(g_mathIn.v4a[i]), jug::Load(g_mathIn.mtxA[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v4[0].GetPtr(), &g_mathOut.xv4[0].x, kMathCount * 4);
 }
@@ -584,7 +584,7 @@ static void BM_Jug_XformPoint(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v3[i] = jug::XformPoint(g_mathIn.v3a[i], g_mathIn.mtxA[i]);
+            g_mathOut.v3[i] = jug::Store(jug::XformPoint(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.mtxA[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -606,7 +606,7 @@ static void BM_DXM_XformPoint(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v3[i] = jug::XformPoint(g_mathIn.v3a[i], g_mathIn.mtxA[i]);
+        g_mathOut.v3[i] = jug::Store(jug::XformPoint(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.mtxA[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
@@ -618,7 +618,7 @@ static void BM_Jug_XformVector(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v3[i] = jug::XformVector(g_mathIn.v3a[i], g_mathIn.mtxA[i]);
+            g_mathOut.v3[i] = jug::Store(jug::XformVector(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.mtxA[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -640,7 +640,7 @@ static void BM_DXM_XformVector(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v3[i] = jug::XformVector(g_mathIn.v3a[i], g_mathIn.mtxA[i]);
+        g_mathOut.v3[i] = jug::Store(jug::XformVector(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.mtxA[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
@@ -656,7 +656,7 @@ static void BM_Jug_MatrixSRT(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeSRT(g_mathIn.scale[i], g_mathIn.qa[i], g_mathIn.trans[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeSRT(jug::Load(g_mathIn.scale[i]), jug::Load(g_mathIn.qa[i]), jug::Load(g_mathIn.trans[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -678,7 +678,7 @@ static void BM_DXM_MatrixSRT(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::MATRIX::MakeSRT(g_mathIn.scale[i], g_mathIn.qa[i], g_mathIn.trans[i]);
+        g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeSRT(jug::Load(g_mathIn.scale[i]), jug::Load(g_mathIn.qa[i]), jug::Load(g_mathIn.trans[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -690,7 +690,7 @@ static void BM_Jug_MatrixRotationQuat(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.qa[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.qa[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -712,7 +712,7 @@ static void BM_DXM_MatrixRotationQuat(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.qa[i]);
+        g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.qa[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -724,7 +724,7 @@ static void BM_Jug_MatrixPersp(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakePersp(g_mathIn.fovY[i], g_mathIn.aspect[i], 0.1f, 100.f);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakePersp(g_mathIn.fovY[i], g_mathIn.aspect[i], 0.1f, 100.f));
         }
         benchmark::ClobberMemory();
     }
@@ -746,7 +746,7 @@ static void BM_DXM_MatrixPersp(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::MATRIX::MakePersp(g_mathIn.fovY[i], g_mathIn.aspect[i], 0.1f, 100.f);
+        g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakePersp(g_mathIn.fovY[i], g_mathIn.aspect[i], 0.1f, 100.f));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -758,7 +758,7 @@ static void BM_Jug_MatrixViewLookTo(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeViewLookTo(g_mathIn.trans[i], g_mathIn.dir[i], jug::Up<jug::VECTOR3>());
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeViewLookTo(jug::Load(g_mathIn.trans[i]), jug::Load(g_mathIn.dir[i]), jug::MathConstants<jug::VECTOR3_REG>::kUp));
         }
         benchmark::ClobberMemory();
     }
@@ -780,7 +780,7 @@ static void BM_DXM_MatrixViewLookTo(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.mtx[i] = jug::MATRIX::MakeViewLookTo(g_mathIn.trans[i], g_mathIn.dir[i], jug::Up<jug::VECTOR3>());
+        g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeViewLookTo(jug::Load(g_mathIn.trans[i]), jug::Load(g_mathIn.dir[i]), jug::MathConstants<jug::VECTOR3_REG>::kUp));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -792,7 +792,7 @@ static void BM_Jug_MatrixRotationX(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotationX(g_mathIn.angle[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotationX(g_mathIn.angle[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -814,7 +814,7 @@ static void BM_DXM_MatrixRotationX(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotationX(g_mathIn.angle[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotationX(g_mathIn.angle[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -826,7 +826,7 @@ static void BM_Jug_MatrixRotationAxis(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.dir[i], g_mathIn.angle[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.dir[i]), g_mathIn.angle[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -848,7 +848,7 @@ static void BM_DXM_MatrixRotationAxis(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.dir[i], g_mathIn.angle[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.dir[i]), g_mathIn.angle[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -860,7 +860,7 @@ static void BM_Jug_MatrixRotationPYR(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.euler[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.euler[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -882,7 +882,7 @@ static void BM_DXM_MatrixRotationPYR(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeRotation(g_mathIn.euler[i]);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeRotation(jug::Load(g_mathIn.euler[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -894,7 +894,7 @@ static void BM_Jug_MatrixOrtho(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f));
         }
         benchmark::ClobberMemory();
     }
@@ -916,7 +916,7 @@ static void BM_DXM_MatrixOrtho(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.mtx[i] = jug::MATRIX::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f);
+            g_mathOut.mtx[i] = jug::Store(jug::MATRIX_REG::MakeOrtho(-g_mathIn.aspect[i], g_mathIn.aspect[i], -g_mathIn.fovY[i], g_mathIn.fovY[i], 0.1f, 100.f));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.mtx[0].GetPtr(), &g_mathOut.xmtx[0]._11, kMathCount * 16);
 }
@@ -928,7 +928,13 @@ static void BM_Jug_MatrixDecompose(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            jug::Decompose(g_mathIn.srt[i], &g_mathOut.v3[i], &g_mathOut.q[i], &g_mathOut.box[i].center);
+            jug::VECTOR3_REG    s;
+            jug::QUATERNION_REG r;
+            jug::VECTOR3_REG    t;
+            jug::Decompose(jug::Load(g_mathIn.srt[i]), &s, &r, &t);
+            g_mathOut.v3[i]         = jug::Store(s);
+            g_mathOut.q[i]          = jug::Store(r);
+            g_mathOut.box[i].center = jug::Store(t);
         }
         benchmark::ClobberMemory();
     }
@@ -956,7 +962,13 @@ static void BM_DXM_MatrixDecompose(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            jug::Decompose(g_mathIn.srt[i], &g_mathOut.v3[i], &g_mathOut.q[i], &g_mathOut.box[i].center);
+            jug::VECTOR3_REG    s;
+            jug::QUATERNION_REG r;
+            jug::VECTOR3_REG    t;
+            jug::Decompose(jug::Load(g_mathIn.srt[i]), &s, &r, &t);
+            g_mathOut.v3[i]         = jug::Store(s);
+            g_mathOut.q[i]          = jug::Store(r);
+            g_mathOut.box[i].center = jug::Store(t);
     }
     // 회전은 q 와 -q 가 같으니 부호를 맞춘 뒤 비교
     for (size_t i = 0; i < kMathCount; ++i)
@@ -976,7 +988,7 @@ static void BM_Jug_QuatFromMatrix(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = jug::QUATERNION::MakeFromMatrix(g_mathIn.rot[i]);
+            g_mathOut.q[i] = jug::Store(jug::QUATERNION_REG::MakeFromMatrix(jug::Load(g_mathIn.rot[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -999,7 +1011,7 @@ static void BM_DXM_QuatFromMatrix(benchmark::State& _state)
     // q 와 -q 는 같은 회전이라 부호를 맞춘 뒤 비교함.
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        const jug::QUATERNION q    = jug::QUATERNION::MakeFromMatrix(g_mathIn.rot[i]);
+        const jug::QUATERNION q    = jug::Store(jug::QUATERNION_REG::MakeFromMatrix(jug::Load(g_mathIn.rot[i])));
         const float           sign = q[0] * g_mathOut.xq[i].x + q[1] * g_mathOut.xq[i].y + q[2] * g_mathOut.xq[i].z + q[3] * g_mathOut.xq[i].w;
         g_mathOut.q[i]             = sign < 0.f ? -q : q;
     }
@@ -1013,7 +1025,7 @@ static void BM_Jug_QuatFromAxisAngle(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = jug::QUATERNION::MakeFromAxisAngle(g_mathIn.dir[i], g_mathIn.angle[i]);
+            g_mathOut.q[i] = jug::Store(jug::QUATERNION_REG::MakeFromAxisAngle(jug::Load(g_mathIn.dir[i]), g_mathIn.angle[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -1035,7 +1047,7 @@ static void BM_DXM_QuatFromAxisAngle(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.q[i] = jug::QUATERNION::MakeFromAxisAngle(g_mathIn.dir[i], g_mathIn.angle[i]);
+        g_mathOut.q[i] = jug::Store(jug::QUATERNION_REG::MakeFromAxisAngle(jug::Load(g_mathIn.dir[i]), g_mathIn.angle[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
 }
@@ -1047,7 +1059,7 @@ static void BM_Jug_QuatFromEuler(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = jug::QUATERNION::MakeFromEuler(g_mathIn.euler[i]);
+            g_mathOut.q[i] = jug::Store(jug::QUATERNION_REG::MakeFromEuler(jug::Load(g_mathIn.euler[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -1069,7 +1081,7 @@ static void BM_DXM_QuatFromEuler(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.q[i] = jug::QUATERNION::MakeFromEuler(g_mathIn.euler[i]);
+        g_mathOut.q[i] = jug::Store(jug::QUATERNION_REG::MakeFromEuler(jug::Load(g_mathIn.euler[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
 }
@@ -1085,7 +1097,7 @@ static void BM_Jug_QuatMultiply(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = g_mathIn.qa[i] * g_mathIn.qb[i];
+            g_mathOut.q[i] = jug::Store(jug::Load(g_mathIn.qa[i]) * jug::Load(g_mathIn.qb[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -1107,7 +1119,7 @@ static void BM_DXM_QuatMultiply(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.q[i] = g_mathIn.qa[i] * g_mathIn.qb[i];
+        g_mathOut.q[i] = jug::Store(jug::Load(g_mathIn.qa[i]) * jug::Load(g_mathIn.qb[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
 }
@@ -1119,7 +1131,7 @@ static void BM_Jug_QuatSlerp(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = jug::Slerp(g_mathIn.qa[i], g_mathIn.qb[i], 0.3f);
+            g_mathOut.q[i] = jug::Store(jug::Slerp(jug::Load(g_mathIn.qa[i]), jug::Load(g_mathIn.qb[i]), 0.3f));
         }
         benchmark::ClobberMemory();
     }
@@ -1141,7 +1153,7 @@ static void BM_DXM_QuatSlerp(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.q[i] = jug::Slerp(g_mathIn.qa[i], g_mathIn.qb[i], 0.3f);
+        g_mathOut.q[i] = jug::Store(jug::Slerp(jug::Load(g_mathIn.qa[i]), jug::Load(g_mathIn.qb[i]), 0.3f));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
 }
@@ -1153,7 +1165,7 @@ static void BM_Jug_QuatRotate(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.v3[i] = jug::Rotate(g_mathIn.v3a[i], g_mathIn.qa[i]);
+            g_mathOut.v3[i] = jug::Store(jug::Rotate(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.qa[i])));
         }
         benchmark::ClobberMemory();
     }
@@ -1175,7 +1187,7 @@ static void BM_DXM_QuatRotate(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.v3[i] = jug::Rotate(g_mathIn.v3a[i], g_mathIn.qa[i]);
+        g_mathOut.v3[i] = jug::Store(jug::Rotate(jug::Load(g_mathIn.v3a[i]), jug::Load(g_mathIn.qa[i])));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.v3[0].GetPtr(), &g_mathOut.xv3[0].x, kMathCount * 3);
 }
@@ -1187,7 +1199,7 @@ static void BM_Jug_QuatNormalize(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.q[i] = jug::Normalize(jug::QUATERNION { g_mathIn.v4a[i] });
+            g_mathOut.q[i] = jug::Store(jug::Normalize(jug::QUATERNION_REG { jug::Load(g_mathIn.v4a[i]).v }));
         }
         benchmark::ClobberMemory();
     }
@@ -1209,7 +1221,7 @@ static void BM_DXM_QuatNormalize(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-            g_mathOut.q[i] = jug::Normalize(jug::QUATERNION { g_mathIn.v4a[i] });
+            g_mathOut.q[i] = jug::Store(jug::Normalize(jug::QUATERNION_REG { jug::Load(g_mathIn.v4a[i]).v }));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.q[0].GetPtr(), &g_mathOut.xq[0].x, kMathCount * 4);
 }
@@ -1225,7 +1237,7 @@ static void BM_Jug_AABBXform(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.box[i] = jug::Xform(g_mathIn.box[i], g_mathIn.srt[i]);
+            g_mathOut.box[i] = jug::Xform(g_mathIn.box[i], jug::Load(g_mathIn.srt[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -1247,7 +1259,7 @@ static void BM_DXM_AABBXform(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.box[i] = jug::Xform(g_mathIn.box[i], g_mathIn.srt[i]);
+        g_mathOut.box[i] = jug::Xform(g_mathIn.box[i], jug::Load(g_mathIn.srt[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.box[0].center.GetPtr(), &g_mathOut.xbox[0].Center.x, kMathCount * 6);
 }
@@ -1259,7 +1271,7 @@ static void BM_Jug_SphereXform(benchmark::State& _state)
     {
         for (size_t i = 0; i < kMathCount; ++i)
         {
-            g_mathOut.sphere[i] = jug::Xform(g_mathIn.sphere[i], g_mathIn.srt[i]);
+            g_mathOut.sphere[i] = jug::Xform(g_mathIn.sphere[i], jug::Load(g_mathIn.srt[i]));
         }
         benchmark::ClobberMemory();
     }
@@ -1281,7 +1293,7 @@ static void BM_DXM_SphereXform(benchmark::State& _state)
 
     for (size_t i = 0; i < kMathCount; ++i)
     {
-        g_mathOut.sphere[i] = jug::Xform(g_mathIn.sphere[i], g_mathIn.srt[i]);
+        g_mathOut.sphere[i] = jug::Xform(g_mathIn.sphere[i], jug::Load(g_mathIn.srt[i]));
     }
     _state.counters["err"] = MaxRelError(g_mathOut.sphere[0].center.GetPtr(), &g_mathOut.xsphere[0].Center.x, kMathCount * 4);
 }

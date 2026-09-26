@@ -706,7 +706,7 @@ JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCo
     {
         const simd::M128 sc = simd::SinCos1(_x);
         _outSin             = simd::GetX(sc);
-        _outCos             = simd::GetY(sc);
+        _outCos             = simd::Get<1>(sc);
         return;
     }
 #endif
