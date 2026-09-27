@@ -224,7 +224,6 @@ static_assert(PodT<VECTOR2>, "VECTOR2 must be POD type.");
 //  Constants
 // =======================================================
 
-// 클래스 템플릿의 static 상수는 clang/gcc 에서 constexpr 로 못 쓴다 - MathConstants 로만 둔다.
 template<VectorScalarT T>
 struct MathConstants<VECTOR<T, 2>>
 {

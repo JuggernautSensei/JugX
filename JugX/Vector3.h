@@ -1,6 +1,4 @@
 ﻿#pragma once
-#include <concepts>
-
 #include "Vector2.h"
 
 namespace jug
@@ -198,6 +196,29 @@ struct VECTOR<T, 3>
         return VECTOR<T, 2> { e[0], e[1] };
     }
 
+    // w = 0
+    [[nodiscard]] JUG_MATH_API constexpr simd::M128 JUG_VECTORCALL ToM128() const
+        requires std::is_same_v<T, float>
+    {
+        return simd::Set(e[0], e[1], e[2], 0.f);
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VECTOR JUG_VECTORCALL FromM128(
+        const simd::M128 _v)
+        requires std::is_same_v<T, float>
+    {
+        if (std::is_constant_evaluated())
+        {
+            return simd::NoInlineConstruct<VECTOR>(simd::Get<0>(_v), simd::Get<1>(_v), simd::Get<2>(_v));
+        }
+        else
+        {
+            VECTOR ret;
+            simd::StoreFloat3(ret.e.data(), _v);
+            return ret;
+        }
+    }
+
     constexpr static size_t kDim = 3;
 
     JUG_DISABLE_ANON_WARNING_BEGIN
@@ -238,7 +259,6 @@ static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
 //  Constants
 // =======================================================
 
-// 클래스 템플릿의 static 상수는 clang/gcc 에서 constexpr 로 못 쓴다 - MathConstants 로만 둔다.
 template<VectorScalarT T>
 struct MathConstants<VECTOR<T, 3>>
 {

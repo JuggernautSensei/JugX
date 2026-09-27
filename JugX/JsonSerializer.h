@@ -32,7 +32,7 @@ class JsonWriter
 
 public:
     // ===========================================
-    //  Container Type
+    //  Container Handle
     // ===========================================
 
     void SetObject();

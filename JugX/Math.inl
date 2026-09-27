@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Vector2.h"
 
 namespace jug
 {
@@ -8,7 +9,9 @@ namespace jug
 // ==========================================
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsEqual(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsEqual(
+    T _x,
+    U _y)
 {
     if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
     {
@@ -26,13 +29,17 @@ template<std::integral T, std::integral U>
 }
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsNotEqual(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsNotEqual(
+    T _x,
+    U _y)
 {
     return !IsEqual(_x, _y);
 }
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsLess(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsLess(
+    T _x,
+    U _y)
 {
     if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
     {
@@ -50,7 +57,9 @@ template<std::integral T, std::integral U>
 }
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsGreater(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsGreater(
+    T _x,
+    U _y)
 {
     if constexpr (std::is_signed_v<T> == std::is_signed_v<U>)
     {
@@ -68,13 +77,17 @@ template<std::integral T, std::integral U>
 }
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsLessEqual(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsLessEqual(
+    T _x,
+    U _y)
 {
     return !IsGreater(_x, _y);
 }
 
 template<std::integral T, std::integral U>
-[[nodiscard]] JUG_MATH_API constexpr bool IsGreaterEqual(T _x, U _y)
+[[nodiscard]] JUG_MATH_API constexpr bool IsGreaterEqual(
+    T _x,
+    U _y)
 {
     return !IsLess(_x, _y);
 }
@@ -83,42 +96,55 @@ template<std::integral T, std::integral U>
 //  Basic
 // =========================================
 
-template<typename T, typename U>
-[[nodiscard]] JUG_MATH_API constexpr T Min(const T& _x, const U& _y)
+template<typename T>
+[[nodiscard]] JUG_MATH_API constexpr T Min(
+    const T                       _x,
+    const std::type_identity_t<T> _y)
 {
     return (_x < _y) ? _x : static_cast<T>(_y);
 }
 
 template<typename T, typename... Us>
-[[nodiscard]] JUG_MATH_API constexpr T Min(const T& _x, const Us&... _ys)
+[[nodiscard]] JUG_MATH_API constexpr T Min(
+    const T                       _x,
+    const std::type_identity_t<T> _y,
+    Us... _args)
 {
-    return Min(_x, Min(_ys...));
+    return Min(_x, Min(_y, _args...));
 }
 
-template<typename T, typename U>
-[[nodiscard]] JUG_MATH_API constexpr T Max(T _x, U _y)
+template<typename T>
+[[nodiscard]] JUG_MATH_API constexpr T Max(
+    T                       _x,
+    std::type_identity_t<T> _y)
 {
     return (_x > _y) ? _x : static_cast<T>(_y);
 }
 
 template<typename T, typename... Us>
-[[nodiscard]] JUG_MATH_API constexpr T Max(const T& _x, const Us&... _ys)
+[[nodiscard]] JUG_MATH_API constexpr T Max(
+    const T                       _x,
+    const std::type_identity_t<T> _y,
+    Us... _args)
 {
-    return Max(_x, Max(_ys...));
+    return Max(_x, Max(_y, _args...));
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Clamp(T _x, T _min, T _max)
+[[nodiscard]] JUG_MATH_API constexpr T Clamp(
+    T _x,
+    T _min,
+    T _max)
 {
     return _x < _min ? _min : (_x > _max ? _max : _x);
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Abs(T _x)
+[[nodiscard]] JUG_MATH_API constexpr T Abs(
+    T _x)
 {
     if constexpr (std::is_same_v<T, float>)
     {
-        // 부호 비트만 지운다. 삼항식은 MSVC 가 분기로 만든다.
         return std::bit_cast<float>(std::bit_cast<uint32_t>(_x) & ~kFloatSignMask);
     }
     else
@@ -128,7 +154,8 @@ template<ArithmeticT T>
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Sign(T _x)
+[[nodiscard]] JUG_MATH_API constexpr T Sign(
+    T _x)
 {
     if constexpr (std::is_unsigned_v<T>)
     {
@@ -141,7 +168,8 @@ template<ArithmeticT T>
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr bool SignBit(T _x)
+[[nodiscard]] JUG_MATH_API constexpr bool SignBit(
+    T _x)
 {
     if constexpr (std::is_unsigned_v<T>)
     {
@@ -154,7 +182,9 @@ template<ArithmeticT T>
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T CopySign(T _x, T _y)
+[[nodiscard]] JUG_MATH_API constexpr T CopySign(
+    T _x,
+    T _y)
 {
     static_assert(std::is_same_v<double, T> == false, "CopySign is not implemented for double yet.");
 
@@ -179,7 +209,9 @@ template<ArithmeticT T>
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Mod(T _x, T _y)
+[[nodiscard]] JUG_MATH_API constexpr T Mod(
+    T _x,
+    T _y)
 {
     if constexpr (std::is_integral_v<T>)
     {
@@ -192,20 +224,27 @@ template<ArithmeticT T>
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Wrap(T _x, T _wrap)
+[[nodiscard]] JUG_MATH_API constexpr T Wrap(
+    T _x,
+    T _wrap)
 {
     const T tmp = Mod(_x, _wrap);
     return tmp < T { 0 } ? _wrap + tmp : tmp;
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Step(T _edge, T _x)
+[[nodiscard]] JUG_MATH_API constexpr T Step(
+    T _edge,
+    T _x)
 {
     return _x < _edge ? T { 0 } : T { 1 };
 }
 
 template<ArithmeticT T>
-[[nodiscard]] JUG_MATH_API constexpr T Pulse(T _x, T _start, T _end)
+[[nodiscard]] JUG_MATH_API constexpr T Pulse(
+    T _x,
+    T _start,
+    T _end)
 {
     return Step(_start, _x) - Step(_end, _x);
 }
@@ -215,24 +254,30 @@ template<ArithmeticT T>
 // ===========================================
 
 template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Floor(T _x, T _multiple)
+[[nodiscard]] JUG_MATH_API constexpr T Floor(
+    T _x,
+    T _multiple)
 {
     T remainder = _x % _multiple;
     return remainder == T(0) ? _x : _x - remainder - (remainder < T(0) ? _multiple : T(0));
 }
 
 template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Ceil(T _x, T _multiple)
+[[nodiscard]] JUG_MATH_API constexpr T Ceil(
+    T _x,
+    T _multiple)
 {
     T remainder = _x % _multiple;
     return remainder == T(0) ? _x : _x - remainder + (remainder > T(0) ? _multiple : T(0));
 }
 
 template<std::integral T>
-[[nodiscard]] JUG_MATH_API constexpr T Round(T _x, T _multiple)
+[[nodiscard]] JUG_MATH_API constexpr T Round(
+    T _x,
+    T _multiple)
 {
     T f    = Floor(_x, _multiple);
-    T diff = _x - f;   
+    T diff = _x - f;
     return diff >= (_multiple + T(1)) / T(2) ? f + _multiple : f;
 }
 
@@ -240,37 +285,47 @@ template<std::integral T>
 //  Float
 // =========================================
 
-[[nodiscard]] JUG_MATH_API constexpr float ToDeg(const float _rad)
+[[nodiscard]] JUG_MATH_API constexpr float ToDeg(
+    const float _rad)
 {
     return _rad * kRad2Deg;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float ToRad(const float _deg)
+[[nodiscard]] JUG_MATH_API constexpr float ToRad(
+    const float _deg)
 {
     return _deg * kDeg2Rad;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(const float _x, const float _epsilon)
+[[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(
+    const float _x,
+    const float _epsilon)
 {
     return Abs(_x) < _epsilon;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(const float _x, const float _y, const float _epsilon)
+[[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(
+    const float _x,
+    const float _y,
+    const float _epsilon)
 {
     return IsZeroApprox(_x - _y, _epsilon);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Trunc(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Trunc(
+    const float _x)
 {
     return static_cast<float>(static_cast<int>(_x));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Fract(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Fract(
+    const float _x)
 {
     return _x - Trunc(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Floor(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Floor(
+    const float _x)
 {
     if (_x < 0.f)
     {
@@ -284,60 +339,77 @@ template<std::integral T>
     }
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Ceil(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Ceil(
+    const float _x)
 {
     return -Floor(-_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Round(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Round(
+    const float _x)
 {
     return _x < 0.f ? Ceil(_x - 0.5f) : Floor(_x + 0.5f);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsNan(const float _f)
+[[nodiscard]] JUG_MATH_API constexpr bool IsNan(
+    const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
     return tmp > kFloatExponentMask;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsFinite(const float _f)
+[[nodiscard]] JUG_MATH_API constexpr bool IsFinite(
+    const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
     return tmp < kFloatExponentMask;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool IsInfinite(const float _f)
+[[nodiscard]] JUG_MATH_API constexpr bool IsInfinite(
+    const float _f)
 {
     const uint32_t tmp = std::bit_cast<uint32_t>(_f) & Max<int32_t>();
     return tmp == kFloatExponentMask;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float RcpSafe(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float RcpSafe(
+    const float _x)
 {
     return 1.f / CopySign(Max(kFloatSmallest, Abs(_x)), _x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Lerp(const float _x, const float _y, const float _t)
+[[nodiscard]] JUG_MATH_API constexpr float Lerp(
+    const float _x,
+    const float _y,
+    const float _t)
 {
     return _x + (_y - _x) * _t;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float InvLerp(const float _x, const float _y, const float _value)
+[[nodiscard]] JUG_MATH_API constexpr float InvLerp(
+    const float _x,
+    const float _y,
+    const float _value)
 {
     return (_value - _x) / (_y - _x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float SmoothStep(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float SmoothStep(
+    const float _x)
 {
     return _x * _x * (3.f - 2.f * _x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Bias(const float _time, const float _bias)
+[[nodiscard]] JUG_MATH_API constexpr float Bias(
+    const float _time,
+    const float _bias)
 {
     return _time / ((1.f / _bias - 2.f) * (1.f - _time) + 1.f);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Gain(const float _time, const float _gain)
+[[nodiscard]] JUG_MATH_API constexpr float Gain(
+    const float _time,
+    const float _gain)
 {
     if (_time < 0.5f)
     {
@@ -437,7 +509,8 @@ namespace math_detail
 
 }   // namespace math_detail
 
-[[nodiscard]] JUG_MATH_API constexpr float Log(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Log(
+    const float _x)
 {
     if (std::is_constant_evaluated())
     {
@@ -469,7 +542,8 @@ namespace math_detail
     return ::exp2f(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Exp(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Exp(
+    const float _x)
 {
     if (std::is_constant_evaluated())
     {
@@ -479,7 +553,9 @@ namespace math_detail
     return ::expf(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Pow(const float _x, const float _y)
+[[nodiscard]] JUG_MATH_API constexpr float Pow(
+    const float _x,
+    const float _y)
 {
     if (std::is_constant_evaluated())
     {
@@ -499,50 +575,24 @@ namespace math_detail
     return ::powf(_x, _y);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Sqrt(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Sqrt(
+    const float _x)
 {
-    if (std::is_constant_evaluated())
-    {
-        if (_x < 0.f)
-        {
-            return std::bit_cast<float>(kFloatExponentMask | kFloatMantissaMask);
-        }
-
-        if (_x < kFloatSmallest)
-        {
-            return 0.f;
-        }
-
-        return _x * Pow(_x, -0.5f);
-    }
-
-#ifdef JUG_SIMD_AVAILABLE
-    return simd::GetX(simd::Sqrt(simd::SetAll(_x)));
-#else
-    return ::sqrtf(_x);
-#endif
+    return simd::Sqrt(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float RSqrt(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float RSqrt(
+    const float _x)
 {
     if (_x < kFloatSmallest)
     {
         return kFloatInfinity;
     }
-
-    if (std::is_constant_evaluated())
-    {
-        return Pow(_x, -0.5f);
-    }
-
-#ifdef JUG_SIMD_AVAILABLE
-    return simd::GetX(simd::RSqrt(simd::SetAll(_x)));
-#else
-    return 1.f / ::sqrtf(_x);
-#endif
+    return simd::RSqrt(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Saturate(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Saturate(
+    const float _x)
 {
     return Clamp(_x, 0.f, 1.f);
 }
@@ -561,12 +611,11 @@ namespace math_detail
         constexpr float c6 = 0.0066700901f;
         constexpr float c7 = -0.0012624911f;
 
-        // Horner 대신 x^2, x^4 로 나눠 (Estrin) 곱셈-덧셈 의존 사슬을 7단에서 3단으로
         const float absa   = Abs(_x);
         const float absa2  = absa * absa;
         const float absa4  = absa2 * absa2;
         const float tmp    = ((c7 * absa + c6) * absa2 + (c5 * absa + c4)) * absa4 + ((c3 * absa + c2) * absa2 + (c1 * absa + c0));
-        const float tmp2   = tmp * Sqrt(Max(1.f - absa, 0.f));   // |x| 가 반올림으로 1 을 살짝 넘어도 NaN 이 안 나게
+        const float tmp2   = tmp * Sqrt(Max(1.f - absa, 0.f));
         const float negate = static_cast<float>(_x < 0.f);
         const float tmp3   = tmp2 - 2.f * negate * tmp2;
         return negate * kPI + tmp3;
@@ -606,133 +655,47 @@ namespace math_detail
     }
 }   // namespace math_detail
 
-// DirectXMath XMScalarSin / XMScalarCos / XMScalarSinCos 와 같은 식 (constexpr 과 SIMD 없는 환경 전용).
-// 런타임은 분기 없는 simd::SinCos 를 쓴다 - 여기의 구간 접기 분기는 임의 각도에서 절반이 예측 실패한다.
-namespace math_detail
+[[nodiscard]] JUG_MATH_API constexpr float Sin(
+    const float _x)
 {
-    [[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
-    {
-        // DirectXMath XMScalarSin 과 같은 식. x = 2pi * quotient + y, y 는 [-pi, pi]
-        float quotient = kInv2PI * _x;
-        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
-        float y        = _x - k2PI * quotient;
-
-        // sin(y) = sin(x) 를 유지하며 [-pi/2, pi/2] 로 접는다
-        if (y > kHalfPI)
-        {
-            y = kPI - y;
-        }
-        else if (y < -kHalfPI)
-        {
-            y = -kPI - y;
-        }
-
-        // 11차 minimax
-        const float y2 = y * y;
-        return (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.f) * y;
-    }
-
-    [[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
-    {
-        // DirectXMath XMScalarCos 와 같은 식
-        float quotient = kInv2PI * _x;
-        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
-        float y        = _x - k2PI * quotient;
-
-        // cos(y) = sign * cos(x) 로 [-pi/2, pi/2] 에 접는다
-        float sign = 1.f;
-        if (y > kHalfPI)
-        {
-            y    = kPI - y;
-            sign = -1.f;
-        }
-        else if (y < -kHalfPI)
-        {
-            y    = -kPI - y;
-            sign = -1.f;
-        }
-
-        // 10차 minimax
-        const float y2 = y * y;
-        const float p  = ((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.f;
-        return sign * p;
-    }
-
-    JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCos)
-    {
-        // DirectXMath XMScalarSinCos 와 같은 식. 구간 축소를 한 번만 한다
-        float quotient = kInv2PI * _x;
-        quotient       = _x >= 0.f ? static_cast<float>(static_cast<int>(quotient + 0.5f)) : static_cast<float>(static_cast<int>(quotient - 0.5f));
-        float y        = _x - k2PI * quotient;
-
-        float sign = 1.f;
-        if (y > kHalfPI)
-        {
-            y    = kPI - y;
-            sign = -1.f;
-        }
-        else if (y < -kHalfPI)
-        {
-            y    = -kPI - y;
-            sign = -1.f;
-        }
-
-        const float y2 = y * y;
-        _outSin        = (((((-2.3889859e-08f * y2 + 2.7525562e-06f) * y2 - 0.00019840874f) * y2 + 0.0083333310f) * y2 - 0.16666667f) * y2 + 1.f) * y;
-        _outCos        = sign * (((((-2.6051615e-07f * y2 + 2.4760495e-05f) * y2 - 0.0013888378f) * y2 + 0.041666638f) * y2 - 0.5f) * y2 + 1.f);
-    }
-}   // namespace math_detail
-
-[[nodiscard]] JUG_MATH_API constexpr float Sin(const float _x)
-{
-#ifdef JUG_SIMD_AVAILABLE
-    JUG_SIMD_PATH(simd::GetX(simd::Sin(simd::SetAll(_x))));
-#endif
-    return math_detail::Sin(_x);
+    return simd::Get<0>(simd::Sin(simd::SetAll(_x)));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Cos(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Cos(
+    const float _x)
 {
-#ifdef JUG_SIMD_AVAILABLE
-    JUG_SIMD_PATH(simd::GetX(simd::Cos(simd::SetAll(_x))));
-#endif
-    return math_detail::Cos(_x);
+    return simd::Get<0>(simd::Cos(simd::SetAll(_x)));
 }
 
-JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCos)
+JUG_MATH_API constexpr SIN_COS_RESULT SinCos(
+    const float _x)
 {
-#ifdef JUG_SIMD_AVAILABLE
-    if (!std::is_constant_evaluated())
-    {
-        const simd::M128 sc = simd::SinCos1(_x);
-        _outSin             = simd::GetX(sc);
-        _outCos             = simd::Get<1>(sc);
-        return;
-    }
-#endif
-    math_detail::SinCos(_x, _outSin, _outCos);
+    const simd::M128 sc = simd::SinCos1(_x);
+    return { simd::Get<0>(sc), simd::Get<1>(sc) };
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float Tan(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float Tan(
+    const float _x)
 {
-    float s = 0.f;
-    float c = 0.f;
-    SinCos(_x, s, c);
+    const auto [s, c] = SinCos(_x);
     return s / c;
 }
 
-// DirectXMath XMScalarACos / XMScalarASin 과 같은 7차 다항식. constexpr 과 런타임이 같은 식을 쓴다.
-[[nodiscard]] JUG_MATH_API constexpr float ACos(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float ACos(
+    const float _x)
 {
     return math_detail::ACos(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float ASin(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float ASin(
+    const float _x)
 {
     return kHalfPI - math_detail::ACos(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float ATan2(const float _y, const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float ATan2(
+    const float _y,
+    const float _x)
 {
     if (std::is_constant_evaluated())
     {
@@ -742,7 +705,8 @@ JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCo
     return ::atan2f(_y, _x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float ATan(const float _x)
+[[nodiscard]] JUG_MATH_API constexpr float ATan(
+    const float _x)
 {
     if (std::is_constant_evaluated())
     {
@@ -752,13 +716,18 @@ JUG_MATH_API constexpr void SinCos(const float _x, float& _outSin, float& _outCo
     return ::atanf(_x);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float AngleDiff(const float _x, const float _y)
+[[nodiscard]] JUG_MATH_API constexpr float AngleDiff(
+    const float _x,
+    const float _y)
 {
     const float dist = Wrap(_y - _x, k2PI);
     return Wrap(dist * 2.f, k2PI) - dist;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr float AngleLerp(const float _x, const float _y, const float _t)
+[[nodiscard]] JUG_MATH_API constexpr float AngleLerp(
+    const float _x,
+    const float _y,
+    const float _t)
 {
     return _x + AngleDiff(_x, _y) * _t;
 }

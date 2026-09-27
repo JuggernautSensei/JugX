@@ -30,7 +30,7 @@ template<typename V>
 concept FloatingPointVectorT = VectorT<V> && std::floating_point<typename VectorTraits<V>::Scalar>;
 
 // =======================================================
-//  Method
+//  Operator
 // =======================================================
 
 template<VectorT V>
@@ -53,6 +53,18 @@ template<VectorT V>
     }
     return ret;
 }
+
+template<>
+[[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
+    const float   _scalar,
+    const VECTOR4 _v)
+{
+    return VECTOR4::FromM128(simd::Div(simd::SetAll(_scalar), _v.ToM128()));
+}
+
+// =======================================================
+//  Method
+// =======================================================
 
 template<FloatingPointVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr bool IsZeroApprox(
@@ -232,24 +244,16 @@ template<FloatingPointVectorT V>
     return Sqrt(LengthSq(_v));
 }
 
-// 영벡터의 정규화는 영벡터로 정의한다 (DirectXMath 와 같은 의미 - 길이가 정확히 0 일 때만).
 template<FloatingPointVectorT V>
 [[nodiscard]] JUG_MATH_API constexpr V Normalize(
     const V _v)
 {
     const float lenSq = LengthSq(_v);
-    if (lenSq == 0.f)
+    if (lenSq < kFloatSmallest)
     {
-        return Zero<V>();
+        return lenSq == 0.f ? Zero<V>() : _v * (1.f / Sqrt(lenSq));
     }
-
-    const float len = Sqrt(lenSq);
-    V           ret = _v;
-    for (size_t i = 0; i < V::kDim; ++i)
-    {
-        ret[i] = _v[i] / len;
-    }
-    return ret;
+    return _v * RSqrt(lenSq);
 }
 
 template<FloatingPointVectorT V>
@@ -328,7 +332,7 @@ template<FloatingPointVectorT V>
     const float dot  = -Dot(_v, _normal);
     const V     perp = (_v + dot * _normal) * _eta;
     const float k    = 1.f - LengthSq(perp);
-    if (k < 0.f)   // 전반사. HLSL refract() 와 같이 영벡터로 정의한다.
+    if (k < 0.f)   // 전반사.
     {
         return Zero<V>();
     }

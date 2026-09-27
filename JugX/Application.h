@@ -18,8 +18,8 @@ class Application
     JUG_CLASS(Application, NO_COPY, NO_MOVE)
 
 public:
-    virtual ~Application();
     [[nodiscard]] static Application& GetSingleton();
+    virtual ~Application();
 
     int  Run(int _argc, char** _argv);
     void Quit();

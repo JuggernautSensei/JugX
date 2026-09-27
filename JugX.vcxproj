@@ -78,7 +78,6 @@
     <ClInclude Include="JugX\JsonDeserializer.h" />
     <ClInclude Include="JugX\Macro.h" />
     <ClInclude Include="JugX\Matrix.h" />
-    <ClInclude Include="JugX\MatrixReg.h" />
     <ClInclude Include="JugX\MemoryArena.h" />
     <ClInclude Include="JugX\MemoryHasher.h" />
     <ClInclude Include="JugX\MemoryView.h" />
@@ -87,7 +86,6 @@
     <ClInclude Include="JugX\Plane.h" />
     <ClInclude Include="JugX\Platform.h" />
     <ClInclude Include="JugX\Quaternion.h" />
-    <ClInclude Include="JugX\QuaternionReg.h" />
     <ClInclude Include="JugX\Ray.h" />
     <ClInclude Include="JugX\Ref.h" />
     <ClInclude Include="JugX\RefCount.h" />
@@ -104,7 +102,6 @@
     <ClInclude Include="JugX\Vector2.h" />
     <ClInclude Include="JugX\Vector3.h" />
     <ClInclude Include="JugX\Vector4.h" />
-    <ClInclude Include="JugX\VectorReg.h" />
     <ClInclude Include="JugX\OsInclude.h" />
   </ItemGroup>
   <ItemGroup>
@@ -171,7 +168,6 @@
     <ClCompile Include="JugX\Macro.cpp" />
     <ClCompile Include="JugX\Math.cpp" />
     <ClCompile Include="JugX\Matrix.cpp" />
-    <ClCompile Include="JugX\MatrixReg.cpp" />
     <ClCompile Include="JugX\MemoryView.cpp" />
     <ClCompile Include="JugX\NoopHasher.cpp" />
     <ClCompile Include="JugX\OBB.cpp" />
@@ -179,7 +175,6 @@
     <ClCompile Include="JugX\Plane.cpp" />
     <ClCompile Include="JugX\Platform.cpp" />
     <ClCompile Include="JugX\Quaternion.cpp" />
-    <ClCompile Include="JugX\QuaternionReg.cpp" />
     <ClCompile Include="JugX\RGBA.cpp" />
     <ClCompile Include="JugX\Ray.cpp" />
     <ClCompile Include="JugX\Ref.cpp" />
@@ -198,7 +193,6 @@
     <ClCompile Include="JugX\Vector2.cpp" />
     <ClCompile Include="JugX\Vector3.cpp" />
     <ClCompile Include="JugX\Vector4.cpp" />
-    <ClCompile Include="JugX\VectorReg.cpp" />
     <ClCompile Include="JugX\OsInclude.cpp" />
   </ItemGroup>
   <ItemGroup>

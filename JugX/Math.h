@@ -9,16 +9,6 @@ namespace jug
 {
 
 // ===========================================
-//  Macro
-// ===========================================
-
-#ifdef __CUDACC__
-#    define JUG_MATH_API __host__ __device__
-#else
-#    define JUG_MATH_API
-#endif
-
-// ===========================================
 //  Math Constants
 // ===========================================
 
@@ -80,6 +70,16 @@ JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Identity);
 JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Unit);
 JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Universe);
 
+// ===========================================
+//  Structs
+// ===========================================
+
+struct SIN_COS_RESULT
+{
+    float sin;
+    float cos;
+};
+
 // ==========================================
 //  Comparison
 // ==========================================
@@ -106,17 +106,17 @@ template<std::integral T, std::integral U>
 //  Basic
 // =========================================
 
-template<typename T, typename U = std::type_identity_t<T>>
-[[nodiscard]] JUG_MATH_API constexpr T Min(const T& _x, const U& _y);
+template<typename T>
+[[nodiscard]] JUG_MATH_API constexpr T Min(T _x, std::type_identity_t<T> _y);
 
 template<typename T, typename... Us>
-[[nodiscard]] JUG_MATH_API constexpr T Min(const T& _x, const Us&... _ys);
+[[nodiscard]] JUG_MATH_API constexpr T Min(T _x, std::type_identity_t<T> _y, Us... _args);
 
-template<typename T, typename U = std::type_identity_t<T>>
-[[nodiscard]] JUG_MATH_API constexpr T Max(T _x, U _y);
+template<typename T>
+[[nodiscard]] JUG_MATH_API constexpr T Max(T _x, std::type_identity_t<T> _y);
 
 template<typename T, typename... Us>
-[[nodiscard]] JUG_MATH_API constexpr T Max(const T& _x, const Us&... _ys);
+[[nodiscard]] JUG_MATH_API constexpr T Max(T _x, std::type_identity_t<T> _y, Us... _args);
 
 template<ArithmeticT T>
 [[nodiscard]] JUG_MATH_API constexpr T Clamp(T _x, T _min, T _max);
@@ -184,42 +184,42 @@ constexpr static float kSqrt2      = 1.41421356237309504880f;
 constexpr static float kLogNat2    = 0.6931471805599453f;
 constexpr static float kInvLogNat2 = 1.4426950408889634f;
 
-[[nodiscard]] JUG_MATH_API constexpr float ToDeg(float _rad);
-[[nodiscard]] JUG_MATH_API constexpr float ToRad(float _deg);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsZeroApprox(float _x, float _epsilon = kEpsilon);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsEqualApprox(float _x, float _y, float _epsilon = kEpsilon);
-[[nodiscard]] JUG_MATH_API constexpr float Trunc(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Fract(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Floor(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Ceil(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Round(float _x);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsNan(float _f);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsFinite(float _f);
-[[nodiscard]] JUG_MATH_API constexpr bool  IsInfinite(float _f);
-[[nodiscard]] JUG_MATH_API constexpr float RcpSafe(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Lerp(float _x, float _y, float _t);
-[[nodiscard]] JUG_MATH_API constexpr float InvLerp(float _x, float _y, float _value);
-[[nodiscard]] JUG_MATH_API constexpr float SmoothStep(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Bias(float _time, float _bias);
-[[nodiscard]] JUG_MATH_API constexpr float Gain(float _time, float _gain);
-[[nodiscard]] JUG_MATH_API constexpr float Log(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Log2(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Exp(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Exp2(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Pow(float _x, float _y);
-[[nodiscard]] JUG_MATH_API constexpr float Sqrt(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float RSqrt(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Saturate(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Sin(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Cos(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float Tan(float _x);
-JUG_MATH_API constexpr void                SinCos(float _x, float& _outSin, float& _outCos);
-[[nodiscard]] JUG_MATH_API constexpr float ACos(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float ASin(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float ATan2(float _y, float _x);
-[[nodiscard]] JUG_MATH_API constexpr float ATan(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float AngleDiff(float _x, float _y);
-[[nodiscard]] JUG_MATH_API constexpr float AngleLerp(float _x, float _y, float _t);
+[[nodiscard]] JUG_MATH_API constexpr float          ToDeg(float _rad);
+[[nodiscard]] JUG_MATH_API constexpr float          ToRad(float _deg);
+[[nodiscard]] JUG_MATH_API constexpr bool           IsZeroApprox(float _x, float _epsilon = kEpsilon);
+[[nodiscard]] JUG_MATH_API constexpr bool           IsEqualApprox(float _x, float _y, float _epsilon = kEpsilon);
+[[nodiscard]] JUG_MATH_API constexpr float          Trunc(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Fract(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Floor(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Ceil(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Round(float _x);
+[[nodiscard]] JUG_MATH_API constexpr bool           IsNan(float _f);
+[[nodiscard]] JUG_MATH_API constexpr bool           IsFinite(float _f);
+[[nodiscard]] JUG_MATH_API constexpr bool           IsInfinite(float _f);
+[[nodiscard]] JUG_MATH_API constexpr float          RcpSafe(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Lerp(float _x, float _y, float _t);
+[[nodiscard]] JUG_MATH_API constexpr float          InvLerp(float _x, float _y, float _value);
+[[nodiscard]] JUG_MATH_API constexpr float          SmoothStep(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Bias(float _time, float _bias);
+[[nodiscard]] JUG_MATH_API constexpr float          Gain(float _time, float _gain);
+[[nodiscard]] JUG_MATH_API constexpr float          Log(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Log2(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Exp(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Exp2(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Pow(float _x, float _y);
+[[nodiscard]] JUG_MATH_API constexpr float          Sqrt(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          RSqrt(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Saturate(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Sin(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Cos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          Tan(float _x);
+[[nodiscard]] JUG_MATH_API constexpr SIN_COS_RESULT SinCos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          ACos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          ASin(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          ATan2(float _y, float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          ATan(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float          AngleDiff(float _x, float _y);
+[[nodiscard]] JUG_MATH_API constexpr float          AngleLerp(float _x, float _y, float _t);
 
 }   // namespace jug
 

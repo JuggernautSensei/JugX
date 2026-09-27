@@ -7,13 +7,13 @@ namespace jug
 
 struct MATRIX;
 
-struct alignas(16) QUATERNION
+struct alignas(16) QUAT
 {
     using ValueT = float;
 
-    JUG_MATH_API QUATERNION() = default;
+    JUG_MATH_API QUAT() = default;
 
-    JUG_MATH_API constexpr QUATERNION(
+    JUG_MATH_API constexpr QUAT(
         const float _x,
         const float _y,
         const float _z,
@@ -22,79 +22,93 @@ struct alignas(16) QUATERNION
     {
     }
 
-    JUG_MATH_API constexpr QUATERNION(
+    JUG_MATH_API constexpr QUAT(
         const VECTOR3 _imaginary,
         const float   _real)
         : v { _imaginary, _real }
     {
     }
 
-    explicit JUG_MATH_API constexpr QUATERNION(
+    explicit JUG_MATH_API constexpr QUAT(
         const VECTOR4 _xyzw)
         : v { _xyzw }
     {
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr simd::M128 JUG_VECTORCALL ToM128() const
+    {
+        return simd::LoadAligned(v.GetPtr());
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT JUG_VECTORCALL FromM128(
+        const simd::M128 _q)
+    {
+        if (std::is_constant_evaluated())
+        {
+            return simd::NoInlineConstruct<QUAT>(simd::Get<0>(_q), simd::Get<1>(_q), simd::Get<2>(_q), simd::Get<3>(_q));
+        }
+        else
+        {
+            return std::bit_cast<QUAT>(_q);
+        }
     }
 
     // =======================================================
     //  Factory
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API static constexpr QUATERNION MakeFromTo(
+    [[nodiscard]] JUG_MATH_API static constexpr QUAT MakeFromTo(
         const VECTOR3 _dirFrom,
         const VECTOR3 _dirTo)
     {
         JUG_ASSERT(IsNormalized(_dirFrom) && IsNormalized(_dirTo), "From and To must be normalized vectors");
 
-        const float d = Dot(_dirFrom, _dirTo);
+        const simd::M128 from = _dirFrom.ToM128();
+        const simd::M128 to   = _dirTo.ToM128();
+        const float      d    = simd::Get<0>(simd::Dot3V(from, to));
         if (Abs(d) > kAlmostOne)
         {
             if (d >= 0)
             {
-                return QUATERNION { 0.f, 0.f, 0.f, 1.f };
+                return QUAT { 0.f, 0.f, 0.f, 1.f };
             }
 
-            // 반대 방향이면 수직인 아무 축으로 180도
-            const VECTOR3 axis = Normalize(Cross(Abs(_dirFrom[0]) <= Abs(_dirFrom[1]) ? Right<VECTOR3>() : Up<VECTOR3>(), _dirFrom));
-            return QUATERNION { axis, 0.f };
+            const simd::M128 other = Abs(_dirFrom[0]) <= Abs(_dirFrom[1]) ? simd::Set(1.f, 0.f, 0.f, 0.f) : simd::Set(0.f, 1.f, 0.f, 0.f);
+            return FromM128(simd::ZeroW(simd::Normalize3(simd::Cross3(other, from))));
         }
 
-        const VECTOR3 c    = Cross(_dirFrom, _dirTo);
-        const float   s    = Sqrt((1.f + d) * 2.f);
-        const float   invS = 1.f / s;
-        return QUATERNION { c * invS, s * 0.5f };
+        const float s = Sqrt((1.f + d) * 2.f);
+        return FromM128(simd::Insert<3>(simd::Mult(simd::Cross3(from, to), simd::SetAll(1.f / s)), s * 0.5f));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static QUATERNION MakeFromAxisAngle(
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromAxisAngle(
         const VECTOR3 _axis,
         const float   _rad)
     {
         JUG_ASSERT(IsNormalized(_axis), "Rotation axis must be normalized");
 
-        float s = 0.f;
-        float c = 0.f;
-        SinCos(_rad * 0.5f, s, c);
-        return QUATERNION { _axis * s, c };
+        const simd::M128 sc = simd::SinCos1(_rad * 0.5f);
+        return FromM128(simd::Mult(simd::Shuffle<0, 0, 0, 1>(sc), simd::Blend<0b1000>(_axis.ToM128(), simd::SetAll(1.f))));
     }
 
-    // pitch(x) -> yaw(y) -> roll(z) 순서의 오일러 각 (라디안)
-    [[nodiscard]] JUG_MATH_API constexpr static QUATERNION MakeFromEuler(
+    // pitch(x) -> yaw(y) -> roll(z)
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromEuler(
         const VECTOR3 _pyrRad)
     {
-        float sp = 0.f, cp = 0.f;
-        float sy = 0.f, cy = 0.f;
-        float sr = 0.f, cr = 0.f;
-        SinCos(_pyrRad[0] * 0.5f, sp, cp);
-        SinCos(_pyrRad[1] * 0.5f, sy, cy);
-        SinCos(_pyrRad[2] * 0.5f, sr, cr);
-        return QUATERNION {
-            cy * sp * cr + sy * cp * sr,
-            sy * cp * cr - cy * sp * sr,
-            cy * cp * sr - sy * sp * cr,
-            cy * cp * cr + sy * sp * sr
-        };
+        const auto [s, c]   = simd::SinCos(simd::Mult(_pyrRad.ToM128(), simd::SetAll(0.5f)));
+        const simd::M128 p0 = simd::Shuffle<0, 2, 2, 2>(simd::Shuffle2<0, 0, 0, 0>(s, c));
+        const simd::M128 y0 = simd::Shuffle<0, 2, 0, 0>(simd::Shuffle2<1, 1, 1, 1>(c, s));
+        const simd::M128 r0 = simd::Shuffle<0, 0, 2, 0>(simd::Shuffle2<2, 2, 2, 2>(c, s));
+        const simd::M128 p1 = simd::Shuffle<0, 2, 2, 2>(simd::Shuffle2<0, 0, 0, 0>(c, s));
+        const simd::M128 y1 = simd::Shuffle<0, 2, 0, 0>(simd::Shuffle2<1, 1, 1, 1>(s, c));
+        const simd::M128 r1 = simd::Shuffle<0, 0, 2, 0>(simd::Shuffle2<2, 2, 2, 2>(s, c));
+
+        const simd::M128 q0 = simd::Mult(simd::Mult(p0, y0), r0);
+        const simd::M128 q1 = simd::Mult(simd::Mult(p1, simd::Set(1.f, -1.f, -1.f, 1.f)), y1);
+        return FromM128(simd::MultAdd(q1, r1, q0));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static QUATERNION MakeFromMatrix(
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromMatrix(
         const MATRIX& _mtx);
 
     // =======================================================
@@ -128,11 +142,98 @@ struct alignas(16) QUATERNION
         return v.GetPtr();
     }
 
-    JUG_MATH_API constexpr QUATERNION& operator+=(QUATERNION _other);
-    JUG_MATH_API constexpr QUATERNION& operator-=(QUATERNION _other);
-    JUG_MATH_API constexpr QUATERNION& operator*=(QUATERNION _other);
-    JUG_MATH_API constexpr QUATERNION& operator*=(float _scalar);
-    JUG_MATH_API constexpr QUATERNION& operator/=(float _scalar);
+    // =======================================================
+    //  Operators
+    // =======================================================
+
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator-() const
+    {
+        return FromM128(simd::Negate(ToM128()));
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator+(
+        const QUAT _other) const
+    {
+        return FromM128(simd::Add(ToM128(), _other.ToM128()));
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator-(
+        const QUAT _other) const
+    {
+        return FromM128(simd::Sub(ToM128(), _other.ToM128()));
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator*(
+        const float _scalar) const
+    {
+        return FromM128(simd::Mult(ToM128(), simd::SetAll(_scalar)));
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator/(
+        const float _scalar) const
+    {
+        return FromM128(simd::Div(ToM128(), simd::SetAll(_scalar)));
+    }
+
+    // a * b 는 a 회전을 먼저 적용하고 b 회전을 적용
+    [[nodiscard]] JUG_MATH_API constexpr QUAT operator*(
+        const QUAT _other) const
+    {
+        const simd::M128 q1  = ToM128();
+        const simd::M128 q2  = _other.ToM128();
+        // 부호 상수를 마지막에 곱해야 SSE2 에서 상수 레지스터 복사(movaps)가 안 생김
+        const simd::M128 wx = simd::MultAdd(simd::Mult(simd::Splat<0>(q2), simd::Shuffle<3, 2, 1, 0>(q1)), simd::Set(1.f, -1.f, 1.f, -1.f), simd::Mult(simd::Splat<3>(q2), q1));
+        const simd::M128 yz = simd::MultAdd(simd::Mult(simd::Splat<2>(q2), simd::Shuffle<1, 0, 3, 2>(q1)), simd::Set(-1.f, 1.f, 1.f, -1.f), simd::Mult(simd::Mult(simd::Splat<1>(q2), simd::Shuffle<2, 3, 0, 1>(q1)), simd::Set(1.f, 1.f, -1.f, -1.f)));
+        return FromM128(simd::Add(wx, yz));
+    }
+
+    [[nodiscard]] JUG_MATH_API friend constexpr QUAT operator*(
+        const float _scalar,
+        const QUAT  _q)
+    {
+        return _q * _scalar;
+    }
+
+    JUG_MATH_API constexpr QUAT& operator+=(
+        const QUAT _other)
+    {
+        *this = *this + _other;
+        return *this;
+    }
+
+    JUG_MATH_API constexpr QUAT& operator-=(
+        const QUAT _other)
+    {
+        *this = *this - _other;
+        return *this;
+    }
+
+    JUG_MATH_API constexpr QUAT& operator*=(
+        const QUAT _other)
+    {
+        *this = *this * _other;
+        return *this;
+    }
+
+    JUG_MATH_API constexpr QUAT& operator*=(
+        const float _scalar)
+    {
+        *this = *this * _scalar;
+        return *this;
+    }
+
+    JUG_MATH_API constexpr QUAT& operator/=(
+        const float _scalar)
+    {
+        *this = *this / _scalar;
+        return *this;
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr bool operator==(
+        const QUAT _other) const
+    {
+        return simd::MoveMask(simd::CmpEq(ToM128(), _other.ToM128())) == 0xf;
+    }
 
     // =======================================================
     //  Conversion
@@ -141,8 +242,8 @@ struct alignas(16) QUATERNION
     [[nodiscard]] JUG_MATH_API constexpr AXIS_ANGLE ToAxisAngle() const;
     [[nodiscard]] JUG_MATH_API constexpr VECTOR3    ToEuler() const;
 
-    const static QUATERNION kZero;
-    const static QUATERNION kIdentity;
+    const static QUAT kZero;
+    const static QUAT kIdentity;
 
     constexpr static size_t kDim = 4;
 
@@ -163,272 +264,176 @@ struct alignas(16) QUATERNION
     JUG_DISABLE_ANON_WARNING_END
 };
 
-static_assert(sizeof(QUATERNION) == 16, "QUATERNION must be tightly packed");
-static_assert(alignof(QUATERNION) == 16, "QUATERNION must be 16-byte aligned");
-static_assert(PodT<QUATERNION>, "QUATERNION must be POD type.");
+static_assert(sizeof(QUAT) == 16, "QUAT must be tightly packed");
+static_assert(alignof(QUAT) == 16, "QUAT must be 16-byte aligned");
+static_assert(PodT<QUAT>, "QUAT must be POD type.");
 
 // =======================================================
 //  Constants
 // =======================================================
 
-inline constexpr QUATERNION QUATERNION::kZero     = { 0.f, 0.f, 0.f, 0.f };
-inline constexpr QUATERNION QUATERNION::kIdentity = { 0.f, 0.f, 0.f, 1.f };
+inline constexpr QUAT QUAT::kZero     = { 0.f, 0.f, 0.f, 0.f };
+inline constexpr QUAT QUAT::kIdentity = { 0.f, 0.f, 0.f, 1.f };
 
 template<>
-struct MathConstants<QUATERNION>
+struct MathConstants<QUAT>
 {
-    constexpr static QUATERNION kZero     = QUATERNION::kZero;
-    constexpr static QUATERNION kIdentity = QUATERNION::kIdentity;
+    constexpr static QUAT kZero     = QUAT::kZero;
+    constexpr static QUAT kIdentity = QUAT::kIdentity;
 };
-
-// ======================================================
-//  Operators
-// ======================================================
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator-(
-    const QUATERNION _q)
-{
-    return QUATERNION { -_q.v };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator+(
-    const QUATERNION _x,
-    const QUATERNION _y)
-{
-    return QUATERNION { _x.v + _y.v };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator-(
-    const QUATERNION _x,
-    const QUATERNION _y)
-{
-    return QUATERNION { _x.v - _y.v };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator*(
-    const QUATERNION _q,
-    const float      _scalar)
-{
-    return QUATERNION { _q.v * _scalar };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator*(
-    const float      _scalar,
-    const QUATERNION _q)
-{
-    return QUATERNION { _q.v * _scalar };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator/(
-    const QUATERNION _q,
-    const float      _scalar)
-{
-    return QUATERNION { _q.v / _scalar };
-}
-
-// _x * _y 는 _x 회전을 먼저 적용하고 _y 회전을 적용 (Hamilton 곱으로는 _y ⊗ _x, DirectXMath XMQuaternionMultiply 와 같음)
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION operator*(
-    const QUATERNION _x,
-    const QUATERNION _y)
-{
-    const float x1 = _x[0], y1 = _x[1], z1 = _x[2], w1 = _x[3];
-    const float x2 = _y[0], y2 = _y[1], z2 = _y[2], w2 = _y[3];
-    return QUATERNION {
-        w2 * x1 + x2 * w1 + y2 * z1 - z2 * y1,
-        w2 * y1 - x2 * z1 + y2 * w1 + z2 * x1,
-        w2 * z1 + x2 * y1 - y2 * x1 + z2 * w1,
-        w2 * w1 - x2 * x1 - y2 * y1 - z2 * z1
-    };
-}
-
-[[nodiscard]] JUG_MATH_API constexpr bool operator==(
-    const QUATERNION _x,
-    const QUATERNION _y)
-{
-    return _x.v == _y.v;
-}
-
-[[nodiscard]] JUG_MATH_API constexpr bool operator!=(
-    const QUATERNION _x,
-    const QUATERNION _y)
-{
-    return !(_x.v == _y.v);
-}
-
-JUG_MATH_API constexpr QUATERNION& QUATERNION::operator+=(
-    const QUATERNION _other)
-{
-    *this = *this + _other;
-    return *this;
-}
-
-JUG_MATH_API constexpr QUATERNION& QUATERNION::operator-=(
-    const QUATERNION _other)
-{
-    *this = *this - _other;
-    return *this;
-}
-
-JUG_MATH_API constexpr QUATERNION& QUATERNION::operator*=(
-    const QUATERNION _other)
-{
-    *this = *this * _other;
-    return *this;
-}
-
-JUG_MATH_API constexpr QUATERNION& QUATERNION::operator*=(
-    const float _scalar)
-{
-    *this = *this * _scalar;
-    return *this;
-}
-
-JUG_MATH_API constexpr QUATERNION& QUATERNION::operator/=(
-    const float _scalar)
-{
-    *this = *this / _scalar;
-    return *this;
-}
 
 // ======================================================
 //  Basic
 // ======================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(
-    const QUATERNION _x,
-    const QUATERNION _y,
-    const float      _epsilon = kEpsilon)
+    const QUAT  _x,
+    const QUAT  _y,
+    const float _epsilon = kEpsilon)
 {
-    return IsEqualApprox(_x.v, _y.v, _epsilon);
+    return simd::MoveMask(simd::CmpLt(simd::Abs(simd::Sub(_x.ToM128(), _y.ToM128())), simd::SetAll(_epsilon))) == 0xf;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Dot(
-    const QUATERNION _x,
-    const QUATERNION _y)
+    const QUAT _x,
+    const QUAT _y)
 {
-    return Dot(_x.v, _y.v);
+    return simd::Get<0>(simd::Dot4V(_x.ToM128(), _y.ToM128()));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float LengthSq(
-    const QUATERNION _q)
+    const QUAT _q)
 {
-    return LengthSq(_q.v);
+    return Dot(_q, _q);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Length(
-    const QUATERNION _q)
+    const QUAT _q)
 {
-    return Length(_q.v);
+    const simd::M128 q = _q.ToM128();
+    return simd::Get<0>(simd::Sqrt(simd::Dot4V(q, q)));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION Normalize(
-    const QUATERNION _q)
+[[nodiscard]] JUG_MATH_API constexpr QUAT Normalize(
+    const QUAT _q)
 {
-    return QUATERNION { Normalize(_q.v) };
+    const simd::M128 q = _q.ToM128();
+    return QUAT::FromM128(simd::NormalizeBy(q, simd::Dot4V(q, q)));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsNormalized(
-    const QUATERNION _q)
+    const QUAT _q)
 {
     return IsEqualApprox(LengthSq(_q), 1.f);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsSameRotationApprox(
-    const QUATERNION _x,
-    const QUATERNION _y)
+    const QUAT _x,
+    const QUAT _y)
 {
-    JUG_ASSERT(IsNormalized(_x) && IsNormalized(_y), "QUATERNION must be normalized");
+    JUG_ASSERT(IsNormalized(_x) && IsNormalized(_y), "QUAT must be normalized");
     return IsEqualApprox(Abs(Dot(_x, _y)), 1.f);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION Conjugate(
-    const QUATERNION _q)
+[[nodiscard]] JUG_MATH_API constexpr QUAT Conjugate(
+    const QUAT _q)
 {
-    return QUATERNION { -_q[0], -_q[1], -_q[2], _q[3] };
+    return QUAT::FromM128(simd::Xor(_q.ToM128(), simd::Set(-0.f, -0.f, -0.f, 0.f)));
 }
 
 // 영 사원수의 역원은 영 사원수
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION Inverse(
-    const QUATERNION _q)
+[[nodiscard]] JUG_MATH_API constexpr QUAT Inverse(
+    const QUAT _q)
 {
-    const float lenSq = LengthSq(_q);
-    if (IsZeroApprox(lenSq))
+    const simd::M128 q     = _q.ToM128();
+    const simd::M128 lenSq = simd::Dot4V(q, q);
+    if (IsZeroApprox(simd::Get<0>(lenSq)))
     {
-        return MathConstants<QUATERNION>::kZero;
+        return QUAT::kZero;
     }
-    return Conjugate(_q) * (1.f / lenSq);
+    return QUAT::FromM128(simd::Div(simd::Xor(q, simd::Set(-0.f, -0.f, -0.f, 0.f)), lenSq));
 }
 
 // =======================================================
 //  Vector
 // =======================================================
 
-// t = 2 (q.xyz x v), v' = v + w t + q.xyz x t
 [[nodiscard]] JUG_MATH_API constexpr VECTOR3 Rotate(
-    const VECTOR3    _v,
-    const QUATERNION _q)
+    const VECTOR3 _v,
+    const QUAT    _q)
 {
-    JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
-    const VECTOR3 img = _q.GetImaginary();
-    const VECTOR3 t   = Cross(img, _v) * 2.f;
-    return _v + t * _q[3] + Cross(img, t);
+    JUG_ASSERT(IsNormalized(_q), "QUAT must be normalized");
+    const simd::M128 q = _q.ToM128();
+    const simd::M128 v = _v.ToM128();
+    const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
+    return VECTOR3::FromM128(simd::Add(simd::MultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
 }
 
 [[nodiscard]] JUG_MATH_API constexpr VECTOR3 RotateInv(
-    const VECTOR3    _v,
-    const QUATERNION _q)
+    const VECTOR3 _v,
+    const QUAT    _q)
 {
-    JUG_ASSERT(IsNormalized(_q), "QUATERNION must be normalized");
-    const VECTOR3 img = _q.GetImaginary();
-    const VECTOR3 t   = Cross(img, _v) * 2.f;
-    return _v - t * _q[3] + Cross(img, t);
+    JUG_ASSERT(IsNormalized(_q), "QUAT must be normalized");
+    const simd::M128 q = _q.ToM128();
+    const simd::M128 v = _v.ToM128();
+    const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
+    return VECTOR3::FromM128(simd::Add(simd::NegMultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
 }
 
 // =======================================================
 //  Interpolation
 // =======================================================
 
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION Nlerp(
-    const QUATERNION _x,
-    const QUATERNION _y,
-    const float      _t)
+[[nodiscard]] JUG_MATH_API constexpr QUAT Nlerp(
+    const QUAT  _x,
+    const QUAT  _y,
+    const float _t)
 {
-    const QUATERNION end = Dot(_x, _y) < 0.f ? -_y : _y;
-    return Normalize(_x + (end - _x) * _t);
+    const simd::M128 x   = _x.ToM128();
+    const simd::M128 dot = simd::Dot4V(x, _y.ToM128());
+    const simd::M128 y   = simd::Xor(_y.ToM128(), simd::And(dot, simd::SetAll(-0.f)));
+    const simd::M128 q   = simd::Lerp(x, y, simd::SetAll(_t));
+    return QUAT::FromM128(simd::NormalizeBy(q, simd::Dot4V(q, q)));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr QUATERNION Slerp(
-    const QUATERNION _x,
-    const QUATERNION _y,
-    const float      _t)
+[[nodiscard]] JUG_MATH_API constexpr QUAT Slerp(
+    const QUAT  _x,
+    const QUAT  _y,
+    const float _t)
 {
-    float      cosOmega = Dot(_x, _y);
-    QUATERNION end      = _y;
-    if (cosOmega < 0.f)   // 최단 경로
+    const simd::M128 x   = _x.ToM128();
+    const simd::M128 dot = simd::Dot4V(x, _y.ToM128());
+    const simd::M128 y   = simd::Xor(_y.ToM128(), simd::And(dot, simd::SetAll(-0.f)));
+    const simd::M128 c   = simd::Abs(dot);
+    if (simd::Get<0>(c) > kAlmostOne)
     {
-        cosOmega = -cosOmega;
-        end      = -_y;
+        const simd::M128 q = simd::Lerp(x, y, simd::SetAll(_t));
+        return QUAT::FromM128(simd::NormalizeBy(q, simd::Dot4V(q, q)));
     }
 
-    if (cosOmega > kAlmostOne)   // 거의 같은 회전 - sin(omega) 로 나누면 불안정
-    {
-        return Nlerp(_x, end, _t);
-    }
+    const simd::M128 c2    = simd::Mult(c, c);
+    const simd::M128 c4    = simd::Mult(c2, c2);
+    const simd::M128 p01   = simd::MultAdd(simd::SetAll(-0.2145988016f), c, simd::SetAll(1.5707963050f));
+    const simd::M128 p23   = simd::MultAdd(simd::SetAll(-0.0501743046f), c, simd::SetAll(0.0889789874f));
+    const simd::M128 p45   = simd::MultAdd(simd::SetAll(-0.0170881256f), c, simd::SetAll(0.0308918810f));
+    const simd::M128 p67   = simd::MultAdd(simd::SetAll(-0.0012624911f), c, simd::SetAll(0.0066700901f));
+    const simd::M128 poly  = simd::MultAdd(simd::MultAdd(p67, c2, p45), c4, simd::MultAdd(p23, c2, p01));
+    const simd::M128 omega = simd::Mult(simd::Sqrt(simd::Sub(simd::SetAll(1.f), c)), poly);
 
-    const float omega       = ACos(cosOmega);
-    const float invSinOmega = 1.f / Sin(omega);
-    return _x * (Sin((1.f - _t) * omega) * invSinOmega) + end * (Sin(_t * omega) * invSinOmega);
+    const simd::M128 s     = simd::Sin(simd::Mult(omega, simd::Set(1.f, 1.f - _t, _t, 0.f)));
+    const simd::M128 scale = simd::Div(s, simd::Splat<0>(s));
+    return QUAT::FromM128(simd::MultAdd(x, simd::Splat<1>(scale), simd::Mult(y, simd::Splat<2>(scale))));
 }
 
 // =======================================================
 //  Conversion
 // =======================================================
 
-JUG_MATH_API constexpr AXIS_ANGLE QUATERNION::ToAxisAngle() const
+JUG_MATH_API constexpr AXIS_ANGLE QUAT::ToAxisAngle() const
 {
-    JUG_ASSERT(IsNormalized(*this), "QUATERNION must be normalized");
+    JUG_ASSERT(IsNormalized(*this), "QUAT must be normalized");
 
-    const QUATERNION shortest = v[3] < 0.f ? -(*this) : *this;
+    const QUAT shortest = v[3] < 0.f ? -(*this) : *this;
 
     AXIS_ANGLE ret;
     ret.rad             = 2.f * ACos(Clamp(shortest[3], -1.f, 1.f));
@@ -444,9 +449,9 @@ JUG_MATH_API constexpr AXIS_ANGLE QUATERNION::ToAxisAngle() const
     return ret;
 }
 
-JUG_MATH_API constexpr VECTOR3 QUATERNION::ToEuler() const
+JUG_MATH_API constexpr VECTOR3 QUAT::ToEuler() const
 {
-    JUG_ASSERT(IsNormalized(*this), "QUATERNION must be normalized");
+    JUG_ASSERT(IsNormalized(*this), "QUAT must be normalized");
 
     const float qx = v[0], qy = v[1], qz = v[2], qw = v[3];
     const float m21      = 2.f * (qy * qz - qx * qw);

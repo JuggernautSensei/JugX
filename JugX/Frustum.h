@@ -39,10 +39,10 @@ struct FRUSTUM
     [[nodiscard]] JUG_MATH_API static constexpr FRUSTUM MakeFromMatrix(
         const MATRIX& _mtx)
     {
-        const VECTOR4 c0 = VECTOR4 { _mtx[0][0], _mtx[1][0], _mtx[2][0], _mtx[3][0] };
-        const VECTOR4 c1 = VECTOR4 { _mtx[0][1], _mtx[1][1], _mtx[2][1], _mtx[3][1] };
-        const VECTOR4 c2 = VECTOR4 { _mtx[0][2], _mtx[1][2], _mtx[2][2], _mtx[3][2] };
-        const VECTOR4 c3 = VECTOR4 { _mtx[0][3], _mtx[1][3], _mtx[2][3], _mtx[3][3] };
+        const VECTOR4 c0 = { _mtx[0][0], _mtx[1][0], _mtx[2][0], _mtx[3][0] };
+        const VECTOR4 c1 = { _mtx[0][1], _mtx[1][1], _mtx[2][1], _mtx[3][1] };
+        const VECTOR4 c2 = { _mtx[0][2], _mtx[1][2], _mtx[2][2], _mtx[3][2] };
+        const VECTOR4 c3 = { _mtx[0][3], _mtx[1][3], _mtx[2][3], _mtx[3][3] };
 
         return FRUSTUM {
             PLANE { c3 - c0 },
@@ -56,22 +56,22 @@ struct FRUSTUM
 
     [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
     {
-        const PLANE rightP = planes[eFrustumPlane::Right];
-        const PLANE leftP  = planes[eFrustumPlane::Left];
-        const PLANE upP    = planes[eFrustumPlane::Up];
-        const PLANE downP  = planes[eFrustumPlane::Down];
-        const PLANE farP   = planes[eFrustumPlane::Far];
-        const PLANE nearP  = planes[eFrustumPlane::Near];
+        const PLANE right = planes[eFrustumPlane::Right];
+        const PLANE left  = planes[eFrustumPlane::Left];
+        const PLANE up    = planes[eFrustumPlane::Up];
+        const PLANE down  = planes[eFrustumPlane::Down];
+        const PLANE farZ  = planes[eFrustumPlane::Far];
+        const PLANE nearZ = planes[eFrustumPlane::Near];
 
         DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = IntersectOf3Planes(leftP, downP, nearP);
-        ret[eCorner::LeftBottomFar]   = IntersectOf3Planes(leftP, downP, farP);
-        ret[eCorner::LeftTopNear]     = IntersectOf3Planes(leftP, upP, nearP);
-        ret[eCorner::LeftTopFar]      = IntersectOf3Planes(leftP, upP, farP);
-        ret[eCorner::RightBottomNear] = IntersectOf3Planes(rightP, downP, nearP);
-        ret[eCorner::RightBottomFar]  = IntersectOf3Planes(rightP, downP, farP);
-        ret[eCorner::RightTopNear]    = IntersectOf3Planes(rightP, upP, nearP);
-        ret[eCorner::RightTopFar]     = IntersectOf3Planes(rightP, upP, farP);
+        ret[eCorner::LeftBottomNear]  = IntersectOf3Planes(left, down, nearZ);
+        ret[eCorner::LeftBottomFar]   = IntersectOf3Planes(left, down, farZ);
+        ret[eCorner::LeftTopNear]     = IntersectOf3Planes(left, up, nearZ);
+        ret[eCorner::LeftTopFar]      = IntersectOf3Planes(left, up, farZ);
+        ret[eCorner::RightBottomNear] = IntersectOf3Planes(right, down, nearZ);
+        ret[eCorner::RightBottomFar]  = IntersectOf3Planes(right, down, farZ);
+        ret[eCorner::RightTopNear]    = IntersectOf3Planes(right, up, nearZ);
+        ret[eCorner::RightTopFar]     = IntersectOf3Planes(right, up, farZ);
         return ret;
     }
 

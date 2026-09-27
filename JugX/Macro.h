@@ -1,18 +1,24 @@
 ﻿#pragma once
-#ifdef _MSC_VER
+#include "Platform.h"
+
+// ===========================================
+//  Anonymous Struct, Union Warning
+// ===========================================
+
+#ifdef JUG_COMPILER_MSVC
 #    define JUG_DISABLE_ANON_WARNING_BEGIN \
         __pragma(warning(push))            \
             __pragma(warning(disable : 4201))
 #    define JUG_DISABLE_ANON_WARNING_END \
         __pragma(warning(pop))
-#elif defined(__clang__)
+#elif defined(JUG_COMPILER_CLANG)
 #    define JUG_DISABLE_ANON_WARNING_BEGIN                                 \
         _Pragma("clang diagnostic push")                                   \
             _Pragma("clang diagnostic ignored \"-Wgnu-anonymous-struct\"") \
                 _Pragma("clang diagnostic ignored \"-Wnested-anon-types\"")
 #    define JUG_DISABLE_ANON_WARNING_END \
         _Pragma("clang diagnostic pop")
-#elif defined(__GNUC__)
+#elif defined(JUG_COMPILER_GCC)
 #    define JUG_DISABLE_ANON_WARNING_BEGIN \
         _Pragma("GCC diagnostic push")     \
             _Pragma("GCC diagnostic ignored \"-Wpedantic\"")
@@ -23,26 +29,41 @@
 #    define JUG_DISABLE_ANON_WARNING_END
 #endif
 
-#ifdef _MSC_VER
+// ===========================================
+//  Inline
+// ===========================================
+
+#ifdef JUG_COMPILER_MSVC
 #    define JUG_FORCE_INLINE __forceinline
-#elif defined(__clang__) || defined(__GNUC__)
+#    define JUG_NO_INLINE    __declspec(noinline)
+#elif defined(JUG_COMPILER_CLANG) || defined(JUG_COMPILER_GCC)
 #    define JUG_FORCE_INLINE inline __attribute__((always_inline))
+#    define JUG_NO_INLINE    __attribute__((noinline))
 #else
 #    define JUG_FORCE_INLINE inline
+#    define JUG_NO_INLINE
 #endif
 
-#if defined(__GNUC__) || defined(__clang__)
+// ===========================================
+//  Function Signature
+// ===========================================
+
+#if defined(JUG_COMPILER_GCC) || defined(JUG_COMPILER_CLANG)
 #    define JUG_FUNCSIG __PRETTY_FUNCTION__
-#elif defined(_MSC_VER)
+#elif defined(JUG_COMPILER_MSVC)
 #    define JUG_FUNCSIG __FUNCSIG__
 #else
 #    error "Unsupported compiler for JUG_FUNCSIG"
 #endif
 
-#if defined(_MSC_VER)
+// ===========================================
+//  Debug Break
+// ===========================================
+
+#if defined(JUG_COMPILER_MSVC)
 #    include <intrin.h>
 #    define JUG_DEBUG_BREAK() __debugbreak()
-#elif defined(__clang__) || defined(__GNUC__)
+#elif defined(JUG_COMPILER_CLANG) || defined(JUG_COMPILER_GCC)
 #    if defined(__has_builtin)
 #        if __has_builtin(__builtin_debugtrap)
 #            define JUG_DEBUG_BREAK() __builtin_debugtrap()
@@ -67,6 +88,10 @@
 #    define JUG_DEBUG_BREAK() raise(SIGTRAP)
 #endif
 
+// ===========================================
+//  Misc
+// ===========================================
+
 #define JUG_NOOP (void)0
 
 #define JUG_BEGIN_MACRO_BLOCK \
@@ -76,6 +101,7 @@
 #define JUG_END_MACRO_BLOCK \
     }                       \
     while (false)
+
 
 #define JUG_UNREACHABLE_RETURN(T) \
     return T {}
