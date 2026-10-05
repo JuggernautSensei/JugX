@@ -14,7 +14,7 @@ struct OBB
     JUG_MATH_API OBB() = default;
 
     JUG_MATH_API constexpr explicit OBB(
-        const MATRIX& _mtx)
+        const MAT4& _mtx)
         : mtx(_mtx)
     {
     }
@@ -23,24 +23,24 @@ struct OBB
         const AABB& _aabb)
     {
         return OBB {
-            MATRIX { VECTOR4 { _aabb.extends[0], 0.f, 0.f, 0.f },
-                    VECTOR4 { 0.f, _aabb.extends[1], 0.f, 0.f },
-                    VECTOR4 { 0.f, 0.f, _aabb.extends[2], 0.f },
-                    VECTOR4 { _aabb.center[0], _aabb.center[1], _aabb.center[2], 1.f } }
+            MAT4 { VEC4 { _aabb.extends[0], 0.f, 0.f, 0.f },
+                  VEC4 { 0.f, _aabb.extends[1], 0.f, 0.f },
+                  VEC4 { 0.f, 0.f, _aabb.extends[2], 0.f },
+                  VEC4 { _aabb.center[0], _aabb.center[1], _aabb.center[2], 1.f } }
         };
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetCenter() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 GetCenter() const
     {
-        return VECTOR3 { mtx[3][0], mtx[3][1], mtx[3][2] };
+        return VEC3 { mtx[3][0], mtx[3][1], mtx[3][2] };
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetExtents() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 GetExtents() const
     {
-        return VECTOR3 {
-            Length(VECTOR3 { mtx[0][0], mtx[0][1], mtx[0][2] }),
-            Length(VECTOR3 { mtx[1][0], mtx[1][1], mtx[1][2] }),
-            Length(VECTOR3 { mtx[2][0], mtx[2][1], mtx[2][2] })
+        return VEC3 {
+            Length(VEC3 { mtx[0][0], mtx[0][1], mtx[0][2] }),
+            Length(VEC3 { mtx[1][0], mtx[1][1], mtx[1][2] }),
+            Length(VEC3 { mtx[2][0], mtx[2][1], mtx[2][2] })
         };
     }
 
@@ -59,15 +59,15 @@ struct OBB
         return GetExtents()[2] * 2.f;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
+    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcCorners() const
     {
-        const VECTOR3 axisX = VECTOR3 { mtx[0][0], mtx[0][1], mtx[0][2] };
-        const VECTOR3 axisY = VECTOR3 { mtx[1][0], mtx[1][1], mtx[1][2] };
-        const VECTOR3 axisZ = VECTOR3 { mtx[2][0], mtx[2][1], mtx[2][2] };
-        const VECTOR3 c     = GetCenter();
+        const VEC3 axisX = VEC3 { mtx[0][0], mtx[0][1], mtx[0][2] };
+        const VEC3 axisY = VEC3 { mtx[1][0], mtx[1][1], mtx[1][2] };
+        const VEC3 axisZ = VEC3 { mtx[2][0], mtx[2][1], mtx[2][2] };
+        const VEC3 c     = GetCenter();
 
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners;
-        corners[eCorner::LeftBottomNear]  = c - axisX - axisY - axisZ;
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = {};
+        corners[eCorner::LeftBottomNear]         = c - axisX - axisY - axisZ;
         corners[eCorner::LeftBottomFar]   = c - axisX - axisY + axisZ;
         corners[eCorner::LeftTopNear]     = c - axisX + axisY - axisZ;
         corners[eCorner::LeftTopFar]      = c - axisX + axisY + axisZ;
@@ -78,35 +78,28 @@ struct OBB
         return corners;
     }
 
-    const static OBB kZero;
-    const static OBB kUnit;
+    [[nodiscard]] JUG_MATH_API static constexpr OBB Zero()
+    {
+        return OBB { MAT4::Zero() };
+    }
 
-    MATRIX mtx;
+    [[nodiscard]] JUG_MATH_API static constexpr OBB Unit()
+    {
+        return OBB { MAT4::Identity() };
+    }
+
+    MAT4 mtx;
 };
 
 static_assert(PodT<OBB>, "OBB must be POD type.");
-
-// ========================================================
-//  Constants
-// ========================================================
-
-inline constexpr OBB OBB::kZero = OBB { Zero<MATRIX>() };
-inline constexpr OBB OBB::kUnit = OBB { Identity<MATRIX>() };
-
-template<>
-struct MathConstants<OBB>
-{
-    static constexpr OBB kZero = OBB::kZero;
-    static constexpr OBB kUnit = OBB::kUnit;
-};
 
 // ========================================================
 //  Method
 // ========================================================
 
 [[nodiscard]] JUG_MATH_API constexpr OBB Xform(
-    const OBB&    _obb,
-    const MATRIX& _mtx)
+    const OBB&  _obb,
+    const MAT4& _mtx)
 {
     return OBB { _obb.mtx * _mtx };
 }

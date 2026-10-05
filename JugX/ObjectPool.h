@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    FixedBlockMemoryPool m_pool;
+    FixedBlockMemoryPool m_pool = {};
 };
 
 }   // namespace jug

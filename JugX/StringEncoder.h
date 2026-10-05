@@ -9,11 +9,11 @@ struct EncodeResult
     size_t written   = 0;   // 실제로 변환된 길이. 널 문자는 포함되지 않음.
 };
 
-EncodeResult ToUtf8(Span<char> _outBuffer, StringView _utf16, bool _bNullTerminated);
-EncodeResult ToUtf16(Span<wchar_t> _outBuffer, StringView _utf8, bool _bNullTerminated);
+EncodeResult EncodeUtf8To(Span<char> _outBuffer, WStringView _utf16, bool _bNullTerminated);
+EncodeResult EncodeUtf16To(Span<wchar_t> _outBuffer, StringView _utf8, bool _bNullTerminated);
 
-[[nodiscard]] String  ToUtf8(WStringView _utf16);
-[[nodiscard]] WString ToUtf16(StringView _utf8);
+[[nodiscard]] String  EncodeUtf8(WStringView _utf16);
+[[nodiscard]] WString EncodeUtf16(StringView _utf8);
 
 void AppendUtf16(String& _out, WStringView _utf16);   // Append
 void AppendUtf8(WString& _out, StringView _utf8);     // Append

@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include "TypeRefl.h"
+#include "Optional.h"
 #include "Tag.h"
+#include "TypeRefl.h"
 
 namespace jug
 {
@@ -12,12 +13,12 @@ namespace jug
 //   template 인자를 통해 강타입 핸들을 만들 수 있음.
 // ================================================================
 
-JUG_DEFINE_TAG(NullHandleType, kNullHandle)
+JUG_DEFINE_TAG(InvalidHandleType, kInvalidHandle)
 
 namespace handle_detail
 {
-    constexpr uint32_t kNullValue = 0xFFFFFFFF;
-    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index. 0xFFFFFFFF 를 null value sentinel로 사용하기 때문에 MaxIndex 값을 0xFFFFFF - 1로 설정.
+    constexpr uint32_t kInvalidValue = 0xFFFFFFFF;
+    constexpr uint32_t kMaxIndex  = 0xFFFFFF - 1;   // 24 bits for index. (0xFFFFFFFF is reserved for the invalid handle)
     constexpr uint32_t kMaxToken  = 0xFF;           // 8 bits for token.
 }   // namespace handle_detail
 
@@ -26,13 +27,13 @@ class Handle
 {
 public:
     constexpr Handle()
-        : value(handle_detail::kNullValue)
+        : value(handle_detail::kInvalidValue)
     {
     }
 
     /* implicit */ constexpr Handle(
-        const NullHandleType)
-        : value(handle_detail::kNullValue)
+        const InvalidHandleType)
+        : value(handle_detail::kInvalidValue)
     {
     }
 
@@ -63,14 +64,14 @@ public:
         return value <=> _other.value;
     }
 
-    [[nodiscard]] constexpr bool IsNull() const
+    [[nodiscard]] constexpr bool IsInvalid() const
     {
-        return value == handle_detail::kNullValue;
+        return value == handle_detail::kInvalidValue;
     }
 
     constexpr explicit operator bool() const
     {
-        return !IsNull();
+        return !IsInvalid();
     }
 
     [[nodiscard]] constexpr uint32_t GetIndex() const
@@ -97,7 +98,7 @@ private:
             uint32_t index : 24;
             uint32_t token : 8;
         };
-        uint32_t value = handle_detail::kNullValue;
+        uint32_t value = handle_detail::kInvalidValue;
     };
     JUG_DISABLE_ANON_WARNING_END
 };
@@ -134,7 +135,8 @@ struct std::hash<jug::Handle<T>>
     }
 };
 
-template <typename T>
+// std::formatter specialization
+template<typename T>
 struct std::formatter<jug::Handle<T>> : public std::formatter<std::string_view>
 {
     template<typename FormatContext>

@@ -14,8 +14,7 @@ public:
     // 최대 _outBuffer의 크기만큼 읽고 실제로 읽은 바이트 수를 반환함.
     Result<size_t> Read(MutableMemoryView _outBuffer) const;
     Result<size_t> Read(MutableMemoryView _outBuffer, char _delimiter) const;
-
-    bool IsEOF() const;
+    bool           IsEOF() const;
 
 private:
     FileReader() = default;

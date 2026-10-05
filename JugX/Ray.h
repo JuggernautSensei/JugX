@@ -6,40 +6,40 @@ namespace jug
 
 struct HIT
 {
-    VECTOR3 point;
-    VECTOR3 normal;
-    float   t;
-    bool    bFrontFace;
+    VEC3  point;
+    VEC3  normal;
+    float t;
+    bool  bFrontFace;
 };
 
 struct RAY
 {
-    JUG_MATH_API  RAY() = default;
+    JUG_MATH_API RAY() = default;
 
     JUG_MATH_API constexpr RAY(
-        const VECTOR3 _origin,
-        const VECTOR3 _dir)
+        const VEC3 _origin,
+        const VEC3 _dir)
         : origin(_origin)
         , dir(_dir)
     {
     }
 
     [[nodiscard]] JUG_MATH_API static constexpr RAY MakeRayOnNDC(
-        const float   _ndcX,
-        const float   _ndcY,
-        const MATRIX& _invViewProj)
+        const float _ndcX,
+        const float _ndcY,
+        const MAT4& _invViewProj)
     {
-        const VECTOR3 n = XformPoint(VECTOR3 { _ndcX, _ndcY, 0.f }, _invViewProj);
-        const VECTOR3 f = XformPoint(VECTOR3 { _ndcX, _ndcY, 1.f }, _invViewProj);
+        const VEC3 n = XformPoint(VEC3 { _ndcX, _ndcY, 0.f }, _invViewProj);
+        const VEC3 f = XformPoint(VEC3 { _ndcX, _ndcY, 1.f }, _invViewProj);
         return RAY { n, Normalize(f - n) };
     }
 
     [[nodiscard]] JUG_MATH_API static constexpr RAY MakeRayOnScreen(
-        const int     _screenX,
-        const int     _screenY,
-        const int     _screenWidth,
-        const int     _screenHeight,
-        const MATRIX& _invViewProj)
+        const int   _screenX,
+        const int   _screenY,
+        const int   _screenWidth,
+        const int   _screenHeight,
+        const MAT4& _invViewProj)
     {
         const float xScreen = static_cast<float>(_screenX) + 0.5f;
         const float yScreen = static_cast<float>(_screenY) + 0.5f;
@@ -48,28 +48,19 @@ struct RAY
         return MakeRayOnNDC(xNDC, yNDC, _invViewProj);
     }
 
-    const static RAY kZero;
+    [[nodiscard]] JUG_MATH_API static constexpr RAY Zero()
+    {
+        return RAY { VEC3::Zero(), VEC3::UnitX() };
+    }
 
-    VECTOR3 origin;
-    VECTOR3 dir;
+    VEC3 origin;
+    VEC3 dir;
 };
 
 static_assert(PodT<RAY>, "RAY must be POD type.");
 
 // ========================================================
-//  Constants
-// ========================================================
-
-inline constexpr RAY RAY::kZero = RAY { Zero<VECTOR3>(), UnitX<VECTOR3>() };
-
-template<>
-struct MathConstants<RAY>
-{
-    static constexpr RAY kZero = RAY::kZero;
-};
-
-// ========================================================
-//  Method  
+//  Method
 // ========================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsNormalized(
@@ -84,7 +75,7 @@ struct MathConstants<RAY>
     return RAY { _ray.origin, Normalize(_ray.dir) };
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 RayAt(
+[[nodiscard]] JUG_MATH_API constexpr VEC3 RayAt(
     const RAY&  _ray,
     const float _t)
 {

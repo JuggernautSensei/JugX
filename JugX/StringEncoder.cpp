@@ -13,46 +13,64 @@ namespace jug
 namespace
 {
     template<typename T>
-    struct Encoder
+    class Encoder
     {
+    public:
         using value_type = T;
+
+        explicit Encoder(
+            Span<T> _buffer)
+            : m_buffer(_buffer)
+        {
+        }
 
         void push_back(
             const T _ch)
         {
-            if (buffer.size() > result.written)
+            if (m_buffer.size() > m_result.written)
             {
-                buffer[result.written++] = _ch;
+                m_buffer[m_result.written++] = _ch;
             }
-            ++result.totalSize;
+            ++m_result.totalSize;
         }
 
-        Span<T>      buffer = {};
-        EncodeResult result = {};
+        [[nodiscard]] EncodeResult GetResult() const
+        {
+            return m_result;
+        }
+
+    private:
+        Span<T>      m_buffer = {};
+        EncodeResult m_result = {};
     };
 }   // namespace
 
-EncodeResult ToUtf8(
-    Span<char>       _outBuffer,
-    const StringView _utf16,
-    const bool       _bNullTerminated)
+EncodeResult EncodeUtf8To(
+    Span<char>        _outBuffer,
+    const WStringView _utf16,
+    const bool        _bNullTerminated)
 {
     if (_bNullTerminated)
     {
-        JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");
+        JUG_ASSERT(!_outBuffer.empty(), "Output m_buffer is empty.\n");
         _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
     }
 
-    Encoder<char> encoder = { _outBuffer };
+    Encoder<char> encoder { _outBuffer };
 
     try
     {
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(encoder));
+        const EncodeResult result = encoder.GetResult();
+        if (result.written != result.totalSize)
+        {
+            JUG_CORE_LOG_WARN("Format m_result is truncated. Needed: {}, Written: {}", result.totalSize, result.written);
+        }
         if (_bNullTerminated)
         {
-            _outBuffer[encoder.result.written] = '\0';
+            _outBuffer[result.written] = '\0';
         }
-        return encoder.result;
+        return result;
     }
     catch (const utf8::exception& e)
     {
@@ -65,27 +83,32 @@ EncodeResult ToUtf8(
     }
 }
 
-EncodeResult ToUtf16(
+EncodeResult EncodeUtf16To(
     Span<wchar_t>    _outBuffer,
     const StringView _utf8,
     const bool       _bNullTerminated)
 {
     if (_bNullTerminated)
     {
-        JUG_ASSERT(!_outBuffer.empty(), "Output buffer is empty.\n");
+        JUG_ASSERT(!_outBuffer.empty(), "Output m_buffer is empty.\n");
         _outBuffer = _outBuffer.subspan(0, _outBuffer.size() - 1);
     }
 
-    Encoder<wchar_t> encoder = { _outBuffer };
+    Encoder<wchar_t> encoder { _outBuffer };
 
     try
     {
         utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(encoder));
+        const EncodeResult result = encoder.GetResult();
+        if (result.written != result.totalSize)
+        {
+            JUG_CORE_LOG_WARN("Format m_result is truncated. Needed: {}, Written: {}", result.totalSize, result.written);
+        }
         if (_bNullTerminated)
         {
-            _outBuffer[encoder.result.written] = L'\0';
+            _outBuffer[result.written] = L'\0';
         }
-        return encoder.result;
+        return result;
     }
     catch (const utf8::exception& e)
     {
@@ -98,21 +121,22 @@ EncodeResult ToUtf16(
     }
 }
 
-String ToUtf8(
+String EncodeUtf8(
     const WStringView _utf16)
 {
-    Encoder<char> encoder = {};
+    Encoder<char> encoder { {} };
 
     try
     {
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(encoder));
-        if (encoder.result.totalSize == 0)
+        const EncodeResult result = encoder.GetResult();
+        if (result.totalSize == 0)
         {
             return {};
         }
 
         String str = {};
-        str.reserve(encoder.result.totalSize);
+        str.reserve(result.totalSize);
         utf8::utf16to8(_utf16.begin(), _utf16.end(), std::back_inserter(str));
         return str;
     }
@@ -123,21 +147,22 @@ String ToUtf8(
     }
 }
 
-WString ToUtf16(
+WString EncodeUtf16(
     const StringView _utf8)
 {
-    Encoder<wchar_t> encoder = {};
+    Encoder<char> encoder { {} };
 
     try
     {
         utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(encoder));
-        if (encoder.result.totalSize == 0)
+        const EncodeResult result = encoder.GetResult();
+        if (result.totalSize == 0)
         {
             return {};
         }
 
         WString str = {};
-        str.reserve(encoder.result.totalSize);
+        str.reserve(result.totalSize);
         utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(str));
         return str;
     }
@@ -173,7 +198,7 @@ void AppendUtf8(
 
     try
     {
-        utf8 ::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(_out));
+        utf8::utf8to16(_utf8.begin(), _utf8.end(), std::back_inserter(_out));
     }
     catch (const utf8::exception& e)
     {

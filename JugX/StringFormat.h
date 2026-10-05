@@ -9,54 +9,56 @@ struct FormatResult
     size_t written   = 0;   // 실제로 변환된 길이. 널 문자는 포함되지 않음.
 };
 
+// 버퍼 길이 부족시 메시지는 잘림.
+
 // ===========================================
 //  Format Span
 // ===========================================
 
-FormatResult VFormat(Span<char> _out, StringView _format, std::format_args _args);
-FormatResult VFormat(Span<wchar_t> _out, WStringView _format, std::wformat_args _args);
+FormatResult VFormatTo(Span<char> _out, StringView _format, std::format_args _args);
+FormatResult VFormatTo(Span<wchar_t> _out, WStringView _format, std::wformat_args _args);
 
 template<typename... Args>
-FormatResult Format(
+FormatResult FormatTo(
     const Span<char>                  _out,
     const std::format_string<Args...> _format,
     Args&&... _args)
 {
-    return VFormat(_out, _format.get(), std::make_format_args(_args...));
+    return VFormatTo(_out, _format.get(), std::make_format_args(_args...));
 }
 
 template<typename... Args>
-FormatResult WFormat(
+FormatResult FormatTo(
     const Span<wchar_t>                _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {
-    return VFormat(_out, _format.get(), std::make_wformat_args(_args...));
+    return VFormatTo(_out, _format.get(), std::make_wformat_args(_args...));
 }
 
 // ===========================================
 //  Format Span Null Terminate
 // ===========================================
 
-FormatResult ZVFormat(Span<char> _out, StringView _format, std::format_args _args);
-FormatResult ZVFormat(Span<wchar_t> _out, WStringView _format, std::wformat_args _args);
+FormatResult ZVFormatTo(Span<char> _out, StringView _format, std::format_args _args);
+FormatResult ZVFormatTo(Span<wchar_t> _out, WStringView _format, std::wformat_args _args);
 
 template<typename... Args>
-[[nodiscard]] FormatResult ZFormat(
+FormatResult ZFormatTo(
     const Span<char>                  _out,
     const std::format_string<Args...> _format,
     Args&&... _args)
 {
-    return ZVFormat(_out, _format.get(), std::make_format_args(_args...));
+    return ZVFormatTo(_out, _format.get(), std::make_format_args(_args...));
 }
 
 template<typename... Args>
-[[nodiscard]] FormatResult ZWFormat(
+FormatResult ZFormatTo(
     const Span<wchar_t>                _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {
-    return ZVFormat(_out, _format.get(), std::make_wformat_args(_args...));
+    return ZVFormatTo(_out, _format.get(), std::make_wformat_args(_args...));
 }
 
 // ===========================================
@@ -75,7 +77,7 @@ template<typename... Args>
 }
 
 template<typename... Args>
-[[nodiscard]] WString WFormat(
+[[nodiscard]] WString Format(
     const std::wformat_string<Args...> _format,
     Args&&... _args)
 {
@@ -83,7 +85,7 @@ template<typename... Args>
 }
 
 // ===========================================
-//  Append To String (char)
+//  Append To String
 // ===========================================
 
 void AppendVFormat(String& _out, StringView _format, std::format_args _args);
@@ -99,7 +101,7 @@ void AppendFormat(
 }
 
 template<typename... Args>
-void AppendWFormat(
+void AppendFormat(
     WString&                           _out,
     const std::wformat_string<Args...> _format,
     Args&&... _args)

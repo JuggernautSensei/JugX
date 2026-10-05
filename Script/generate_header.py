@@ -62,7 +62,14 @@ def main() -> None:
     lines += [f'#include "{h}"' for h in rest_headers]
     lines.append("")
 
-    OUTPUT_FILE.write_text("\n".join(lines), encoding="utf-8")
+    content = "\n".join(lines)
+    # 내용이 같으면 쓰지 않는다. 병렬 빌드 중 다른 프로젝트가 헤더를 열고 있으면
+    # 쓰기가 PermissionError로 실패하고, 타임스탬프 갱신으로 불필요한 재컴파일도 생긴다.
+    if OUTPUT_FILE.exists() and OUTPUT_FILE.read_text(encoding="utf-8-sig") == content:
+        print(f"up to date: {OUTPUT_FILE}")
+        return
+
+    OUTPUT_FILE.write_text(content, encoding="utf-8")
     print(f"wrote {OUTPUT_FILE} ({len(base_headers)} base + {len(rest_headers)} rest headers)")
 
 

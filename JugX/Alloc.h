@@ -18,7 +18,7 @@ namespace jug
 #endif
 
 // ===========================================
-//  Aligned Alloca
+//  Aligned Alloc
 // ===========================================
 
 #if defined(JUG_COMPILER_MSVC)
@@ -32,7 +32,7 @@ namespace jug
 #endif
 
 // ===================================================
-//  Heap AllocMemory
+//  Heap Alloc
 // ===================================================
 
 [[nodiscard]] void* Alloc(size_t _size);

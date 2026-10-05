@@ -91,6 +91,7 @@ public:
 
     [[nodiscard]] value_type*       data();
     [[nodiscard]] const value_type* data() const;
+    [[nodiscard]] size_t            size() const;
     [[nodiscard]] iterator          begin();
     [[nodiscard]] iterator          end();
     [[nodiscard]] const_iterator    begin() const;
@@ -187,6 +188,7 @@ public:
     using const_iterator = ConstIterator;
 
     [[nodiscard]] const value_type* data() const;
+    [[nodiscard]] size_t            size() const;
     [[nodiscard]] const_iterator    begin() const;
     [[nodiscard]] const_iterator    end() const;
     [[nodiscard]] const_iterator    cbegin() const;

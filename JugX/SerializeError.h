@@ -22,7 +22,7 @@ public:
     using ErrorT = eSerializeError;
 
     [[nodiscard]] StringView GetName() const noexcept override;
-    [[nodiscard]] String     MakeMessage(int _err) const override;
+    [[nodiscard]] String MakeMessage(int _err) const override;
 };
 
 JUG_DEFINE_ERROR_ENUM(eSerializeError, SerializeErrorCategory);

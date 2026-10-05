@@ -20,9 +20,9 @@ class FixedBlockMemoryPool
 {
     JUG_CLASS(FixedBlockMemoryPool, NO_COPY)
 
-    struct LINK
+    struct Link
     {
-        LINK* pLink;
+        Link* pLinkOrNull = nullptr;
     };
 
 public:
@@ -36,8 +36,8 @@ public:
     void  Reset();
 
 private:
-    LINK*      m_pPoolList        = nullptr;
-    LINK*      m_pFreeList        = nullptr;
+    Link*      m_pPoolList        = nullptr;
+    Link*      m_pFreeListOrNull  = nullptr;
     std::byte* m_pEnd             = nullptr;
     std::byte* m_pCur             = nullptr;
     size_t     m_alignedBlockSize = 0;

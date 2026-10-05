@@ -6,41 +6,59 @@
 #include <iterator>
 
 #include "CoreLogger.h"
+#include "TypeTraits.h"
 
 namespace jug
 {
 namespace
 {
     template<CharT T>
-    struct Formatter
+    class Formatter
     {
+    public:
         using value_type = T;
+
+        explicit Formatter(const Span<T> _buffer)
+            : m_buffer(_buffer)
+        {
+        }
 
         void push_back(const T _ch)
         {
-            if (buffer.size() > result.written)
+            if (m_buffer.size() > m_result.written)
             {
-                buffer[result.written++] = _ch;
+                m_buffer[m_result.written++] = _ch;
             }
-            ++result.totalSize;
+            ++m_result.totalSize;
         }
 
-        Span<T>      buffer = {};
-        FormatResult result = {};
+        [[nodiscard]] FormatResult GetResult() const
+        {
+            return m_result;
+        }
+
+    private:
+        Span<T>      m_buffer = {};
+        FormatResult m_result = {};
     };
 }   // namespace
 
-FormatResult VFormat(
+FormatResult VFormatTo(
     const Span<char>       _out,
     const StringView       _format,
     const std::format_args _args)
 {
-    Formatter<char> formatter = { _out };
+    Formatter<char> formatter { _out };
 
     try
     {
         std::vformat_to(std::back_inserter(formatter), _format, _args);
-        return formatter.result;
+        const FormatResult result = formatter.GetResult();
+        if (result.written != result.totalSize)
+        {
+            JUG_CORE_LOG_WARN("Format m_result is truncated. Needed: {}, Written: {}", result.totalSize, result.written);
+        }
+        return result;
     }
     catch (const std::format_error& e)
     {
@@ -53,17 +71,22 @@ FormatResult VFormat(
     }
 }
 
-FormatResult VFormat(
+FormatResult VFormatTo(
     const Span<wchar_t>     _out,
     const WStringView       _format,
     const std::wformat_args _args)
 {
-    Formatter<wchar_t> formatter = { _out };
+    Formatter<wchar_t> formatter { _out };
 
     try
     {
         std::vformat_to(std::back_inserter(formatter), _format, _args);
-        return formatter.result;
+        const FormatResult result = formatter.GetResult();
+        if (result.written != result.totalSize)
+        {
+            JUG_CORE_LOG_WARN("Format m_result is truncated. Needed: {}, Written: {}", result.totalSize, result.written);
+        }
+        return result;
     }
     catch (const std::format_error& e)
     {
@@ -76,24 +99,24 @@ FormatResult VFormat(
     }
 }
 
-FormatResult ZVFormat(
+FormatResult ZVFormatTo(
     const Span<char>       _out,
     const StringView       _format,
     const std::format_args _args)
 {
-    JUG_ASSERT(!_out.empty(), "Output buffer is empty.\n");
-    FormatResult ret = VFormat(_out.subspan(0, _out.size() - 1), _format, _args);
+    JUG_ASSERT(!_out.empty(), "Output m_buffer is empty.\n");
+    FormatResult ret = VFormatTo(_out.subspan(0, _out.size() - 1), _format, _args);
     _out[0]          = '\0';
     return ret;
 }
 
-FormatResult ZVFormat(
+FormatResult ZVFormatTo(
     Span<wchar_t>           _out,
     const WStringView       _format,
     const std::wformat_args _args)
 {
-    JUG_ASSERT(!_out.empty(), "Output buffer is empty.\n");
-    FormatResult ret = VFormat(_out.subspan(0, _out.size() - 1), _format, _args);
+    JUG_ASSERT(!_out.empty(), "Output m_buffer is empty.\n");
+    FormatResult ret = VFormatTo(_out.subspan(0, _out.size() - 1), _format, _args);
     _out[0]          = L'\0';
     return ret;
 }
@@ -136,7 +159,10 @@ WString VFormat(
     }
 }
 
-void AppendVFormat(String& _out, const StringView _format, const std::format_args _args)
+void AppendVFormat(
+    String&                _out,
+    const StringView       _format,
+    const std::format_args _args)
 {
     const size_t old = _out.size();
 
@@ -144,10 +170,10 @@ void AppendVFormat(String& _out, const StringView _format, const std::format_arg
     {
         std::vformat_to(std::back_inserter(_out), _format, _args);
     }
-    catch (const std::format_error&)   // NOLINT
+    catch (const std::format_error& e)   // NOLINT
     {
         _out.erase(_out.begin() + static_cast<ptrdiff_t>(old), _out.end());
-        JUG_CORE_LOG_ERROR("Format error occurred while appending to string.");
+        JUG_CORE_LOG_ERROR("Format error occurred while appending to string. Error: {}", e.what());
     }
 }
 
@@ -162,10 +188,10 @@ void AppendVFormat(
     {
         std::vformat_to(std::back_inserter(_out), _format, _args);
     }
-    catch (const std::format_error&)   // NOLINT
+    catch (const std::format_error& e)   // NOLINT
     {
         _out.erase(_out.begin() + static_cast<ptrdiff_t>(old), _out.end());
-        JUG_CORE_LOG_ERROR("Format error occurred while appending to string.");
+        JUG_CORE_LOG_ERROR("Format error occurred while appending to string. Error: {}", e.what());
     }
 }
 

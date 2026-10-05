@@ -5,11 +5,11 @@ namespace jug
 {
 
 template<VectorScalarT T>
-struct VECTOR<T, 3>
+struct VEC<T, 3>
 {
-    JUG_MATH_API VECTOR() = default;
+    JUG_MATH_API VEC() = default;
 
-    JUG_MATH_API constexpr VECTOR(
+    JUG_MATH_API constexpr VEC(
         const T _x,
         const T _y,
         const T _z)
@@ -17,22 +17,22 @@ struct VECTOR<T, 3>
     {
     }
 
-    JUG_MATH_API constexpr VECTOR(
-        const VECTOR<T, 2> _xy,
-        const T            _z)
+    JUG_MATH_API constexpr VEC(
+        const VEC<T, 2> _xy,
+        const T         _z)
         : e { _xy[0], _xy[1], _z }
     {
     }
 
-    explicit JUG_MATH_API constexpr VECTOR(
+    explicit JUG_MATH_API constexpr VEC(
         const T _value)
         : e { _value, _value, _value }
     {
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator-() const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] = -v[i];
@@ -40,10 +40,10 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator+(
-        const VECTOR _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator+(
+        const VEC _other) const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] += _other[i];
@@ -51,10 +51,10 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator-(
-        const VECTOR _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator-(
+        const VEC _other) const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] -= _other[i];
@@ -62,10 +62,10 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator*(
         const T _scalar) const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] *= _scalar;
@@ -73,11 +73,11 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator/(
         const T _scalar) const
         requires std::is_integral_v<T>
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] /= _scalar;
@@ -85,17 +85,17 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator/(
         const T _scalar) const
         requires std::is_floating_point_v<T>
     {
         return *this * (1.f / _scalar);
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator*(
-        const VECTOR _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator*(
+        const VEC _other) const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] *= _other[i];
@@ -103,10 +103,10 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR operator/(
-        const VECTOR _other) const
+    [[nodiscard]] JUG_MATH_API constexpr VEC operator/(
+        const VEC _other) const
     {
-        VECTOR v = *this;
+        VEC v = *this;
         for (size_t i = 0; i < kDim; ++i)
         {
             v[i] /= _other[i];
@@ -114,50 +114,50 @@ struct VECTOR<T, 3>
         return v;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator+=(
-        const VECTOR _other)
+    JUG_MATH_API constexpr VEC& operator+=(
+        const VEC _other)
     {
         *this = *this + _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator-=(
-        const VECTOR _other)
+    JUG_MATH_API constexpr VEC& operator-=(
+        const VEC _other)
     {
         *this = *this - _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator*=(
+    JUG_MATH_API constexpr VEC& operator*=(
         const T _scalar)
     {
         *this = *this * _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator/=(
+    JUG_MATH_API constexpr VEC& operator/=(
         const T _scalar)
     {
         *this = *this / _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator*=(
-        const VECTOR _other)
+    JUG_MATH_API constexpr VEC& operator*=(
+        const VEC _other)
     {
         *this = *this * _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr VECTOR& operator/=(
-        const VECTOR _other)
+    JUG_MATH_API constexpr VEC& operator/=(
+        const VEC _other)
     {
         *this = *this / _other;
         return *this;
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool operator==(
-        const VECTOR _other) const
+        const VEC _other) const
     {
         for (size_t i = 0; i < kDim; ++i)
         {
@@ -191,9 +191,9 @@ struct VECTOR<T, 3>
         return e.data();
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR<T, 2> ToVector2() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC<T, 2> ToVector2() const
     {
-        return VECTOR<T, 2> { e[0], e[1] };
+        return VEC<T, 2> { e[0], e[1] };
     }
 
     // w = 0
@@ -203,20 +203,70 @@ struct VECTOR<T, 3>
         return simd::Set(e[0], e[1], e[2], 0.f);
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static VECTOR JUG_VECTORCALL FromM128(
+    [[nodiscard]] JUG_MATH_API constexpr static VEC JUG_VECTORCALL FromM128(
         const simd::M128 _v)
         requires std::is_same_v<T, float>
     {
         if (std::is_constant_evaluated())
         {
-            return simd::NoInlineConstruct<VECTOR>(simd::Get<0>(_v), simd::Get<1>(_v), simd::Get<2>(_v));
+            return simd::NoInlineConstruct<VEC>(simd::Get<0>(_v), simd::Get<1>(_v), simd::Get<2>(_v));
         }
         else
         {
-            VECTOR ret;
+            VEC ret;
             simd::StoreFloat3(ret.e.data(), _v);
             return ret;
         }
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Zero()
+    {
+        return VEC { T { 0 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC One()
+    {
+        return VEC { T { 1 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Right()
+    {
+        return VEC { T { 1 }, T { 0 }, T { 0 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Up()
+    {
+        return VEC { T { 0 }, T { 1 }, T { 0 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Forward()
+    {
+        return VEC { T { 0 }, T { 0 }, T { 1 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC UnitX()
+    {
+        return VEC { T { 1 }, T { 0 }, T { 0 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC UnitY()
+    {
+        return VEC { T { 0 }, T { 1 }, T { 0 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC UnitZ()
+    {
+        return VEC { T { 0 }, T { 0 }, T { 1 } };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Max()
+    {
+        return VEC { std::numeric_limits<T>::max() };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static VEC Min()
+    {
+        return VEC { std::numeric_limits<T>::lowest() };
     }
 
     constexpr static size_t kDim = 3;
@@ -249,29 +299,10 @@ struct VECTOR<T, 3>
     JUG_DISABLE_ANON_WARNING_END
 };
 
-using VECTOR3  = VECTOR<float, 3>;
-using VECTOR3S = VECTOR<int, 3>;
-using VECTOR3U = VECTOR<uint32_t, 3>;
+using VEC3  = VEC<float, 3>;
+using VEC3I = VEC<int, 3>;
+using VEC3U = VEC<uint32_t, 3>;
 
-static_assert(PodT<VECTOR3>, "VECTOR3 must be POD type.");
-
-// =======================================================
-//  Constants
-// =======================================================
-
-template<VectorScalarT T>
-struct MathConstants<VECTOR<T, 3>>
-{
-    constexpr static VECTOR<T, 3> kZero    = VECTOR<T, 3> { T { 0 } };
-    constexpr static VECTOR<T, 3> kOne     = VECTOR<T, 3> { T { 1 } };
-    constexpr static VECTOR<T, 3> kRight   = VECTOR<T, 3> { T { 1 }, T { 0 }, T { 0 } };
-    constexpr static VECTOR<T, 3> kUp      = VECTOR<T, 3> { T { 0 }, T { 1 }, T { 0 } };
-    constexpr static VECTOR<T, 3> kForward= VECTOR<T, 3> { T { 0 }, T { 0 }, T { 1 } };
-    constexpr static VECTOR<T, 3> kUnitX   = VECTOR<T, 3> { T { 1 }, T { 0 }, T { 0 } };
-    constexpr static VECTOR<T, 3> kUnitY   = VECTOR<T, 3> { T { 0 }, T { 1 }, T { 0 } };
-    constexpr static VECTOR<T, 3> kUnitZ   = VECTOR<T, 3> { T { 0 }, T { 0 }, T { 1 } };
-    constexpr static VECTOR<T, 3> kMax     = VECTOR<T, 3> { MathConstants<T>::kMax };
-    constexpr static VECTOR<T, 3> kMin     = VECTOR<T, 3> { MathConstants<T>::kMin };
-};
+static_assert(PodT<VEC3>, "VEC3 must be POD type.");
 
 }   // namespace jug

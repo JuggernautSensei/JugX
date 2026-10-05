@@ -46,7 +46,7 @@ public:
     [[nodiscard]] uint64_t Generate();
 
 private:
-    std::mt19937_64 m_mt;
+    std::mt19937_64 m_mt = {};
 };
 
 template<typename T>
@@ -84,13 +84,13 @@ template<ArithmeticT T, RngT R>
 }
 
 template<RngT R>
-[[nodiscard]] VECTOR3 RandomVector3InUnitSphere(
+[[nodiscard]] VEC3 RandomVector3InUnitSphere(
     R&         _rng,
     const bool _onSurface = false)
 {
     while (true)
     {
-        const VECTOR3 v = VECTOR3 {
+        const VEC3 v = VEC3 {
             Random(_rng, -1.0f, 1.0f),
             Random(_rng, -1.0f, 1.0f),
             Random(_rng, -1.0f, 1.0f)
@@ -104,12 +104,12 @@ template<RngT R>
 }
 
 template<RngT R>
-[[nodiscard]] VECTOR3 RandomVector3InHemiSphere(
-    R&            _rng,
-    const VECTOR3 _normal,
-    const bool    _onSurface = false)
+[[nodiscard]] VEC3 RandomVector3InHemiSphere(
+    R&         _rng,
+    const VEC3 _normal,
+    const bool _onSurface = false)
 {
-    const VECTOR3 v = RandomVector3InUnitSphere(_rng, _onSurface);
+    const VEC3 v = RandomVector3InUnitSphere(_rng, _onSurface);
     return Dot(v, _normal) > 0.f ? v : -v;
 }
 

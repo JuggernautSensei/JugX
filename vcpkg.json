@@ -9,7 +9,14 @@
     "sdl3",
     "parallel-hashmap",
     "utfcpp",
-    "yyjson"
+    "yyjson",
+    "spdlog"
+  ],
+  "overrides": [
+    {
+      "name": "benchmark",
+      "version": "1.9.5"
+    }
   ],
   "features": {
     "test": {

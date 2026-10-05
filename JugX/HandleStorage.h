@@ -1,13 +1,12 @@
 ﻿#pragma once
 #include "Handle.h"
-#include "Math.h"
+#include "InvalidIndex.h"
 
 namespace jug
 {
 
 namespace handle_storage_detail
 {
-    constexpr size_t kNullIndex  = Max<size_t>();
     constexpr size_t kGrowFactor = 2;
     constexpr size_t kMinSize    = 4;
 }   // namespace handle_storage_detail
@@ -202,15 +201,15 @@ public:
         const H _handle,
         Args&&... _args)
     {
-        JUG_ASSERT(!_handle.IsNull(), "Cannot insert a null handle.\n");
-        JUG_ASSERT(FindDenseOrNullIndex_(_handle) == handle_storage_detail::kNullIndex, "_handle already exists in HandleStorageT.\n");
+        JUG_ASSERT(!_handle.IsInvalid(), "Cannot insert an invalid handle.\n");
+        JUG_ASSERT(FindDenseOrInvalid_(_handle) == kInvalidIndex, "_handle already exists in HandleStorageT.\n");
 
         // make space
         const size_t index = _handle.GetIndex();
         if (index >= m_sparse.size())
         {
             const size_t size = Max(handle_storage_detail::kMinSize, index * handle_storage_detail::kGrowFactor);
-            m_sparse.resize(size, handle_storage_detail::kNullIndex);
+            m_sparse.resize(size, kInvalidIndex);
         }
 
         // insert
@@ -238,13 +237,14 @@ public:
         const H _handle,
         Args&&... _args)
     {
-        JUG_ASSERT(!_handle.IsNull(), "Cannot insert a null handle.\n");
+        JUG_ASSERT(!_handle.IsInvalid(), "Cannot insert an invalid handle.\n");
 
-        const size_t dense = FindDenseOrNullIndex_(_handle);
-        if (dense != handle_storage_detail::kNullIndex)
+        const size_t denseOrInvalid = FindDenseOrInvalid_(_handle);
+        if (denseOrInvalid != kInvalidIndex)
         {
-            m_values[dense] = V { std::forward<Args>(_args)... };
-            return m_values[dense];
+            V& value = m_values[denseOrInvalid];
+            value    = V { std::forward<Args>(_args)... };
+            return value;
         }
 
         return Emplace(_handle, std::forward<Args>(_args)...);
@@ -253,8 +253,8 @@ public:
     void Erase(
         const H _handle)
     {
-        const size_t dense = FindDenseOrNullIndex_(_handle);
-        JUG_ASSERT(dense != handle_storage_detail::kNullIndex, "_handle does not exist in HandleStorageT.\n");
+        const size_t dense = FindDenseOrInvalid_(_handle);
+        JUG_ASSERT(dense != kInvalidIndex, "_handle does not exist in HandleStorageT.\n");
 
         // swap & pop
         const size_t last = m_values.size() - 1;
@@ -266,7 +266,7 @@ public:
             m_sparse[lastIndex]    = dense;
         }
 
-        m_sparse[_handle.GetIndex()] = handle_storage_detail::kNullIndex;
+        m_sparse[_handle.GetIndex()] = kInvalidIndex;
         m_handles.pop_back();
         m_values.pop_back();
     }
@@ -281,15 +281,15 @@ public:
     [[nodiscard]] bool Contains(
         const H _handle) const
     {
-        // null 도 동시에 잡음
-        return FindDenseOrNullIndex_(_handle) != handle_storage_detail::kNullIndex;
+        // invalid 도 동시에 잡음
+        return FindDenseOrInvalid_(_handle) != kInvalidIndex;
     }
 
     [[nodiscard]] V& Get(
         const H _handle)
     {
-        const size_t dense = FindDenseOrNullIndex_(_handle);
-        JUG_ASSERT(dense != handle_storage_detail::kNullIndex, "_handle does not exist in HandleStorageT.\n");
+        const size_t dense = FindDenseOrInvalid_(_handle);
+        JUG_ASSERT(dense != kInvalidIndex, "_handle does not exist in HandleStorageT.\n");
         return m_values[dense];
     }
 
@@ -302,8 +302,8 @@ public:
     [[nodiscard]] V* GetOrNull(
         const H _handle)
     {
-        const size_t dense = FindDenseOrNullIndex_(_handle);
-        return dense != handle_storage_detail::kNullIndex ? &m_values[dense] : nullptr;
+        const size_t denseOrInvalid = FindDenseOrInvalid_(_handle);
+        return denseOrInvalid != kInvalidIndex ? &m_values[denseOrInvalid] : nullptr;
     }
 
     [[nodiscard]] const V* GetOrNull(
@@ -431,25 +431,25 @@ public:
     }
 
 private:
-    [[nodiscard]] size_t FindDenseOrNullIndex_(
+    [[nodiscard]] size_t FindDenseOrInvalid_(
         const H _handle) const
     {
         const size_t index = _handle.GetIndex();
         if (index >= m_sparse.size())
         {
-            return handle_storage_detail::kNullIndex;
+            return kInvalidIndex;
         }
 
-        const size_t dense = m_sparse[index];
-        if (dense == handle_storage_detail::kNullIndex || m_handles[dense] != _handle)
+        const size_t denseOrInvalid = m_sparse[index];
+        if (denseOrInvalid == kInvalidIndex || m_handles[denseOrInvalid] != _handle)
         {
-            return handle_storage_detail::kNullIndex;
+            return kInvalidIndex;
         }
 
-        return dense;
+        return denseOrInvalid;
     }
 
-    Vector<size_t> m_sparse  = {};   // dense index 저장
+    Vector<size_t> m_sparse  = {};   // dense index 저장. 원소는 kInvalidIndex 가능
     Vector<H>      m_handles = {};   // 핸들을 연속적으로 저장
     Vector<V>      m_values  = {};   // 값을 연속적으로 저장
 };

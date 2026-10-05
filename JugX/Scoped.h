@@ -31,24 +31,24 @@ public:
     }
 
     /* implicit */ Scoped(
-        T* _pObj)
-        : m_pObj(_pObj)
+        T* _pObjOrNull)
+        : m_pObj(_pObjOrNull)
         , m_delete()
     {
     }
 
     /* implicit */ Scoped(
-        T*            _pObj,
+        T*            _pObjOrNull,
         const Delete& _deleter) noexcept
-        : m_pObj(_pObj)
+        : m_pObj(_pObjOrNull)
         , m_delete(_deleter)
     {
     }
 
     /* implicit */ Scoped(
-        T*       _pObj,
+        T*       _pObjOrNull,
         Delete&& _deleter) noexcept
-        : m_pObj(_pObj)
+        : m_pObj(_pObjOrNull)
         , m_delete(std::move(_deleter))
     {
     }
@@ -90,16 +90,16 @@ public:
         return *this;
     }
 
-    ~Scoped()
-    {
-        Reset();
-    }
-
     Scoped& operator=(
         const nullptr_t)
     {
         Reset();
         return *this;
+    }
+
+    ~Scoped()
+    {
+        Reset();
     }
 
     [[nodiscard]] T& operator*() const
@@ -123,22 +123,22 @@ public:
         return !m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
-        const nullptr_t) const noexcept
-    {
-        return m_pObj;
-    }
-
     [[nodiscard]] bool operator==(
         const Scoped& _other) const noexcept
     {
         return m_pObj == _other.m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
+    [[nodiscard]] auto operator<=>(
+        const nullptr_t) const noexcept
+    {
+        return m_pObj <=> nullptr;
+    }
+
+    [[nodiscard]] auto operator<=>(
         const Scoped& _other) const noexcept
     {
-        return m_pObj != _other.m_pObj;
+        return m_pObj <=> _other.m_pObj;
     }
 
     [[nodiscard]] T* GetPtr() const noexcept
@@ -154,18 +154,18 @@ public:
     }
 
     void Reset(
-        T* _pObj = nullptr) noexcept
+        T* _pObjOrNull = nullptr) noexcept
     {
-        T* pOld = m_pObj;
-        m_pObj  = _pObj;
-        if (pOld)
+        T* pOldOrNull = m_pObj;
+        m_pObj        = _pObjOrNull;
+        if (pOldOrNull)
         {
-            m_delete(pOld);
+            m_delete(pOldOrNull);
         }
     }
 
     void Reset(
-        T*            _pObj,
+        T*            _pObjOrNull,
         const Delete& _deleter) noexcept
     {
         if (m_pObj)
@@ -173,12 +173,12 @@ public:
             m_delete(m_pObj);
         }
 
-        m_pObj   = _pObj;
+        m_pObj   = _pObjOrNull;
         m_delete = _deleter;
     }
 
     void Reset(
-        T*       _pObj,
+        T*       _pObjOrNull,
         Delete&& _deleter) noexcept
     {
         if (m_pObj)
@@ -186,7 +186,7 @@ public:
             m_delete(m_pObj);
         }
 
-        m_pObj   = _pObj;
+        m_pObj   = _pObjOrNull;
         m_delete = std::move(_deleter);
     }
 
@@ -247,24 +247,24 @@ public:
     }
 
     /* implicit */ Scoped(
-        T* _pObj)
-        : m_pObj(_pObj)
+        T* _pObjOrNull)
+        : m_pObj(_pObjOrNull)
         , m_delete()
     {
     }
 
     /* implicit */ Scoped(
-        T*            _pObj,
+        T*            _pObjOrNull,
         const Delete& _deleter) noexcept
-        : m_pObj(_pObj)
+        : m_pObj(_pObjOrNull)
         , m_delete(_deleter)
     {
     }
 
     /* implicit */ Scoped(
-        T*       _pObj,
+        T*       _pObjOrNull,
         Delete&& _deleter) noexcept
-        : m_pObj(_pObj)
+        : m_pObj(_pObjOrNull)
         , m_delete(std::move(_deleter))
     {
     }
@@ -325,10 +325,10 @@ public:
         return p;
     }
 
-    void Reset(T* _pObj = nullptr) noexcept
+    void Reset(T* _pObjOrNull = nullptr) noexcept
     {
         T* old = m_pObj;
-        m_pObj = _pObj;
+        m_pObj = _pObjOrNull;
         if (old)
         {
             m_delete(old);
@@ -336,19 +336,19 @@ public:
     }
 
     void Reset(
-        T*            _pObj,
+        T*            _pObjOrNull,
         const Delete& _deleter) noexcept
     {
         m_delete = _deleter;
-        Reset(_pObj);
+        Reset(_pObjOrNull);
     }
 
     void Reset(
-        T*       _pObj,
+        T*       _pObjOrNull,
         Delete&& _deleter) noexcept
     {
         m_delete = std::move(_deleter);
-        Reset(_pObj);
+        Reset(_pObjOrNull);
     }
 
     [[nodiscard]] Delete& GetDeleter() noexcept
@@ -386,22 +386,22 @@ public:
         return !m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
-        const nullptr_t) const noexcept
-    {
-        return m_pObj;
-    }
-
     [[nodiscard]] bool operator==(
         const Scoped& _other) const noexcept
     {
         return m_pObj == _other.m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
+    [[nodiscard]] bool operator<=>(
+        const nullptr_t) const noexcept
+    {
+        return m_pObj <=> nullptr;
+    }
+
+    [[nodiscard]] bool operator<=>(
         const Scoped& _other) const noexcept
     {
-        return m_pObj != _other.m_pObj;
+        return m_pObj <=> _other.m_pObj;
     }
 
 private:

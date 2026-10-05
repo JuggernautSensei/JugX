@@ -11,16 +11,16 @@ struct AABB
     JUG_MATH_API AABB() = default;
 
     JUG_MATH_API constexpr AABB(
-        const VECTOR3 _center,
-        const VECTOR3 _extends)
+        const VEC3 _center,
+        const VEC3 _extends)
         : center(_center)
         , extends(_extends)
     {
     }
 
     [[nodiscard]] JUG_MATH_API static constexpr AABB MakeFromMinMax(
-        const VECTOR3 _min,
-        const VECTOR3 _max)
+        const VEC3 _min,
+        const VEC3 _max)
     {
         AABB aabb;
         aabb.center  = (_min + _max) * 0.5f;
@@ -28,12 +28,12 @@ struct AABB
         return aabb;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetMin() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 GetMin() const
     {
         return center - extends;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetMax() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 GetMax() const
     {
         return center + extends;
     }
@@ -53,44 +53,37 @@ struct AABB
         return extends[2] * 2.f;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
+    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcCorners() const
     {
-        const VECTOR3 min = GetMin();
-        const VECTOR3 max = GetMax();
+        const VEC3 min = GetMin();
+        const VEC3 max = GetMax();
 
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners;
-        corners[eCorner::LeftBottomNear]  = VECTOR3 { min[0], min[1], min[2] };
-        corners[eCorner::LeftBottomFar]   = VECTOR3 { min[0], min[1], max[2] };
-        corners[eCorner::LeftTopNear]     = VECTOR3 { min[0], max[1], min[2] };
-        corners[eCorner::LeftTopFar]      = VECTOR3 { min[0], max[1], max[2] };
-        corners[eCorner::RightBottomNear] = VECTOR3 { max[0], min[1], min[2] };
-        corners[eCorner::RightBottomFar]  = VECTOR3 { max[0], min[1], max[2] };
-        corners[eCorner::RightTopNear]    = VECTOR3 { max[0], max[1], min[2] };
-        corners[eCorner::RightTopFar]     = VECTOR3 { max[0], max[1], max[2] };
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = {};
+        corners[eCorner::LeftBottomNear]         = VEC3 { min[0], min[1], min[2] };
+        corners[eCorner::LeftBottomFar]   = VEC3 { min[0], min[1], max[2] };
+        corners[eCorner::LeftTopNear]     = VEC3 { min[0], max[1], min[2] };
+        corners[eCorner::LeftTopFar]      = VEC3 { min[0], max[1], max[2] };
+        corners[eCorner::RightBottomNear] = VEC3 { max[0], min[1], min[2] };
+        corners[eCorner::RightBottomFar]  = VEC3 { max[0], min[1], max[2] };
+        corners[eCorner::RightTopNear]    = VEC3 { max[0], max[1], min[2] };
+        corners[eCorner::RightTopFar]     = VEC3 { max[0], max[1], max[2] };
         return corners;
     }
 
-    const static AABB kZero;
-    const static AABB kUnit;
+    [[nodiscard]] JUG_MATH_API static constexpr AABB Zero()
+    {
+        return AABB { VEC3::Zero(), VEC3::Zero() };
+    }
 
-    VECTOR3 center;
-    VECTOR3 extends;
+    [[nodiscard]] JUG_MATH_API static constexpr AABB Unit()
+    {
+        return AABB { VEC3::Zero(), VEC3 { 0.5f } };
+    }
+
+    VEC3 center;
+    VEC3 extends;
 };
 static_assert(PodT<AABB>, "AABB must be POD type.");
-
-// ===========================================
-//  Constants
-// ===========================================
-
-inline constexpr AABB AABB::kZero = AABB { Zero<VECTOR3>(), Zero<VECTOR3>() };
-inline constexpr AABB AABB::kUnit = AABB { Zero<VECTOR3>(), VECTOR3 { 0.5f } };
-
-template<>
-struct MathConstants<AABB>
-{
-    static constexpr AABB kZero = AABB::kZero;
-    static constexpr AABB kOne  = AABB::kUnit;
-};
 
 // ===========================================
 //  Method
@@ -100,24 +93,24 @@ struct MathConstants<AABB>
     const AABB& _x,
     const AABB& _y)
 {
-    const VECTOR3 min = Min(_x.GetMin(), _y.GetMin());
-    const VECTOR3 max = Max(_x.GetMax(), _y.GetMax());
+    const VEC3 min = Min(_x.GetMin(), _y.GetMin());
+    const VEC3 max = Max(_x.GetMax(), _y.GetMax());
     return AABB::MakeFromMinMax(min, max);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr AABB Merge(
-    const AABB&   _x,
-    const VECTOR3 _point)
+    const AABB& _x,
+    const VEC3  _point)
 {
-    const VECTOR3 min = Min(_x.GetMin(), _point);
-    const VECTOR3 max = Max(_x.GetMax(), _point);
+    const VEC3 min = Min(_x.GetMin(), _point);
+    const VEC3 max = Max(_x.GetMax(), _point);
     return AABB::MakeFromMinMax(min, max);
 }
 
 // 아핀 행렬 전용. 중심은 w 로 나누지 않는다.
 [[nodiscard]] JUG_MATH_API constexpr AABB Xform(
-    const AABB&   _aabb,
-    const MATRIX& _mtx)
+    const AABB& _aabb,
+    const MAT4& _mtx)
 {
     // c = (cx cy cz -), e 의 1 ~ 3 레인 = (ex ey ez)
     simd::M128 c {};
@@ -147,7 +140,7 @@ struct MathConstants<AABB>
 
     if (std::is_constant_evaluated())
     {
-        return simd::NoInlineConstruct<AABB>(VECTOR3::FromM128(center), VECTOR3::FromM128(ext));
+        return simd::NoInlineConstruct<AABB>(VEC3::FromM128(center), VEC3::FromM128(ext));
     }
     else
     {

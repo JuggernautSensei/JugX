@@ -96,11 +96,6 @@ public:
         _other.m_pObj = nullptr;
     }
 
-    ~Ref()
-    {
-        Release_();
-    }
-
     Ref& operator=(
         const Ref& _other)
     {
@@ -157,13 +152,13 @@ public:
     {
         if (m_pObj != static_cast<T*>(_other.GetPtr()))
         {
-            T* pOther = static_cast<T*>(_other.Release());
-            if (pOther)
+            T* pOtherOrNull = static_cast<T*>(_other.Release());
+            if (pOtherOrNull)
             {
-                pOther->Retain();
+                pOtherOrNull->Retain();
             }
             Release_();
-            m_pObj = pOther;
+            m_pObj = pOtherOrNull;
         }
         return *this;
     }
@@ -173,15 +168,15 @@ public:
     Ref& operator=(
         const Ref<U>& _other)
     {
-        T* pOther = static_cast<T*>(_other.m_pObj);
-        if (m_pObj != pOther)
+        T* pOtherOrNull = static_cast<T*>(_other.m_pObj);
+        if (m_pObj != pOtherOrNull)
         {
-            if (pOther)
+            if (pOtherOrNull)
             {
-                pOther->Retain();
+                pOtherOrNull->Retain();
             }
             Release_();
-            m_pObj = pOther;
+            m_pObj = pOtherOrNull;
         }
         return *this;
     }
@@ -191,14 +186,19 @@ public:
     Ref& operator=(
         Ref<U>&& _other) noexcept
     {
-        T* pOther = static_cast<T*>(_other.m_pObj);
-        if (m_pObj != pOther)
+        T* pOtherOrNull = static_cast<T*>(_other.m_pObj);
+        if (m_pObj != pOtherOrNull)
         {
             Release_();
-            m_pObj = pOther;
+            m_pObj = pOtherOrNull;
         }
         _other.m_pObj = nullptr;
         return *this;
+    }
+
+    ~Ref()
+    {
+        Release_();
     }
 
     [[nodiscard]] T* operator->() const
@@ -217,58 +217,28 @@ public:
         return m_pObj == _ptr;
     }
 
-    [[nodiscard]] bool operator!=(
-        const T* _ptr) const
-    {
-        return m_pObj != _ptr;
-    }
-
     [[nodiscard]] bool operator==(
         const Ref& _other) const
     {
         return m_pObj == _other.m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
-        const Ref& _other) const
-    {
-        return m_pObj != _other.m_pObj;
-    }
-
     [[nodiscard]] bool operator==(
         const nullptr_t) const
     {
-        return !m_pObj ;
+        return !m_pObj;
     }
 
-    [[nodiscard]] bool operator!=(
+    [[nodiscard]] auto operator<=>(
+        const Ref& _other) const
+    {
+        return m_pObj <=> _other.m_pObj;
+    }
+
+    [[nodiscard]] auto operator<=>(
         const nullptr_t) const
     {
-        return m_pObj;
-    }
-
-    [[nodiscard]] bool operator<(
-        const Ref& _other) const
-    {
-        return m_pObj < _other.m_pObj;
-    }
-
-    [[nodiscard]] bool operator>(
-        const Ref& _other) const
-    {
-        return m_pObj > _other.m_pObj;
-    }
-
-    [[nodiscard]] bool operator<=(
-        const Ref& _other) const
-    {
-        return m_pObj <= _other.m_pObj;
-    }
-
-    [[nodiscard]] bool operator>=(
-        const Ref& _other) const
-    {
-        return m_pObj >= _other.m_pObj;
+        return m_pObj <=> nullptr;
     }
 
     explicit operator bool() const
@@ -282,16 +252,16 @@ public:
     }
 
     void Reset(
-        T* _ptr = nullptr)
+        T* _pOrNull = nullptr)
     {
-        if (m_pObj != _ptr)
+        if (m_pObj != _pOrNull)
         {
-            if (_ptr)
+            if (_pOrNull)
             {
-                _ptr->Retain();
+                _pOrNull->Retain();
             }
             Release_();
-            m_pObj = _ptr;
+            m_pObj = _pOrNull;
         }
     }
 

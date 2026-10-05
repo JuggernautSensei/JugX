@@ -52,7 +52,7 @@ public:
     template<ErrorCodeT T>
     /* implicit */ Error(T _errorCode)
         : m_errorCode(ErrorCodeTraits<T>::GetErrorCode(_errorCode))
-        , m_pCategory(ErrorCodeTraits<T>::GetCategory())
+        , m_pCategoryOrNull(ErrorCodeTraits<T>::GetCategory())
     {
     }
 
@@ -68,8 +68,8 @@ public:
     [[nodiscard]] bool operator==(Error _other) const;
 
 private:
-    int             m_errorCode = 0;
-    IErrorCategory* m_pCategory = nullptr;
+    int             m_errorCode       = 0;
+    IErrorCategory* m_pCategoryOrNull = nullptr;
 };
 
 // ===========================================

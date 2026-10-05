@@ -39,6 +39,9 @@ void ReportVAssert(
                        ts.hour,
                        ts.min,
                        ts.sec);
+
+    // 비동기 로깅시 로깅전에 프로그램이 멈출 수 있기 때문에 잠시 슬립
+    std::this_thread::sleep_for(100ms);
 }
 
 }   // namespace jug

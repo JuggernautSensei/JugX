@@ -37,12 +37,12 @@ struct FRUSTUM
     }
 
     [[nodiscard]] JUG_MATH_API static constexpr FRUSTUM MakeFromMatrix(
-        const MATRIX& _mtx)
+        const MAT4& _mtx)
     {
-        const VECTOR4 c0 = { _mtx[0][0], _mtx[1][0], _mtx[2][0], _mtx[3][0] };
-        const VECTOR4 c1 = { _mtx[0][1], _mtx[1][1], _mtx[2][1], _mtx[3][1] };
-        const VECTOR4 c2 = { _mtx[0][2], _mtx[1][2], _mtx[2][2], _mtx[3][2] };
-        const VECTOR4 c3 = { _mtx[0][3], _mtx[1][3], _mtx[2][3], _mtx[3][3] };
+        const VEC4 c0 = { _mtx[0][0], _mtx[1][0], _mtx[2][0], _mtx[3][0] };
+        const VEC4 c1 = { _mtx[0][1], _mtx[1][1], _mtx[2][1], _mtx[3][1] };
+        const VEC4 c2 = { _mtx[0][2], _mtx[1][2], _mtx[2][2], _mtx[3][2] };
+        const VEC4 c3 = { _mtx[0][3], _mtx[1][3], _mtx[2][3], _mtx[3][3] };
 
         return FRUSTUM {
             PLANE { c3 - c0 },
@@ -54,7 +54,7 @@ struct FRUSTUM
         };
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners() const
+    [[nodiscard]] JUG_MATH_API constexpr DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcCorners() const
     {
         const PLANE right = planes[eFrustumPlane::Right];
         const PLANE left  = planes[eFrustumPlane::Left];
@@ -63,35 +63,35 @@ struct FRUSTUM
         const PLANE farZ  = planes[eFrustumPlane::Far];
         const PLANE nearZ = planes[eFrustumPlane::Near];
 
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = IntersectOf3Planes(left, down, nearZ);
-        ret[eCorner::LeftBottomFar]   = IntersectOf3Planes(left, down, farZ);
-        ret[eCorner::LeftTopNear]     = IntersectOf3Planes(left, up, nearZ);
-        ret[eCorner::LeftTopFar]      = IntersectOf3Planes(left, up, farZ);
-        ret[eCorner::RightBottomNear] = IntersectOf3Planes(right, down, nearZ);
-        ret[eCorner::RightBottomFar]  = IntersectOf3Planes(right, down, farZ);
-        ret[eCorner::RightTopNear]    = IntersectOf3Planes(right, up, nearZ);
-        ret[eCorner::RightTopFar]     = IntersectOf3Planes(right, up, farZ);
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> ret = {};
+        ret[eCorner::LeftBottomNear]         = IntersectOf3Planes(left, down, nearZ);
+        ret[eCorner::LeftBottomFar]          = IntersectOf3Planes(left, down, farZ);
+        ret[eCorner::LeftTopNear]            = IntersectOf3Planes(left, up, nearZ);
+        ret[eCorner::LeftTopFar]             = IntersectOf3Planes(left, up, farZ);
+        ret[eCorner::RightBottomNear]        = IntersectOf3Planes(right, down, nearZ);
+        ret[eCorner::RightBottomFar]         = IntersectOf3Planes(right, down, farZ);
+        ret[eCorner::RightTopNear]           = IntersectOf3Planes(right, up, nearZ);
+        ret[eCorner::RightTopFar]            = IntersectOf3Planes(right, up, farZ);
         return ret;
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcCorners(
-        const MATRIX& _invMtx)
+    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcCorners(
+        const MAT4& _invMtx)
     {
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = XformPoint(VECTOR3 { -1.f, -1.f, 0.f }, _invMtx);
-        ret[eCorner::LeftBottomFar]   = XformPoint(VECTOR3 { -1.f, -1.f, 1.f }, _invMtx);
-        ret[eCorner::LeftTopNear]     = XformPoint(VECTOR3 { -1.f, 1.f, 0.f }, _invMtx);
-        ret[eCorner::LeftTopFar]      = XformPoint(VECTOR3 { -1.f, 1.f, 1.f }, _invMtx);
-        ret[eCorner::RightBottomNear] = XformPoint(VECTOR3 { 1.f, -1.f, 0.f }, _invMtx);
-        ret[eCorner::RightBottomFar]  = XformPoint(VECTOR3 { 1.f, -1.f, 1.f }, _invMtx);
-        ret[eCorner::RightTopNear]    = XformPoint(VECTOR3 { 1.f, 1.f, 0.f }, _invMtx);
-        ret[eCorner::RightTopFar]     = XformPoint(VECTOR3 { 1.f, 1.f, 1.f }, _invMtx);
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> ret = {};
+        ret[eCorner::LeftBottomNear]         = XformPoint(VEC3 { -1.f, -1.f, 0.f }, _invMtx);
+        ret[eCorner::LeftBottomFar]          = XformPoint(VEC3 { -1.f, -1.f, 1.f }, _invMtx);
+        ret[eCorner::LeftTopNear]            = XformPoint(VEC3 { -1.f, 1.f, 0.f }, _invMtx);
+        ret[eCorner::LeftTopFar]             = XformPoint(VEC3 { -1.f, 1.f, 1.f }, _invMtx);
+        ret[eCorner::RightBottomNear]        = XformPoint(VEC3 { 1.f, -1.f, 0.f }, _invMtx);
+        ret[eCorner::RightBottomFar]         = XformPoint(VEC3 { 1.f, -1.f, 1.f }, _invMtx);
+        ret[eCorner::RightTopNear]           = XformPoint(VEC3 { 1.f, 1.f, 0.f }, _invMtx);
+        ret[eCorner::RightTopFar]            = XformPoint(VEC3 { 1.f, 1.f, 1.f }, _invMtx);
         return ret;
     }
 
     // Perspective Frustum
-    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcViewSpaceCornersFromPersp(
+    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcViewSpaceCornersFromPersp(
         const float _fovRad,
         const float _aspectRatio,
         const float _nearZ,
@@ -108,20 +108,20 @@ struct FRUSTUM
         const float fw = w * _farZ;
         const float fh = h * _farZ;
 
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = VECTOR3 { -nw, -nh, _nearZ };
-        ret[eCorner::LeftBottomFar]   = VECTOR3 { -fw, -fh, _farZ };
-        ret[eCorner::LeftTopNear]     = VECTOR3 { -nw, nh, _nearZ };
-        ret[eCorner::LeftTopFar]      = VECTOR3 { -fw, fh, _farZ };
-        ret[eCorner::RightBottomNear] = VECTOR3 { nw, -nh, _nearZ };
-        ret[eCorner::RightBottomFar]  = VECTOR3 { fw, -fh, _farZ };
-        ret[eCorner::RightTopNear]    = VECTOR3 { nw, nh, _nearZ };
-        ret[eCorner::RightTopFar]     = VECTOR3 { fw, fh, _farZ };
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> ret = {};
+        ret[eCorner::LeftBottomNear]         = VEC3 { -nw, -nh, _nearZ };
+        ret[eCorner::LeftBottomFar]          = VEC3 { -fw, -fh, _farZ };
+        ret[eCorner::LeftTopNear]            = VEC3 { -nw, nh, _nearZ };
+        ret[eCorner::LeftTopFar]             = VEC3 { -fw, fh, _farZ };
+        ret[eCorner::RightBottomNear]        = VEC3 { nw, -nh, _nearZ };
+        ret[eCorner::RightBottomFar]         = VEC3 { fw, -fh, _farZ };
+        ret[eCorner::RightTopNear]           = VEC3 { nw, nh, _nearZ };
+        ret[eCorner::RightTopFar]            = VEC3 { fw, fh, _farZ };
         return ret;
     }
 
     // Orthographic Frustum
-    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VECTOR3> CalcViewSpaceCornersFromOrtho(
+    [[nodiscard]] JUG_MATH_API constexpr static DIRECT_ENUM_ARRAY<eCorner, VEC3> CalcViewSpaceCornersFromOrtho(
         const float _width,
         const float _height,
         const float _nearZ,
@@ -130,35 +130,26 @@ struct FRUSTUM
         const float hw = _width * 0.5f;
         const float hh = _height * 0.5f;
 
-        DIRECT_ENUM_ARRAY<eCorner, VECTOR3> ret;
-        ret[eCorner::LeftBottomNear]  = VECTOR3 { -hw, -hh, _nearZ };
-        ret[eCorner::LeftBottomFar]   = VECTOR3 { -hw, -hh, _farZ };
-        ret[eCorner::LeftTopNear]     = VECTOR3 { -hw, hh, _nearZ };
-        ret[eCorner::LeftTopFar]      = VECTOR3 { -hw, hh, _farZ };
-        ret[eCorner::RightBottomNear] = VECTOR3 { hw, -hh, _nearZ };
-        ret[eCorner::RightBottomFar]  = VECTOR3 { hw, -hh, _farZ };
-        ret[eCorner::RightTopNear]    = VECTOR3 { hw, hh, _nearZ };
-        ret[eCorner::RightTopFar]     = VECTOR3 { hw, hh, _farZ };
+        DIRECT_ENUM_ARRAY<eCorner, VEC3> ret = {};
+        ret[eCorner::LeftBottomNear]         = VEC3 { -hw, -hh, _nearZ };
+        ret[eCorner::LeftBottomFar]          = VEC3 { -hw, -hh, _farZ };
+        ret[eCorner::LeftTopNear]            = VEC3 { -hw, hh, _nearZ };
+        ret[eCorner::LeftTopFar]             = VEC3 { -hw, hh, _farZ };
+        ret[eCorner::RightBottomNear]        = VEC3 { hw, -hh, _nearZ };
+        ret[eCorner::RightBottomFar]         = VEC3 { hw, -hh, _farZ };
+        ret[eCorner::RightTopNear]           = VEC3 { hw, hh, _nearZ };
+        ret[eCorner::RightTopFar]            = VEC3 { hw, hh, _farZ };
         return ret;
     }
 
-    const static FRUSTUM kZero;
+    [[nodiscard]] JUG_MATH_API static constexpr FRUSTUM Zero()
+    {
+        return FRUSTUM {};
+    }
 
     DIRECT_ENUM_ARRAY<eFrustumPlane, PLANE> planes;
 };
 static_assert(PodT<FRUSTUM>, "FRUSTUM must be POD type.");
-
-// ===========================================
-//  Constants
-// ===========================================
-
-inline constexpr FRUSTUM FRUSTUM::kZero = FRUSTUM {};
-
-template<>
-struct MathConstants<FRUSTUM>
-{
-    static constexpr FRUSTUM kZero = FRUSTUM::kZero;
-};
 
 // ===========================================
 //  Method
@@ -192,7 +183,7 @@ struct MathConstants<FRUSTUM>
 
 [[nodiscard]] JUG_MATH_API constexpr FRUSTUM Xform(
     const FRUSTUM& _frustum,
-    const MATRIX&  _invTransMtx)   // 평면 변환 * 6임. 역-전치 행렬을 사용해야함.
+    const MAT4&    _invTransMtx)   // 평면 변환 * 6임. 역-전치 행렬을 사용해야함.
 {
     return FRUSTUM {
         Xform(_frustum.planes[eFrustumPlane::Right], _invTransMtx),

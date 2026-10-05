@@ -113,28 +113,13 @@
       <Filter>String</Filter>
     </ClInclude>
     <ClInclude Include="JugX\MemoryView.h">
-      <Filter>Memroy\Memory</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\ConsoleLogger.h">
-      <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\Logger.h">
-      <Filter>Log</Filter>
+      <Filter>Memroy\MemoryView</Filter>
     </ClInclude>
     <ClInclude Include="JugX\Timer.h">
       <Filter>Timer</Filter>
     </ClInclude>
     <ClInclude Include="JugX\TimeStamp.h">
       <Filter>Timer</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\FileLogger.h">
-      <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\MemoryLogger.h">
-      <Filter>Log</Filter>
-    </ClInclude>
-    <ClInclude Include="JugX\GroupLogger.h">
-      <Filter>Log</Filter>
     </ClInclude>
     <ClInclude Include="JugX\StringFormat.h">
       <Filter>String</Filter>
@@ -229,10 +214,10 @@
     <ClInclude Include="JugX\Event.h">
       <Filter>Event</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\Application.h">
+    <ClInclude Include="JugX\App.h">
       <Filter>Application</Filter>
     </ClInclude>
-    <ClInclude Include="JugX\ApplicationEvent.h">
+    <ClInclude Include="JugX\AppEvent.h">
       <Filter>Application</Filter>
     </ClInclude>
     <ClInclude Include="JugX\KeyCode.h">
@@ -253,31 +238,28 @@
     <ClInclude Include="JugX\Math.h">
       <Filter>Math\Base</Filter>
     </ClInclude>
+    <ClInclude Include="JugX\File.h">
+      <Filter>File\FileReaderWriter</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Transform.h">
+      <Filter>Math\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\Optional.h">
+      <Filter>Optional</Filter>
+    </ClInclude>
+    <ClInclude Include="JugX\InvalidIndex.h">
+      <Filter>Type</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="JugX\StringEncoder.cpp">
       <Filter>String</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\ConsoleLogger.cpp">
-      <Filter>Log</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\Logger.cpp">
-      <Filter>Log</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Timer.cpp">
       <Filter>Timer</Filter>
     </ClCompile>
     <ClCompile Include="JugX\TimeStamp.cpp">
       <Filter>Timer</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\FileLogger.cpp">
-      <Filter>Log</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\MemoryLogger.cpp">
-      <Filter>Log</Filter>
-    </ClCompile>
-    <ClCompile Include="JugX\GroupLogger.cpp">
-      <Filter>Log</Filter>
     </ClCompile>
     <ClCompile Include="JugX\Alloc.cpp">
       <Filter>Memroy\Alloc</Filter>
@@ -397,7 +379,7 @@
       <Filter>Math\LinearAlgebra\Matrix</Filter>
     </ClCompile>
     <ClCompile Include="JugX\MemoryView.cpp">
-      <Filter>Memroy\Memory</Filter>
+      <Filter>Memroy\MemoryView</Filter>
     </ClCompile>
     <ClCompile Include="JugX\OBB.cpp">
       <Filter>Math\Geomtry</Filter>
@@ -486,10 +468,10 @@
     <ClCompile Include="JugX\EventDispatcher.cpp">
       <Filter>Event</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\Application.cpp">
+    <ClCompile Include="JugX\App.cpp">
       <Filter>Application</Filter>
     </ClCompile>
-    <ClCompile Include="JugX\ApplicationEvent.cpp">
+    <ClCompile Include="JugX\AppEvent.cpp">
       <Filter>Application</Filter>
     </ClCompile>
     <ClCompile Include="JugX\KeyCode.cpp">
@@ -506,6 +488,18 @@
     </ClCompile>
     <ClCompile Include="JugX\JsonString.cpp">
       <Filter>Serializer\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\File.cpp">
+      <Filter>File\FileReaderWriter</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Transform.cpp">
+      <Filter>Math\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\Optional.cpp">
+      <Filter>Optional</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\InvalidIndex.cpp">
+      <Filter>Type</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -577,9 +571,6 @@
     <Filter Include="Serializer\Json">
       <UniqueIdentifier>{123e75fc-a018-44f5-976b-f84c64259643}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Memroy\Memory">
-      <UniqueIdentifier>{bb87f8af-d865-49dc-92d5-41b465e97e52}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Log">
       <UniqueIdentifier>{046371e7-dfc7-4b21-b7b6-d545cbfd4b2a}</UniqueIdentifier>
     </Filter>
@@ -636,6 +627,12 @@
     </Filter>
     <Filter Include="Application">
       <UniqueIdentifier>{fa0cfe9d-ee2f-40eb-b5d1-ad177e05b693}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Optional">
+      <UniqueIdentifier>{a1f3c31a-4b58-4bbe-905f-1e8025d29a60}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memroy\MemoryView">
+      <UniqueIdentifier>{bb87f8af-d865-49dc-92d5-41b465e97e52}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

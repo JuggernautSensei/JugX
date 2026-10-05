@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Optional.h"
 #include "Vector.h"
 
 namespace jug
@@ -128,47 +129,47 @@ namespace matrix_detail
 // 3. 행 벡터
 // 4. 왼손 좌표계
 
-struct alignas(16) MATRIX
+struct alignas(16) MAT4
 {
     using ValueT = float;
 
-    JUG_MATH_API MATRIX() = default;
+    JUG_MATH_API MAT4() = default;
 
-    JUG_MATH_API constexpr MATRIX(
-        const VECTOR4 _row0,
-        const VECTOR4 _row1,
-        const VECTOR4 _row2,
-        const VECTOR4 _row3)
+    JUG_MATH_API constexpr MAT4(
+        const VEC4 _row0,
+        const VEC4 _row1,
+        const VEC4 _row2,
+        const VEC4 _row3)
         : r { _row0, _row1, _row2, _row3 }
     {
     }
 
     // clang-format off
-    JUG_MATH_API constexpr MATRIX(
+    JUG_MATH_API constexpr MAT4(
         const float _m00, const float _m01, const float _m02, const float _m03,
         const float _m10, const float _m11, const float _m12, const float _m13,
         const float _m20, const float _m21, const float _m22, const float _m23,
         const float _m30, const float _m31, const float _m32, const float _m33)
         : r {
-           VECTOR4 { _m00, _m01, _m02, _m03 },
-           VECTOR4 { _m10, _m11, _m12, _m13 },
-           VECTOR4 { _m20, _m21, _m22, _m23 },
-           VECTOR4 { _m30, _m31, _m32, _m33 }
+           VEC4 { _m00, _m01, _m02, _m03 },
+           VEC4 { _m10, _m11, _m12, _m13 },
+           VEC4 { _m20, _m21, _m22, _m23 },
+           VEC4 { _m30, _m31, _m32, _m33 }
         }
     {
     }
     // clang-format on
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX JUG_VECTORCALL FromM128X4(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 JUG_VECTORCALL FromM128X4(
         const simd::M128X4 _m)
     {
         if (std::is_constant_evaluated())
         {
-            return simd::NoInlineConstruct<MATRIX>(VECTOR4::FromM128(_m.r[0]), VECTOR4::FromM128(_m.r[1]), VECTOR4::FromM128(_m.r[2]), VECTOR4::FromM128(_m.r[3]));
+            return simd::NoInlineConstruct<MAT4>(VEC4::FromM128(_m.r[0]), VEC4::FromM128(_m.r[1]), VEC4::FromM128(_m.r[2]), VEC4::FromM128(_m.r[3]));
         }
         else
         {
-            return std::bit_cast<MATRIX>(_m);
+            return std::bit_cast<MAT4>(_m);
         }
     }
 
@@ -183,8 +184,8 @@ struct alignas(16) MATRIX
     //  Factory
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeTranslation(
-        const VECTOR3 _translation)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeTranslation(
+        const VEC3 _translation)
     {
         return FromM128X4(simd::M128X4 {
             {
@@ -196,8 +197,8 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeScale(
-        const VECTOR3 _scale)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeScale(
+        const VEC3 _scale)
     {
         const simd::M128 zero = simd::Zero();
         const simd::M128 s    = _scale.ToM128();
@@ -206,7 +207,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotationX(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotationX(
         const float _rad)
     {
         const simd::M128 sc = simd::SinCos1(_rad);
@@ -217,7 +218,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotationY(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotationY(
         const float _rad)
     {
         const simd::M128 sc = simd::SinCos1(_rad);
@@ -228,7 +229,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotationZ(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotationZ(
         const float _rad)
     {
         const simd::M128 sc = simd::SinCos1(_rad);
@@ -240,15 +241,15 @@ struct alignas(16) MATRIX
     }
 
     // pitch(x) -> yaw(y) -> roll(z)
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotation(
-        const VECTOR3 _pyrRad)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotation(
+        const VEC3 _pyrRad)
     {
         return FromM128X4(matrix_detail::RotationPYR(_pyrRad.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotation(
-        const VECTOR3 _axis,
-        const float   _rad)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotation(
+        const VEC3  _axis,
+        const float _rad)
     {
         JUG_ASSERT(IsNormalized(_axis), "Rotation axis must be normalized");
 
@@ -270,12 +271,12 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotation(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotation(
         const QUAT& _q);
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeRotationLookTo(
-        const VECTOR3 _dir,
-        const VECTOR3 _up)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeRotationLookTo(
+        const VEC3 _dir,
+        const VEC3 _up)
     {
         JUG_ASSERT(IsNormalized(_dir), "Forward dir must be normalized");
         JUG_ASSERT(IsNormalized(_up), "Up dir must be normalized");
@@ -284,11 +285,11 @@ struct alignas(16) MATRIX
         return FromM128X4(matrix_detail::RotationLookTo(_dir.ToM128(), _up.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeSRT(
-        const VECTOR3 _scale,
-        const VECTOR3 _forward,
-        const VECTOR3 _up,
-        const VECTOR3 _translation)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeSRT(
+        const VEC3 _scale,
+        const VEC3 _forward,
+        const VEC3 _up,
+        const VEC3 _translation)
     {
         JUG_ASSERT(IsNormalized(_forward), "Forward dir must be normalized");
         JUG_ASSERT(IsNormalized(_up), "Up dir must be normalized");
@@ -297,24 +298,24 @@ struct alignas(16) MATRIX
         return FromM128X4(matrix_detail::ScaleTranslate(matrix_detail::RotationLookTo(_forward.ToM128(), _up.ToM128()), _scale.ToM128(), _translation.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeSRT(
-        const VECTOR3 _scale,
-        const VECTOR3 _pyrRad,
-        const VECTOR3 _translation)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeSRT(
+        const VEC3 _scale,
+        const VEC3 _pyrRad,
+        const VEC3 _translation)
     {
         return FromM128X4(matrix_detail::ScaleTranslate(matrix_detail::RotationPYR(_pyrRad.ToM128()), _scale.ToM128(), _translation.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeSRT(
-        VECTOR3     _scale,
-        const QUAT& _rotation,
-        VECTOR3     _translation);
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeSRT(
+        const VEC3 _scale,
+        const QUAT _rotation,
+        const VEC3 _translation);
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvSRT(
-        const VECTOR3 _scale,
-        const VECTOR3 _forward,
-        const VECTOR3 _up,
-        const VECTOR3 _translation)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvSRT(
+        const VEC3 _scale,
+        const VEC3 _forward,
+        const VEC3 _up,
+        const VEC3 _translation)
     {
         JUG_ASSERT(IsNormalized(_forward), "Forward dir must be normalized");
         JUG_ASSERT(IsNormalized(_up), "Up dir must be normalized");
@@ -323,43 +324,43 @@ struct alignas(16) MATRIX
         return FromM128X4(matrix_detail::InvSRT(matrix_detail::RotationLookTo(_forward.ToM128(), _up.ToM128()), _scale.ToM128(), _translation.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvSRT(
-        const VECTOR3 _scale,
-        const VECTOR3 _pyrRad,
-        const VECTOR3 _translation)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvSRT(
+        const VEC3 _scale,
+        const VEC3 _pyrRad,
+        const VEC3 _translation)
     {
         JUG_ASSERT(!IsZeroApprox(_scale[0]) && !IsZeroApprox(_scale[1]) && !IsZeroApprox(_scale[2]), "Scale cannot have a zero component.");
 
         return FromM128X4(matrix_detail::InvSRT(matrix_detail::RotationPYR(_pyrRad.ToM128()), _scale.ToM128(), _translation.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvSRT(
-        VECTOR3 _scale,
-        QUAT    _rotation,
-        VECTOR3 _translation);
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvSRT(
+        VEC3 _scale,
+        QUAT _rotation,
+        VEC3 _translation);
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeViewLookTo(
-        const VECTOR3 _eye,
-        const VECTOR3 _dir,
-        const VECTOR3 _up)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeViewLookTo(
+        const VEC3 _eye,
+        const VEC3 _dir,
+        const VEC3 _up)
     {
         JUG_ASSERT(IsNormalized(_dir), "Forward dir must be normalized");
 
         return FromM128X4(matrix_detail::InvRT(matrix_detail::RotationLookTo(_dir.ToM128(), _up.ToM128()), _eye.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeViewLookTo(
-        const VECTOR3 _eye,
-        const VECTOR3 _pyrRad)
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeViewLookTo(
+        const VEC3 _eye,
+        const VEC3 _pyrRad)
     {
         return FromM128X4(matrix_detail::InvRT(matrix_detail::RotationPYR(_pyrRad.ToM128()), _eye.ToM128()));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeViewLookTo(
-        VECTOR3 _eye,
-        QUAT    _rotation);
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeViewLookTo(
+        VEC3 _eye,
+        QUAT _rotation);
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakePersp(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakePersp(
         const float _fovYRad,
         const float _aspectRatio,
         const float _nearZ,
@@ -383,7 +384,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvPersp(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvPersp(
         const float _fovYRad,
         const float _aspectRatio,
         const float _nearZ,
@@ -406,7 +407,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeOrtho(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeOrtho(
         const float _left,
         const float _right,
         const float _bottom,
@@ -427,7 +428,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeOrtho(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeOrtho(
         const float _width,
         const float _height,
         const float _nearZ,
@@ -437,7 +438,7 @@ struct alignas(16) MATRIX
         return MakeOrtho(-_width * 0.5f, _width * 0.5f, -_height * 0.5f, _height * 0.5f, _nearZ, _farZ);
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvOrtho(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvOrtho(
         const float _left,
         const float _right,
         const float _bottom,
@@ -461,7 +462,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr static MATRIX MakeInvOrtho(
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 MakeInvOrtho(
         const float _width,
         const float _height,
         const float _nearZ,
@@ -475,13 +476,13 @@ struct alignas(16) MATRIX
     //  Access
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR4& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr VEC4& operator[](
         const size_t _row)
     {
         return r[_row];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr const VECTOR4& operator[](
+    [[nodiscard]] JUG_MATH_API constexpr const VEC4& operator[](
         const size_t _row) const
     {
         return r[_row];
@@ -515,8 +516,8 @@ struct alignas(16) MATRIX
     //  Operators
     // =======================================================
 
-    [[nodiscard]] JUG_MATH_API constexpr MATRIX operator+(
-        const MATRIX& _other) const
+    [[nodiscard]] JUG_MATH_API constexpr MAT4 operator+(
+        const MAT4& _other) const
     {
         const simd::M128X4 x = ToM128X4();
         const simd::M128X4 y = _other.ToM128X4();
@@ -525,8 +526,8 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr MATRIX operator-(
-        const MATRIX& _other) const
+    [[nodiscard]] JUG_MATH_API constexpr MAT4 operator-(
+        const MAT4& _other) const
     {
         const simd::M128X4 x = ToM128X4();
         const simd::M128X4 y = _other.ToM128X4();
@@ -535,7 +536,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr MATRIX operator*(
+    [[nodiscard]] JUG_MATH_API constexpr MAT4 operator*(
         const float _scalar) const
     {
         const simd::M128X4 x = ToM128X4();
@@ -545,7 +546,7 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr MATRIX operator/(
+    [[nodiscard]] JUG_MATH_API constexpr MAT4 operator/(
         const float _scalar) const
     {
         const simd::M128X4 x = ToM128X4();
@@ -555,8 +556,8 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr MATRIX operator*(
-        const MATRIX& _other) const
+    [[nodiscard]] JUG_MATH_API constexpr MAT4 operator*(
+        const MAT4& _other) const
     {
         const simd::M128X4 x = ToM128X4();
         const simd::M128X4 y = _other.ToM128X4();
@@ -588,16 +589,16 @@ struct alignas(16) MATRIX
         });
     }
 
-    [[nodiscard]] JUG_MATH_API friend constexpr MATRIX operator*(
-        const float   _scalar,
-        const MATRIX& _mtx)
+    [[nodiscard]] JUG_MATH_API friend constexpr MAT4 operator*(
+        const float _scalar,
+        const MAT4& _mtx)
     {
         return _mtx * _scalar;
     }
 
-    [[nodiscard]] JUG_MATH_API friend constexpr MATRIX operator/(
-        const float   _scalar,
-        const MATRIX& _mtx)
+    [[nodiscard]] JUG_MATH_API friend constexpr MAT4 operator/(
+        const float _scalar,
+        const MAT4& _mtx)
     {
         const simd::M128X4 x = _mtx.ToM128X4();
         const simd::M128   s = simd::SetAll(_scalar);
@@ -606,35 +607,35 @@ struct alignas(16) MATRIX
         });
     }
 
-    JUG_MATH_API constexpr MATRIX& operator+=(
-        const MATRIX& _other)
+    JUG_MATH_API constexpr MAT4& operator+=(
+        const MAT4& _other)
     {
         *this = *this + _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr MATRIX& operator-=(
-        const MATRIX& _other)
+    JUG_MATH_API constexpr MAT4& operator-=(
+        const MAT4& _other)
     {
         *this = *this - _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr MATRIX& operator*=(
-        const MATRIX& _other)
+    JUG_MATH_API constexpr MAT4& operator*=(
+        const MAT4& _other)
     {
         *this = *this * _other;
         return *this;
     }
 
-    JUG_MATH_API constexpr MATRIX& operator*=(
+    JUG_MATH_API constexpr MAT4& operator*=(
         const float _scalar)
     {
         *this = *this * _scalar;
         return *this;
     }
 
-    JUG_MATH_API constexpr MATRIX& operator/=(
+    JUG_MATH_API constexpr MAT4& operator/=(
         const float _scalar)
     {
         *this = *this / _scalar;
@@ -642,7 +643,7 @@ struct alignas(16) MATRIX
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool operator==(
-        const MATRIX& _other) const
+        const MAT4& _other) const
     {
         const simd::M128X4 x = ToM128X4();
         const simd::M128X4 y = _other.ToM128X4();
@@ -650,8 +651,25 @@ struct alignas(16) MATRIX
         return simd::MoveMask(e) == 0xf;
     }
 
-    const static MATRIX kIdentity;
-    const static MATRIX kZero;
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 Identity()
+    {
+        return MAT4 {
+            VEC4 { 1.f, 0.f, 0.f, 0.f },
+            VEC4 { 0.f, 1.f, 0.f, 0.f },
+            VEC4 { 0.f, 0.f, 1.f, 0.f },
+            VEC4 { 0.f, 0.f, 0.f, 1.f }
+        };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static MAT4 Zero()
+    {
+        return MAT4 {
+            VEC4 { 0.f },
+            VEC4 { 0.f },
+            VEC4 { 0.f },
+            VEC4 { 0.f }
+        };
+    }
 
     constexpr static size_t kRow = 4;
     constexpr static size_t kCol = 4;
@@ -667,59 +685,34 @@ struct alignas(16) MATRIX
             float m30, m31, m32, m33;
         };
 
-        ARRAY<VECTOR4, 4>         r;
+        ARRAY<VEC4, 4>            r;
         ARRAY<float, 16>          e;
         ARRAY<ARRAY<float, 4>, 4> m;
     };
     JUG_DISABLE_ANON_WARNING_END
 };
 
-static_assert(sizeof(MATRIX) == 64, "MATRIX must be tightly packed");
-static_assert(alignof(MATRIX) == 16, "MATRIX must be 16-byte aligned");
-static_assert(PodT<MATRIX>, "MATRIX must be POD type.");
-
-// =======================================================
-//  Constants
-// =======================================================
-
-inline constexpr MATRIX MATRIX::kIdentity = {
-    VECTOR4 { 1.f, 0.f, 0.f, 0.f },
-    VECTOR4 { 0.f, 1.f, 0.f, 0.f },
-    VECTOR4 { 0.f, 0.f, 1.f, 0.f },
-    VECTOR4 { 0.f, 0.f, 0.f, 1.f }
-};
-
-inline constexpr MATRIX MATRIX::kZero = {
-    VECTOR4 { 0.f },
-    VECTOR4 { 0.f },
-    VECTOR4 { 0.f },
-    VECTOR4 { 0.f }
-};
-
-template<>
-struct MathConstants<MATRIX>
-{
-    constexpr static MATRIX kIdentity = MATRIX::kIdentity;
-    constexpr static MATRIX kZero     = MATRIX::kZero;
-};
+static_assert(sizeof(MAT4) == 64, "MAT4 must be tightly packed");
+static_assert(alignof(MAT4) == 16, "MAT4 must be 16-byte aligned");
+static_assert(PodT<MAT4>, "MAT4 must be POD type.");
 
 // =======================================================
 //  Method
 // =======================================================
 
-[[nodiscard]] JUG_MATH_API constexpr MATRIX Abs(
-    const MATRIX& _mtx)
+[[nodiscard]] JUG_MATH_API constexpr MAT4 Abs(
+    const MAT4& _mtx)
 {
     const simd::M128X4 x = _mtx.ToM128X4();
-    return MATRIX::FromM128X4(simd::M128X4 {
+    return MAT4::FromM128X4(simd::M128X4 {
         { simd::Abs(x.r[0]), simd::Abs(x.r[1]), simd::Abs(x.r[2]), simd::Abs(x.r[3]) }
     });
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsEqualApprox(
-    const MATRIX& _x,
-    const MATRIX& _y,
-    const float   _epsilon = kEpsilon)
+    const MAT4& _x,
+    const MAT4& _y,
+    const float _epsilon = kEpsilon)
 {
     const simd::M128X4 x   = _x.ToM128X4();
     const simd::M128X4 y   = _y.ToM128X4();
@@ -729,16 +722,16 @@ struct MathConstants<MATRIX>
     return simd::MoveMask(simd::And(d01, d23)) == 0xf;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr MATRIX Transpose(
-    const MATRIX& _mtx)
+[[nodiscard]] JUG_MATH_API constexpr MAT4 Transpose(
+    const MAT4& _mtx)
 {
     simd::M128X4 x = _mtx.ToM128X4();
     simd::Transpose4(x.r[0], x.r[1], x.r[2], x.r[3]);
-    return MATRIX::FromM128X4(x);
+    return MAT4::FromM128X4(x);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Determinant(
-    const MATRIX& _mtx)
+    const MAT4& _mtx)
 {
     const simd::M128X4 x  = _mtx.ToM128X4();
     const simd::M128   r0 = x.r[0];
@@ -762,9 +755,9 @@ struct MathConstants<MATRIX>
 }
 
 // 역행렬이 없으면 (행렬식이 정확히 0) 영행렬
-[[nodiscard]] JUG_MATH_API constexpr MATRIX Inverse(
-    const MATRIX& _mtx,
-    float*        _outDetOrNull = nullptr)
+[[nodiscard]] JUG_MATH_API constexpr MAT4 Inverse(
+    const MAT4& _mtx,
+    float*      _pOutDetOrNull = nullptr)
 {
     const simd::M128X4 m  = _mtx.ToM128X4();
     const simd::M128   r0 = m.r[0];
@@ -794,13 +787,13 @@ struct MathConstants<MATRIX>
     const simd::M128 tr   = simd::SumAll(simd::Mult(ab, simd::Shuffle<0, 2, 1, 3>(dc)));
     const simd::M128 detM = simd::Sub(simd::MultAdd(detB, detC, simd::Mult(detA, detD)), tr);
     const float      det  = simd::Get<0>(detM);
-    if (_outDetOrNull)
+    if (_pOutDetOrNull)
     {
-        *_outDetOrNull = det;
+        *_pOutDetOrNull = det;
     }
     if (det == 0.f)
     {
-        return MATRIX::kZero;
+        return MAT4::Zero();
     }
 
     const simd::M128 rDetM = simd::Div(simd::Set(1.f, -1.f, -1.f, 1.f), detM);
@@ -808,28 +801,28 @@ struct MathConstants<MATRIX>
     y                      = simd::Mult(y, rDetM);
     z                      = simd::Mult(z, rDetM);
     w                      = simd::Mult(w, rDetM);
-    return MATRIX::FromM128X4(simd::M128X4 {
+    return MAT4::FromM128X4(simd::M128X4 {
         { simd::Shuffle2<3, 1, 3, 1>(x, y), simd::Shuffle2<2, 0, 2, 0>(x, y), simd::Shuffle2<3, 1, 3, 1>(z, w), simd::Shuffle2<2, 0, 2, 0>(z, w) }
     });
 }
 
 JUG_MATH_API constexpr void Decompose(
-    const MATRIX& _mtx,
-    VECTOR3*      _pOutScaleOrNull,
-    QUAT*         _pOutRotationOrNull,
-    VECTOR3*      _pOutTranslationOrNull);
+    const MAT4& _mtx,
+    VEC3*       _pOutScaleOrNull,
+    QUAT*       _pOutRotationOrNull,
+    VEC3*       _pOutTranslationOrNull);
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR4 Xform(
-    const VECTOR4 _v,
-    const MATRIX& _mtx)
+[[nodiscard]] JUG_MATH_API constexpr VEC4 Xform(
+    const VEC4  _v,
+    const MAT4& _mtx)
 {
-    return VECTOR4::FromM128(matrix_detail::MultRow(_v.ToM128(), _mtx.ToM128X4()));
+    return VEC4::FromM128(matrix_detail::MultRow(_v.ToM128(), _mtx.ToM128X4()));
 }
 
 // (x, y, z, 1) 을 변환하고 w 로 나눈다
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 XformPoint(
-    const VECTOR3 _point,
-    const MATRIX& _mtx)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 XformPoint(
+    const VEC3  _point,
+    const MAT4& _mtx)
 {
     const simd::M128X4 m = _mtx.ToM128X4();
     const simd::M128   p = _point.ToM128();
@@ -842,18 +835,18 @@ JUG_MATH_API constexpr void Decompose(
     const simd::M128 yz  = simd::MultAdd(simd::Splat<2>(p), m.r[2], simd::Mult(simd::Splat<1>(p), m.r[1]));
     const simd::M128 ret = simd::Add(xw, yz);
 #endif
-    return VECTOR3::FromM128(simd::Div(ret, simd::Splat<3>(ret)));
+    return VEC3::FromM128(simd::Div(ret, simd::Splat<3>(ret)));
 }
 
 // (x, y, z, 0) 을 변환한다 (이동 무시)
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 XformVector(
-    const VECTOR3 _v,
-    const MATRIX& _mtx)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 XformVector(
+    const VEC3  _v,
+    const MAT4& _mtx)
 {
     const simd::M128X4 m  = _mtx.ToM128X4();
     const simd::M128   v  = _v.ToM128();
     const simd::M128   xz = simd::MultAdd(simd::Splat<2>(v), m.r[2], simd::Mult(simd::Splat<0>(v), m.r[0]));
-    return VECTOR3::FromM128(simd::MultAdd(simd::Splat<1>(v), m.r[1], xz));
+    return VEC3::FromM128(simd::MultAdd(simd::Splat<1>(v), m.r[1], xz));
 }
 
 }   // namespace jug

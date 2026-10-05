@@ -26,7 +26,7 @@ struct RGBA
     // ======================================================
 
     [[nodiscard]] JUG_MATH_API static constexpr RGBA MakeFromLinear(
-        const VECTOR4 _rgba)
+        const VEC4 _rgba)
     {
         RGBA rgba;
         rgba.r = static_cast<uint8_t>(Clamp(_rgba[0] * 255.f, 0.f, 255.f));
@@ -40,7 +40,7 @@ struct RGBA
     //  Utils
     // ======================================================
 
-    [[nodiscard]] JUG_MATH_API VECTOR4 ToLinear() const
+    [[nodiscard]] JUG_MATH_API VEC4 ToLinear() const
     {
         return {
             static_cast<float>(r) / 255.f,
@@ -56,19 +56,54 @@ struct RGBA
         return rgba == _rgba.rgba;
     }
 
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Zero()
+    {
+        return RGBA { 0, 0, 0, 0 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Black()
+    {
+        return RGBA { 0, 0, 0, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA White()
+    {
+        return RGBA { 255, 255, 255, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Red()
+    {
+        return RGBA { 255, 0, 0, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Green()
+    {
+        return RGBA { 0, 255, 0, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Blue()
+    {
+        return RGBA { 0, 0, 255, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Yellow()
+    {
+        return RGBA { 255, 255, 0, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Cyan()
+    {
+        return RGBA { 0, 255, 255, 255 };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr RGBA Magenta()
+    {
+        return RGBA { 255, 0, 255, 255 };
+    }
+
     // ======================================================
     //  Fields
     // ======================================================
-
-    const static RGBA kZero;
-    const static RGBA kBlack;
-    const static RGBA kWhite;
-    const static RGBA kRed;
-    const static RGBA kGreen;
-    const static RGBA kBlue;
-    const static RGBA kYellow;
-    const static RGBA kCyan;
-    const static RGBA kMagenta;
 
     JUG_DISABLE_ANON_WARNING_BEGIN
     union
@@ -94,26 +129,4 @@ struct RGBA
 
 static_assert(PodT<RGBA>, "RGBA must be POD type.");
 
-// ======================================================
-//  Constants
-// =====================================================
-
-inline constexpr RGBA RGBA::kZero    = RGBA { 0, 0, 0, 0 };
-inline constexpr RGBA RGBA::kBlack   = RGBA { 0, 0, 0, 255 };
-inline constexpr RGBA RGBA::kWhite   = RGBA { 255, 255, 255, 255 };
-inline constexpr RGBA RGBA::kRed     = RGBA { 255, 0, 0, 255 };
-inline constexpr RGBA RGBA::kGreen   = RGBA { 0, 255, 0, 255 };
-inline constexpr RGBA RGBA::kBlue    = RGBA { 0, 0, 255, 255 };
-inline constexpr RGBA RGBA::kYellow  = RGBA { 255, 255, 0, 255 };
-inline constexpr RGBA RGBA::kCyan    = RGBA { 0, 255, 255, 255 };
-inline constexpr RGBA RGBA::kMagenta = RGBA { 255, 0, 255, 255 };
-
-template<>
-struct MathConstants<RGBA>
-{
-    static constexpr RGBA Zero = RGBA::kZero;
-};
-
 }   // namespace jug
-
-

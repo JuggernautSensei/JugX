@@ -9,8 +9,8 @@ struct PLANE
     JUG_MATH_API PLANE() = default;
 
     JUG_MATH_API constexpr PLANE(
-        const VECTOR3 _normal,
-        const float   _d)
+        const VEC3  _normal,
+        const float _d)
         : normal(_normal)
         , d(_d)
     {
@@ -27,48 +27,39 @@ struct PLANE
     }
 
     explicit JUG_MATH_API constexpr PLANE(
-        const VECTOR4 _v)
+        const VEC4 _v)
         : normal(_v[0], _v[1], _v[2])
         , d(_v[3])
     {
     }
 
     JUG_MATH_API constexpr PLANE(
-        const VECTOR3 _point,
-        const VECTOR3 _normal)
+        const VEC3 _point,
+        const VEC3 _normal)
         : normal(_normal)
         , d(-Dot(_normal, _point))
     {
     }
 
     JUG_MATH_API constexpr PLANE(
-        const VECTOR3 _p0,
-        const VECTOR3 _p1,
-        const VECTOR3 _p2)
+        const VEC3 _p0,
+        const VEC3 _p1,
+        const VEC3 _p2)
         : normal(Cross(_p1 - _p0, _p2 - _p0))
         , d(-Dot(normal, _p0))
     {
     }
 
-    const static PLANE kZero;
+    [[nodiscard]] JUG_MATH_API static constexpr PLANE Zero()
+    {
+        return PLANE { VEC3::Zero(), 0.f };
+    }
 
-    VECTOR3 normal;
-    float   d;
+    VEC3  normal;
+    float d;
 };
 
 static_assert(PodT<PLANE>, "PLANE must be POD type.");
-
-// =======================================================
-//  Constants
-// =======================================================
-
-inline constexpr PLANE PLANE::kZero { Zero<VECTOR3>(), 0.f };
-
-template<>
-struct MathConstants<PLANE>
-{
-    constexpr static PLANE kZero = PLANE::kZero;
-};
 
 // =======================================================
 //  Method
@@ -94,35 +85,35 @@ struct MathConstants<PLANE>
 }
 
 // 세 평면이 만나는 한 점. 교점이 정의되지 않으면 영벡터를 리턴.
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 IntersectOf3Planes(
+[[nodiscard]] JUG_MATH_API constexpr VEC3 IntersectOf3Planes(
     const PLANE _x,
     const PLANE _y,
     const PLANE _z)
 {
-    const VECTOR3 cross23 = Cross(_y.normal, _z.normal);
-    const float   denom   = Dot(_x.normal, cross23);
+    const VEC3  cross23 = Cross(_y.normal, _z.normal);
+    const float denom   = Dot(_x.normal, cross23);
     if (IsZeroApprox(denom))   // 세 평면중 한 쌍이 거의 평행함 -> 교점이 정의되지 않음
     {
-        return MathConstants<VECTOR3>::kZero;
+        return VEC3::Zero();
     }
-        
-    const VECTOR3 cross31 = Cross(_z.normal, _x.normal);
-    const VECTOR3 cross12 = Cross(_x.normal, _y.normal);
+
+    const VEC3 cross31 = Cross(_z.normal, _x.normal);
+    const VEC3 cross12 = Cross(_x.normal, _y.normal);
     return (cross23 * -_x.d + cross31 * -_y.d + cross12 * -_z.d) / denom;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr PLANE Xform(
-    const PLANE   _plane,
-    const MATRIX& _invTransMtx)   // Plane은 벡터이기 때문에 변환시 역-전치 행렬을 사용해야함.
+    const PLANE _plane,
+    const MAT4& _invTransMtx)   // Plane은 벡터이기 때문에 변환시 역-전치 행렬을 사용해야함.
 {
-    return PLANE { Xform(VECTOR4 { _plane.normal[0], _plane.normal[1], _plane.normal[2], _plane.d }, _invTransMtx) };
+    return PLANE { Xform(VEC4 { _plane.normal[0], _plane.normal[1], _plane.normal[2], _plane.d }, _invTransMtx) };
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Distance(
-    const PLANE   _plane,
-    const VECTOR3 _point)
+    const PLANE _plane,
+    const VEC3  _point)
 {
-    JUG_ASSERT(IsNormalized(_plane), "Plane must be normalized to calculate distance");
+    JUG_ASSERT(IsNormalized(_plane), "PLANE must be normalized to calculate distance");
     return Dot(_plane.normal, _point) + _plane.d;
 }
 

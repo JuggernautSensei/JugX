@@ -4,6 +4,7 @@ include(CMakeFindDependencyMacro)
 
 # Public link dependencies: these appear in JugX's public headers.
 find_dependency(SDL3 CONFIG)
+find_dependency(spdlog CONFIG)
 
 # parallel-hashmap has no CMake package; its headers are exposed through the
 # consumer's own include path (vcpkg places them in <prefix>/include).

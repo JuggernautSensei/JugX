@@ -1,18 +1,10 @@
 ﻿#pragma once
+#include "Result.h"
 
 namespace jug
 {
 
-enum class eSeekOrigin
-{
-    Set,
-    Cur,
-    End
-};
-
-// ==========================================================
-//  FileReaderWriter
-// ==========================================================
+enum class eSeekOrigin;
 
 class FileReaderWriter
 {
@@ -24,15 +16,15 @@ public:
     FileReaderWriter& operator=(FileReaderWriter&& _other) noexcept;
     ~FileReaderWriter();
 
-    void                  Seek(int64_t _offset, eSeekOrigin _origin) const;
-    int64_t               Tell() const;
-    [[nodiscard]] int64_t GetSize() const;
-    [[nodiscard]] int64_t GetRemain() const;
-    void                  Rewind() const;
+    Error                        Seek(int64_t _offset, eSeekOrigin _origin) const;
+    [[nodiscard]] Result<size_t> Tell() const;
+    [[nodiscard]] Result<size_t> GetSize() const;
+    [[nodiscard]] Result<size_t> GetRemain() const;
+    Error                        Rewind() const;
 
     [[nodiscard]] FILE* GetFile() const;
     [[nodiscard]] bool  IsOpened() const;
-    void                Close();
+    Error               Close();
 
     explicit operator bool() const;
 

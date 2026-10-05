@@ -14,7 +14,7 @@ namespace jug
 
 namespace handle_allocator_detail
 {
-    constexpr size_t kNullIndex  = Max<size_t>();
+    constexpr size_t kEndOfList  = Max<size_t>();   // free list의 끝을 나타내는 값
     constexpr size_t kGrowFactor = 2;
     constexpr size_t kMinSize    = 4;
 }   // namespace handle_allocator_detail
@@ -24,7 +24,7 @@ class HandleAllocator
 {
     struct Item
     {
-        size_t  nextFree = handle_allocator_detail::kNullIndex;   // free list의 다음 인덱스. intrusive linked list로 구현. handle_allocator_detail::kNullIndex이면 free list의 끝.
+        size_t  nextFree = handle_allocator_detail::kEndOfList;   // free list의 다음 인덱스. intrusive linked list로 구현. kEndOfList이면 free list의 끝.
         uint8_t token    = 0;
         bool    bAlloced = false;
     };
@@ -35,7 +35,7 @@ public:
         size_t index = 0;
         size_t token = 0;
 
-        if (m_freeHead == handle_allocator_detail::kNullIndex)   // free list가 없음
+        if (m_freeHead == handle_allocator_detail::kEndOfList)   // free list가 없음
         {
             index = m_nextIndex;
             ++m_nextIndex;
@@ -54,9 +54,9 @@ public:
             token = m_sparse[index].token;   // Free()에서 이미 다음 토큰으로 올려둠
 
             m_freeHead = m_sparse[index].nextFree;
-            if (m_freeHead == handle_allocator_detail::kNullIndex)
+            if (m_freeHead == handle_allocator_detail::kEndOfList)
             {
-                m_freeTail = handle_allocator_detail::kNullIndex;
+                m_freeTail = handle_allocator_detail::kEndOfList;
             }
         }
 
@@ -76,10 +76,10 @@ public:
 
         Item& item    = m_sparse[index];
         item.bAlloced = false;
-        item.nextFree = handle_allocator_detail::kNullIndex;
+        item.nextFree = handle_allocator_detail::kEndOfList;
         ++item.token;   // 토큰을 1 증가시켜 무효화, 8비트 범위 [0, 256)에서 순환
 
-        if (m_freeTail == handle_allocator_detail::kNullIndex)
+        if (m_freeTail == handle_allocator_detail::kEndOfList)
         {
             m_freeHead = index;
             m_freeTail = index;
@@ -97,7 +97,7 @@ public:
     [[nodiscard]] bool IsValid(
         const H _handle) const
     {
-        // kNullHandle 인 경우도 여기서 false 분기로 처리됨.
+        // kInvalidHandle 인 경우도 여기서 false 분기로 처리됨.
         const size_t index = _handle.GetIndex();
         if (index >= m_sparse.size() || !m_sparse[index].bAlloced)
         {
@@ -120,16 +120,16 @@ public:
     void Clear()
     {
         m_sparse.clear();
-        m_freeHead   = handle_allocator_detail::kNullIndex;
-        m_freeTail   = handle_allocator_detail::kNullIndex;
+        m_freeHead   = handle_allocator_detail::kEndOfList;
+        m_freeTail   = handle_allocator_detail::kEndOfList;
         m_numAlloced = 0;
         m_nextIndex  = 0;
     }
 
 private:
     Vector<Item> m_sparse     = {};                                    // For Random Access. { next free index, token, alloced }
-    size_t       m_freeHead   = handle_allocator_detail::kNullIndex;   // free list의 첫 원소. 다음에 Alloc될 슬롯
-    size_t       m_freeTail   = handle_allocator_detail::kNullIndex;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
+    size_t       m_freeHead   = handle_allocator_detail::kEndOfList;   // free list의 첫 원소. 다음에 Alloc될 슬롯
+    size_t       m_freeTail   = handle_allocator_detail::kEndOfList;   // free list의 마지막 원소. 다음 Free가 여기 뒤에 붙음
     size_t       m_numAlloced = 0;
     size_t       m_nextIndex  = 0;
 };

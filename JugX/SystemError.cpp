@@ -227,7 +227,7 @@ String OsErrorCategory::MakeMessage(
         return Format("Unknown HRESULT error code: 0x{:08X}", static_cast<unsigned long>(hr));
     }
 
-    return ToUtf8({ buf.data(), static_cast<size_t>(written) });
+    return EncodeUtf8({ buf.data(), static_cast<size_t>(written) });
 }
 
 Error MakeSystemError(

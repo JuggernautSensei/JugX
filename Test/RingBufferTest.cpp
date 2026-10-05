@@ -3,13 +3,8 @@
 // 고정 용량 원형 버퍼. 내부적으로 슬롯 하나를 항상 비워 두어 head==tail로
 // 가득 참/빔을 구분하므로, capacity를 N으로 잡으면 실제 최대 보관 개수는 N-1이다.
 // 가득 찬 상태에서 PushBack/EmplaceBack 하면 가장 오래된(head) 원소가 밀려난다.
-// 순회 순서(Begin~End, begin~end)는 항상 head -> tail(오래된 것 -> 최신) 순서다.
-#include <string>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include <JugX/JugX.h>
+// 순회 순서(Begin_~End, begin~end)는 항상 head -> tail(오래된 것 -> 최신) 순서다.
+#include "pch.h"
 
 using namespace jug;
 
@@ -19,8 +14,8 @@ using IntBuffer = RingBuffer<int>;
 
 std::vector<int> ToVector(const IntBuffer& _buffer)
 {
-    std::vector<int> result;
-    for (const int value : _buffer)
+    std::vector<int> result = {};
+    for (const int value: _buffer)
     {
         result.push_back(value);
     }
@@ -241,7 +236,7 @@ TEST(RingBuffer, IterationOrderIsHeadToTail)
     buffer.PushBack(2);
     buffer.PushBack(3);
 
-    std::vector<int> values;
+    std::vector<int> values = {};
     for (auto it = buffer.Begin(); it != buffer.End(); ++it)
     {
         values.push_back(*it);
@@ -339,8 +334,8 @@ TEST(RingBuffer, LowercaseBeginEndSupportRangeFor)
     buffer.PushBack(2);
     buffer.PushBack(3);
 
-    std::vector<int> values;
-    for (const int value : buffer)   // range-for는 소문자 begin()/end()만 봄
+    std::vector<int> values = {};
+    for (const int value: buffer)   // range-for는 소문자 begin()/end()만 봄
     {
         values.push_back(value);
     }

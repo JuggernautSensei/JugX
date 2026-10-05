@@ -3,21 +3,13 @@
 // 1. constexpr 로 평가되고 런타임과 같은 값을 내는지
 // 2. DirectXMath 를 기준값으로 한 비교 (Windows)
 // 3. 의미 규칙: 영벡터 정규화, 특이 행렬 역행렬, 역변환 팩토리, 왕복 변환
-#include <cmath>
-#include <cstring>
-#include <random>
-
-#include <gtest/gtest.h>
-
-#include <JugX/JugX.h>
+#include "pch.h"
 
 #if __has_include(<DirectXMath.h>)
 #    include <DirectXCollision.h>
 #    include <DirectXMath.h>
 #    define JUG_TEST_WITH_DXM 1
 #endif
-
-using namespace jug;
 
 namespace
 {
@@ -45,22 +37,22 @@ constexpr float kTol = 2e-5f;
 }
 
 [[nodiscard]] float MaxRelDiff(
-    const MATRIX& _x,
-    const MATRIX& _y)
+    const MAT4& _x,
+    const MAT4& _y)
 {
     return MaxRelDiff(_x.GetPtr(), _y.GetPtr(), 16);
 }
 
 [[nodiscard]] float MaxRelDiff(
-    const VECTOR4 _x,
-    const VECTOR4 _y)
+    const VEC4 _x,
+    const VEC4 _y)
 {
     return MaxRelDiff(_x.GetPtr(), _y.GetPtr(), 4);
 }
 
 [[nodiscard]] float MaxRelDiff(
-    const VECTOR3 _x,
-    const VECTOR3 _y)
+    const VEC3 _x,
+    const VEC3 _y)
 {
     return MaxRelDiff(_x.GetPtr(), _y.GetPtr(), 3);
 }
@@ -88,43 +80,43 @@ struct Rng
         return std::uniform_real_distribution<float>(_min, _max)(engine);
     }
 
-    [[nodiscard]] VECTOR3 Vec3(
+    [[nodiscard]] VEC3 RandVec3(
         const float _min,
         const float _max)
     {
-        return VECTOR3 { Float(_min, _max), Float(_min, _max), Float(_min, _max) };
+        return VEC3 { Float(_min, _max), Float(_min, _max), Float(_min, _max) };
     }
 
-    [[nodiscard]] VECTOR4 Vec4(
+    [[nodiscard]] VEC4 RandVec4(
         const float _min,
         const float _max)
     {
-        return VECTOR4 { Float(_min, _max), Float(_min, _max), Float(_min, _max), Float(_min, _max) };
+        return VEC4 { Float(_min, _max), Float(_min, _max), Float(_min, _max), Float(_min, _max) };
     }
 
-    [[nodiscard]] VECTOR3 Dir()
+    [[nodiscard]] VEC3 Dir()
     {
-        return Normalize(VECTOR3 { Float(-1.f, 1.f), Float(-1.f, 1.f), Float(0.2f, 1.f) });
+        return Normalize(VEC3 { Float(-1.f, 1.f), Float(-1.f, 1.f), Float(0.2f, 1.f) });
     }
 
-    [[nodiscard]] QUAT Quat()
+    [[nodiscard]] QUAT RandQuat()
     {
-        return Normalize(QUAT { Vec4(-1.f, 1.f) });
+        return Normalize(QUAT { RandVec4(-1.f, 1.f) });
     }
 
     // 역행렬이 안정적인 일반 행렬 (대각 우세)
-    [[nodiscard]] MATRIX Mtx()
+    [[nodiscard]] MAT4 Mtx()
     {
-        MATRIX m;
+        MAT4 m;
         for (size_t r = 0; r < 4; ++r)
         {
-            m.r[r] = Vec4(-1.f, 1.f);
+            m.r[r] = RandVec4(-1.f, 1.f);
             m.r[r][r] += 3.f;
         }
         return m;
     }
 
-    std::mt19937 engine;
+    std::mt19937 engine = {};
 };
 
 constexpr int kCount = 256;
@@ -138,29 +130,29 @@ constexpr int kCount = 256;
 namespace constexpr_check
 {
 
-constexpr VECTOR4 kA { 1.f, 2.f, 3.f, 4.f };
-constexpr VECTOR4 kB { -2.f, 0.5f, 4.f, -1.f };
+constexpr VEC4 kA { 1.f, 2.f, 3.f, 4.f };
+constexpr VEC4 kB { -2.f, 0.5f, 4.f, -1.f };
 static_assert((kA + kB)[0] == -1.f && (kA - kB)[3] == 5.f && (kA * 2.f)[2] == 6.f);
 static_assert(Dot(kA, kB) == 7.f);
-static_assert(Normalize(MathConstants<VECTOR4>::kZero) == MathConstants<VECTOR4>::kZero);
+static_assert(Normalize(VEC4::Zero()) == VEC4::Zero());
 
-constexpr QUAT   kQ    = QUAT::MakeFromAxisAngle(VECTOR3 { 0.f, 1.f, 0.f }, 0.5f);
-constexpr MATRIX kSrt  = MATRIX::MakeSRT(VECTOR3 { 1.f, 2.f, 3.f }, kQ, VECTOR3 { 4.f, 5.f, 6.f });
-constexpr MATRIX kInv  = Inverse(kSrt);
-constexpr MATRIX kBack = kSrt * kInv;
-static_assert(IsEqualApprox(kBack, MATRIX::kIdentity, 1e-4f));
-static_assert(IsEqualApprox(MATRIX::MakeInvSRT(VECTOR3 { 1.f, 2.f, 3.f }, kQ, VECTOR3 { 4.f, 5.f, 6.f }), kInv, 1e-4f));
-static_assert(IsEqualApprox(XformPoint(VECTOR3 { 1.f, 0.f, 0.f }, MATRIX::MakeTranslation(VECTOR3 { 1.f, 2.f, 3.f })), VECTOR3 { 2.f, 2.f, 3.f }));
-static_assert(IsEqualApprox(QUAT::MakeFromMatrix(MATRIX::MakeRotation(kQ)), kQ, 1e-5f));
+constexpr QUAT kQ    = QUAT::MakeFromAxisAngle(VEC3 { 0.f, 1.f, 0.f }, 0.5f);
+constexpr MAT4 kSrt  = MAT4::MakeSRT(VEC3 { 1.f, 2.f, 3.f }, kQ, VEC3 { 4.f, 5.f, 6.f });
+constexpr MAT4 kInv  = Inverse(kSrt);
+constexpr MAT4 kBack = kSrt * kInv;
+static_assert(IsEqualApprox(kBack, MAT4::Identity(), 1e-4f));
+static_assert(IsEqualApprox(MAT4::MakeInvSRT(VEC3 { 1.f, 2.f, 3.f }, kQ, VEC3 { 4.f, 5.f, 6.f }), kInv, 1e-4f));
+static_assert(IsEqualApprox(XformPoint(VEC3 { 1.f, 0.f, 0.f }, MAT4::MakeTranslation(VEC3 { 1.f, 2.f, 3.f })), VEC3 { 2.f, 2.f, 3.f }));
+static_assert(IsEqualApprox(QUAT::MakeFromMatrix(MAT4::MakeRotation(kQ)), kQ, 1e-5f));
 
 constexpr float kSin = Sin(1.f);
 static_assert(kSin > 0.8414709f && kSin < 0.8414711f);
 
-constexpr QUAT kSlerp = Slerp(QUAT::kIdentity, kQ, 0.5f);
+constexpr QUAT kSlerp = Slerp(QUAT::Identity(), kQ, 0.5f);
 static_assert(IsEqualApprox(Length(kSlerp), 1.f, 1e-5f));
 constexpr AABB kBox = Xform(AABB {
-                                VECTOR3 { 0.f, 0.f, 0.f },
-                                VECTOR3 { 1.f, 1.f, 1.f }
+                                VEC3 { 0.f, 0.f, 0.f },
+                                VEC3 { 1.f, 1.f, 1.f }
 },
                             kSrt);
 static_assert(kBox.center[0] == 4.f && kBox.center[2] == 6.f);
@@ -171,15 +163,15 @@ static_assert(IsEqualApprox(Normalize(kA), kA / Length(kA)));
 TEST(MathConstexpr, MatchesRuntime)
 {
     volatile float half = 0.5f;
-    const QUAT     q    = QUAT::MakeFromAxisAngle(VECTOR3 { 0.f, 1.f, 0.f }, half);
-    const MATRIX   srt  = MATRIX::MakeSRT(VECTOR3 { 1.f, 2.f, 3.f }, q, VECTOR3 { 4.f, 5.f, 6.f });
+    const QUAT     q    = QUAT::MakeFromAxisAngle(VEC3 { 0.f, 1.f, 0.f }, half);
+    const MAT4     srt  = MAT4::MakeSRT(VEC3 { 1.f, 2.f, 3.f }, q, VEC3 { 4.f, 5.f, 6.f });
     volatile float one  = 1.f;
 
     EXPECT_LT(RotationDiff(q, constexpr_check::kQ), 1e-6f);
     EXPECT_LT(MaxRelDiff(srt, constexpr_check::kSrt), 1e-6f);
     EXPECT_LT(MaxRelDiff(Inverse(srt), constexpr_check::kInv), 1e-5f);
     EXPECT_LT(RelDiff(Sin(one), constexpr_check::kSin), 1e-6f);
-    EXPECT_LT(RotationDiff(Slerp(QUAT::kIdentity, q, half), constexpr_check::kSlerp), 1e-6f);
+    EXPECT_LT(RotationDiff(Slerp(QUAT::Identity(), q, half), constexpr_check::kSlerp), 1e-6f);
 }
 
 // ==========================================================
@@ -188,37 +180,37 @@ TEST(MathConstexpr, MatchesRuntime)
 
 TEST(MathSemantics, NormalizeZeroIsZero)
 {
-    EXPECT_EQ(Normalize(Zero<VECTOR4>()), Zero<VECTOR4>());
-    EXPECT_EQ(Normalize(Zero<VECTOR3>()), Zero<VECTOR3>());
-    EXPECT_EQ(Normalize(Zero<VECTOR2>()), Zero<VECTOR2>());
+    EXPECT_EQ(Normalize(Zero<VEC4>()), Zero<VEC4>());
+    EXPECT_EQ(Normalize(Zero<VEC3>()), Zero<VEC3>());
+    EXPECT_EQ(Normalize(Zero<VEC2>()), Zero<VEC2>());
 }
 
 TEST(MathSemantics, NormalizeTinyIsUnit)
 {
     // DirectXMath 처럼 길이 0 만 0 이다 (예전 kEpsilon 판정은 길이 3e-3 미만을 전부 0 으로 만들었다)
-    const VECTOR3 v3 { 1e-6f, 2e-6f, 0.f };
-    const VECTOR4 v4 { 1e-6f, 0.f, 0.f, 1e-6f };
+    const VEC3 v3 { 1e-6f, 2e-6f, 0.f };
+    const VEC4 v4 { 1e-6f, 0.f, 0.f, 1e-6f };
     EXPECT_NEAR(Length(Normalize(v3)), 1.f, 1e-5f);
     EXPECT_NEAR(Length(Normalize(v4)), 1.f, 1e-5f);
 }
 
 TEST(MathSemantics, InverseSingularIsZero)
 {
-    const MATRIX singular {
-        VECTOR4 { 1.f, 2.f, 3.f, 4.f },
-        VECTOR4 { 2.f, 4.f, 6.f, 8.f },
-        VECTOR4 { 0.f, 1.f, 0.f, 0.f },
-        VECTOR4 { 0.f, 0.f, 0.f, 1.f }
+    const MAT4 singular {
+        VEC4 { 1.f, 2.f, 3.f, 4.f },
+        VEC4 { 2.f, 4.f, 6.f, 8.f },
+        VEC4 { 0.f, 1.f, 0.f, 0.f },
+        VEC4 { 0.f, 0.f, 0.f, 1.f }
     };
     float det = 1.f;
-    EXPECT_EQ(Inverse(singular, &det), MATRIX::kZero);
+    EXPECT_EQ(Inverse(singular, &det), MAT4::Zero());
     EXPECT_EQ(det, 0.f);
 }
 
 TEST(MathSemantics, InverseSmallScaleIsNotZero)
 {
-    const MATRIX m = MATRIX::MakeScale(VECTOR3 { 0.01f, 0.01f, 0.01f });
-    EXPECT_LT(MaxRelDiff(m * Inverse(m), MATRIX::kIdentity), 1e-5f);
+    const MAT4 m = MAT4::MakeScale(VEC3 { 0.01f, 0.01f, 0.01f });
+    EXPECT_LT(MaxRelDiff(m * Inverse(m), MAT4::Identity()), 1e-5f);
 }
 
 TEST(MathSemantics, InverseFactoriesMatchInverse)
@@ -226,21 +218,21 @@ TEST(MathSemantics, InverseFactoriesMatchInverse)
     Rng rng(7);
     for (int i = 0; i < kCount; ++i)
     {
-        const VECTOR3 s   = rng.Vec3(0.5f, 2.f);
-        const VECTOR3 t   = rng.Vec3(-10.f, 10.f);
-        const QUAT    q   = rng.Quat();
-        const VECTOR3 pyr = rng.Vec3(-3.f, 3.f);
-        const VECTOR3 dir = rng.Dir();
-        const VECTOR3 up  = Up<VECTOR3>();
+        const VEC3 s   = rng.RandVec3(0.5f, 2.f);
+        const VEC3 t   = rng.RandVec3(-10.f, 10.f);
+        const QUAT q   = rng.RandQuat();
+        const VEC3 pyr = rng.RandVec3(-3.f, 3.f);
+        const VEC3 dir = rng.Dir();
+        const VEC3 up  = Up<VEC3>();
 
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeInvSRT(s, q, t), Inverse(MATRIX::MakeSRT(s, q, t))), 1e-4f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeInvSRT(s, pyr, t), Inverse(MATRIX::MakeSRT(s, pyr, t))), 1e-4f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeInvSRT(s, dir, up, t), Inverse(MATRIX::MakeSRT(s, dir, up, t))), 1e-4f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeViewLookTo(t, dir, up), Inverse(MATRIX::MakeSRT(One<VECTOR3>(), dir, up, t))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeInvSRT(s, q, t), Inverse(MAT4::MakeSRT(s, q, t))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeInvSRT(s, pyr, t), Inverse(MAT4::MakeSRT(s, pyr, t))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeInvSRT(s, dir, up, t), Inverse(MAT4::MakeSRT(s, dir, up, t))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeViewLookTo(t, dir, up), Inverse(MAT4::MakeSRT(One<VEC3>(), dir, up, t))), 1e-4f);
 
         const float fov = rng.Float(0.5f, 1.5f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeInvPersp(fov, 1.7f, 0.1f, 100.f), Inverse(MATRIX::MakePersp(fov, 1.7f, 0.1f, 100.f))), 1e-3f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeInvOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f), Inverse(MATRIX::MakeOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeInvPersp(fov, 1.7f, 0.1f, 100.f), Inverse(MAT4::MakePersp(fov, 1.7f, 0.1f, 100.f))), 1e-3f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeInvOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f), Inverse(MAT4::MakeOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f))), 1e-4f);
     }
 }
 
@@ -250,30 +242,30 @@ TEST(MathSemantics, RoundTrips)
     for (int i = 0; i < kCount; ++i)
     {
         // 짐벌락 근처는 제외
-        const VECTOR3 pyr = VECTOR3 { rng.Float(-1.4f, 1.4f), rng.Float(-3.f, 3.f), rng.Float(-3.f, 3.f) };
-        const QUAT    q   = QUAT::MakeFromEuler(pyr);
+        const VEC3 pyr = VEC3 { rng.Float(-1.4f, 1.4f), rng.Float(-3.f, 3.f), rng.Float(-3.f, 3.f) };
+        const QUAT q   = QUAT::MakeFromEuler(pyr);
         EXPECT_LT(RotationDiff(QUAT::MakeFromEuler(q.ToEuler()), q), 1e-4f);
 
         const AXIS_ANGLE aa = q.ToAxisAngle();
         EXPECT_LT(RotationDiff(QUAT::MakeFromAxisAngle(aa.axis, aa.rad), q), 1e-4f);
 
-        EXPECT_LT(RotationDiff(QUAT::MakeFromMatrix(MATRIX::MakeRotation(q)), q), 1e-5f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotation(q), MATRIX::MakeRotation(pyr)), 1e-5f);
+        EXPECT_LT(RotationDiff(QUAT::MakeFromMatrix(MAT4::MakeRotation(q)), q), 1e-5f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotation(q), MAT4::MakeRotation(pyr)), 1e-5f);
 
-        const VECTOR3 v = rng.Vec3(-5.f, 5.f);
+        const VEC3 v = rng.RandVec3(-5.f, 5.f);
         EXPECT_LT(MaxRelDiff(RotateInv(Rotate(v, q), q), v), 1e-5f);
-        EXPECT_LT(MaxRelDiff(Rotate(v, q), XformVector(v, MATRIX::MakeRotation(q))), 1e-5f);
+        EXPECT_LT(MaxRelDiff(Rotate(v, q), XformVector(v, MAT4::MakeRotation(q))), 1e-5f);
 
-        const VECTOR3 from = rng.Dir();
-        const VECTOR3 to   = rng.Dir();
+        const VEC3 from = rng.Dir();
+        const VEC3 to   = rng.Dir();
         EXPECT_LT(MaxRelDiff(Rotate(from, QUAT::MakeFromTo(from, to)), to), 1e-4f);
 
-        const VECTOR3 s = rng.Vec3(0.5f, 2.f);
-        const VECTOR3 t = rng.Vec3(-10.f, 10.f);
-        VECTOR3       outS;
-        QUAT          outQ;
-        VECTOR3       outT;
-        Decompose(MATRIX::MakeSRT(s, q, t), &outS, &outQ, &outT);
+        const VEC3 s = rng.RandVec3(0.5f, 2.f);
+        const VEC3 t = rng.RandVec3(-10.f, 10.f);
+        VEC3       outS;
+        QUAT       outQ;
+        VEC3       outT;
+        Decompose(MAT4::MakeSRT(s, q, t), &outS, &outQ, &outT);
         EXPECT_LT(MaxRelDiff(outS, s), 1e-5f);
         EXPECT_LT(RotationDiff(outQ, q), 1e-4f);
         EXPECT_LT(MaxRelDiff(outT, t), 1e-6f);
@@ -310,27 +302,27 @@ namespace
 {
 
 [[nodiscard]] DirectX::XMMATRIX ToXM(
-    const MATRIX& _mtx)
+    const MAT4& _mtx)
 {
     return DirectX::XMLoadFloat4x4A(reinterpret_cast<const DirectX::XMFLOAT4X4A*>(_mtx.GetPtr()));
 }
 
-[[nodiscard]] MATRIX FromXM(
+[[nodiscard]] MAT4 FromXM(
     DirectX::FXMMATRIX _mtx)
 {
-    MATRIX ret;
+    MAT4 ret;
     DirectX::XMStoreFloat4x4A(reinterpret_cast<DirectX::XMFLOAT4X4A*>(ret.GetPtr()), _mtx);
     return ret;
 }
 
 [[nodiscard]] DirectX::XMVECTOR ToXM(
-    const VECTOR4 _v)
+    const VEC4 _v)
 {
     return DirectX::XMLoadFloat4(reinterpret_cast<const DirectX::XMFLOAT4*>(_v.GetPtr()));
 }
 
 [[nodiscard]] DirectX::XMVECTOR ToXM(
-    const VECTOR3 _v)
+    const VEC3 _v)
 {
     return DirectX::XMLoadFloat3(reinterpret_cast<const DirectX::XMFLOAT3*>(_v.GetPtr()));
 }
@@ -341,18 +333,18 @@ namespace
     return ToXM(_q.v);
 }
 
-[[nodiscard]] VECTOR4 FromXM4(
+[[nodiscard]] VEC4 FromXM4(
     DirectX::FXMVECTOR _v)
 {
-    VECTOR4 ret;
+    VEC4 ret;
     DirectX::XMStoreFloat4(reinterpret_cast<DirectX::XMFLOAT4*>(ret.GetPtr()), _v);
     return ret;
 }
 
-[[nodiscard]] VECTOR3 FromXM3(
+[[nodiscard]] VEC3 FromXM3(
     DirectX::FXMVECTOR _v)
 {
-    VECTOR3 ret;
+    VEC3 ret;
     DirectX::XMStoreFloat3(reinterpret_cast<DirectX::XMFLOAT3*>(ret.GetPtr()), _v);
     return ret;
 }
@@ -364,10 +356,10 @@ TEST(MathDXM, Vector)
     Rng rng(1);
     for (int i = 0; i < kCount; ++i)
     {
-        const VECTOR4 a = rng.Vec4(-3.f, 3.f);
-        const VECTOR4 b = rng.Vec4(-3.f, 3.f);
-        const VECTOR3 c = rng.Vec3(-3.f, 3.f);
-        const VECTOR3 d = rng.Vec3(-3.f, 3.f);
+        const VEC4 a = rng.RandVec4(-3.f, 3.f);
+        const VEC4 b = rng.RandVec4(-3.f, 3.f);
+        const VEC3 c = rng.RandVec3(-3.f, 3.f);
+        const VEC3 d = rng.RandVec3(-3.f, 3.f);
 
         EXPECT_LT(MaxRelDiff(Normalize(a), FromXM4(DirectX::XMVector4Normalize(ToXM(a)))), kTol);
         EXPECT_LT(RelDiff(Dot(a, b), DirectX::XMVectorGetX(DirectX::XMVector4Dot(ToXM(a), ToXM(b)))), kTol);
@@ -387,10 +379,10 @@ TEST(MathDXM, Matrix)
     Rng rng(2);
     for (int i = 0; i < kCount; ++i)
     {
-        const MATRIX  a = rng.Mtx();
-        const MATRIX  b = rng.Mtx();
-        const VECTOR4 v = rng.Vec4(-3.f, 3.f);
-        const VECTOR3 p = rng.Vec3(-3.f, 3.f);
+        const MAT4 a = rng.Mtx();
+        const MAT4 b = rng.Mtx();
+        const VEC4 v = rng.RandVec4(-3.f, 3.f);
+        const VEC3 p = rng.RandVec3(-3.f, 3.f);
 
         EXPECT_LT(MaxRelDiff(a * b, FromXM(DirectX::XMMatrixMultiply(ToXM(a), ToXM(b)))), kTol);
         EXPECT_LT(MaxRelDiff(Transpose(a), FromXM(DirectX::XMMatrixTranspose(ToXM(a)))), kTol);
@@ -407,26 +399,26 @@ TEST(MathDXM, MatrixFactory)
     Rng rng(3);
     for (int i = 0; i < kCount; ++i)
     {
-        const float   rad  = rng.Float(-6.f, 6.f);
-        const VECTOR3 axis = rng.Dir();
-        const VECTOR3 pyr  = rng.Vec3(-3.f, 3.f);
-        const QUAT    q    = rng.Quat();
-        const VECTOR3 s    = rng.Vec3(0.5f, 2.f);
-        const VECTOR3 t    = rng.Vec3(-10.f, 10.f);
-        const VECTOR3 dir  = rng.Dir();
+        const float rad  = rng.Float(-6.f, 6.f);
+        const VEC3  axis = rng.Dir();
+        const VEC3  pyr  = rng.RandVec3(-3.f, 3.f);
+        const QUAT  q    = rng.RandQuat();
+        const VEC3  s    = rng.RandVec3(0.5f, 2.f);
+        const VEC3  t    = rng.RandVec3(-10.f, 10.f);
+        const VEC3  dir  = rng.Dir();
 
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotationX(rad), FromXM(DirectX::XMMatrixRotationX(rad))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotationY(rad), FromXM(DirectX::XMMatrixRotationY(rad))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotationZ(rad), FromXM(DirectX::XMMatrixRotationZ(rad))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotation(axis, rad), FromXM(DirectX::XMMatrixRotationNormal(ToXM(axis), rad))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotation(pyr), FromXM(DirectX::XMMatrixRotationRollPitchYaw(pyr[0], pyr[1], pyr[2]))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeRotation(q), FromXM(DirectX::XMMatrixRotationQuaternion(ToXM(q)))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeSRT(s, q, t), FromXM(DirectX::XMMatrixAffineTransformation(ToXM(s), DirectX::XMVectorZero(), ToXM(q), ToXM(t)))), kTol);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeViewLookTo(t, dir, Up<VECTOR3>()), FromXM(DirectX::XMMatrixLookToLH(ToXM(t), ToXM(dir), DirectX::g_XMIdentityR1))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotationX(rad), FromXM(DirectX::XMMatrixRotationX(rad))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotationY(rad), FromXM(DirectX::XMMatrixRotationY(rad))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotationZ(rad), FromXM(DirectX::XMMatrixRotationZ(rad))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotation(axis, rad), FromXM(DirectX::XMMatrixRotationNormal(ToXM(axis), rad))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotation(pyr), FromXM(DirectX::XMMatrixRotationRollPitchYaw(pyr[0], pyr[1], pyr[2]))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeRotation(q), FromXM(DirectX::XMMatrixRotationQuaternion(ToXM(q)))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeSRT(s, q, t), FromXM(DirectX::XMMatrixAffineTransformation(ToXM(s), DirectX::XMVectorZero(), ToXM(q), ToXM(t)))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeViewLookTo(t, dir, Up<VEC3>()), FromXM(DirectX::XMMatrixLookToLH(ToXM(t), ToXM(dir), DirectX::g_XMIdentityR1))), 1e-4f);
 
         const float fov = rng.Float(0.5f, 1.5f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakePersp(fov, 1.7f, 0.1f, 100.f), FromXM(DirectX::XMMatrixPerspectiveFovLH(fov, 1.7f, 0.1f, 100.f))), 1e-4f);
-        EXPECT_LT(MaxRelDiff(MATRIX::MakeOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f), FromXM(DirectX::XMMatrixOrthographicOffCenterLH(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f))), kTol);
+        EXPECT_LT(MaxRelDiff(MAT4::MakePersp(fov, 1.7f, 0.1f, 100.f), FromXM(DirectX::XMMatrixPerspectiveFovLH(fov, 1.7f, 0.1f, 100.f))), 1e-4f);
+        EXPECT_LT(MaxRelDiff(MAT4::MakeOrtho(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f), FromXM(DirectX::XMMatrixOrthographicOffCenterLH(-3.f, 5.f, -2.f, 4.f, 0.5f, 50.f))), kTol);
     }
 }
 
@@ -435,12 +427,12 @@ TEST(MathDXM, Quaternion)
     Rng rng(4);
     for (int i = 0; i < kCount; ++i)
     {
-        const QUAT    a    = rng.Quat();
-        const QUAT    b    = rng.Quat();
-        const VECTOR3 v    = rng.Vec3(-3.f, 3.f);
-        const VECTOR3 axis = rng.Dir();
-        const float   rad  = rng.Float(-6.f, 6.f);
-        const VECTOR3 pyr  = rng.Vec3(-3.f, 3.f);
+        const QUAT  a    = rng.RandQuat();
+        const QUAT  b    = rng.RandQuat();
+        const VEC3  v    = rng.RandVec3(-3.f, 3.f);
+        const VEC3  axis = rng.Dir();
+        const float rad  = rng.Float(-6.f, 6.f);
+        const VEC3  pyr  = rng.RandVec3(-3.f, 3.f);
 
         EXPECT_LT(MaxRelDiff((a * b).v, FromXM4(DirectX::XMQuaternionMultiply(ToXM(a), ToXM(b)))), kTol);
         EXPECT_LT(MaxRelDiff(Slerp(a, b, 0.3f).v, FromXM4(DirectX::XMQuaternionSlerp(ToXM(a), ToXM(b), 0.3f))), 1e-4f);
@@ -450,15 +442,15 @@ TEST(MathDXM, Quaternion)
         EXPECT_LT(MaxRelDiff(Inverse(a).v, FromXM4(DirectX::XMQuaternionInverse(ToXM(a)))), kTol);
         EXPECT_LT(MaxRelDiff(QUAT::MakeFromAxisAngle(axis, rad).v, FromXM4(DirectX::XMQuaternionRotationNormal(ToXM(axis), rad))), kTol);
         EXPECT_LT(MaxRelDiff(QUAT::MakeFromEuler(pyr).v, FromXM4(DirectX::XMQuaternionRotationRollPitchYaw(pyr[0], pyr[1], pyr[2]))), kTol);
-        EXPECT_LT(RotationDiff(QUAT::MakeFromMatrix(MATRIX::MakeRotation(a)), QUAT { FromXM4(DirectX::XMQuaternionRotationMatrix(ToXM(MATRIX::MakeRotation(a)))) }), kTol);
+        EXPECT_LT(RotationDiff(QUAT::MakeFromMatrix(MAT4::MakeRotation(a)), QUAT { FromXM4(DirectX::XMQuaternionRotationMatrix(ToXM(MAT4::MakeRotation(a)))) }), kTol);
     }
 }
 
 TEST(MathDXM, BoundingVolume)
 {
     Rng     rng(5);
-    FRUSTUM frustum = FRUSTUM::MakeFromMatrix(MATRIX::MakePersp(1.f, 16.f / 9.f, 0.1f, 100.f));
-    for (PLANE& plane: frustum.planes)   // Distance(PLANE) 는 정규화된 평면을 요구한다
+    FRUSTUM frustum = FRUSTUM::MakeFromMatrix(MAT4::MakePersp(1.f, 16.f / 9.f, 0.1f, 100.f));
+    for (PLANE& plane: frustum.planes)   // Distance(Plane) 는 정규화된 평면을 요구한다
     {
         const float invLen = 1.f / Length(plane.normal);
         plane.normal       = plane.normal * invLen;
@@ -466,24 +458,24 @@ TEST(MathDXM, BoundingVolume)
     }
     for (int i = 0; i < kCount; ++i)
     {
-        const MATRIX srt = MATRIX::MakeSRT(rng.Vec3(0.5f, 2.f), rng.Quat(), rng.Vec3(-10.f, 10.f));
-        const AABB   box { rng.Vec3(-50.f, 50.f), rng.Vec3(0.1f, 3.f) };
-        const SPHERE sphere { rng.Vec3(-50.f, 50.f), rng.Float(0.1f, 3.f) };
+        const MAT4   srt = MAT4::MakeSRT(rng.RandVec3(0.5f, 2.f), rng.RandQuat(), rng.RandVec3(-10.f, 10.f));
+        const AABB   box { rng.RandVec3(-50.f, 50.f), rng.RandVec3(0.1f, 3.f) };
+        const SPHERE sphere { rng.RandVec3(-50.f, 50.f), rng.Float(0.1f, 3.f) };
 
-        DirectX::BoundingBox xbox;
+        DirectX::BoundingBox xbox = {};
         std::memcpy(&xbox, &box, sizeof(box));
-        DirectX::BoundingBox xboxOut;
+        DirectX::BoundingBox xboxOut = {};
         xbox.Transform(xboxOut, ToXM(srt));
         const AABB boxOut = Xform(box, srt);
-        EXPECT_LT(MaxRelDiff(boxOut.center, VECTOR3 { xboxOut.Center.x, xboxOut.Center.y, xboxOut.Center.z }), kTol);
-        EXPECT_LT(MaxRelDiff(boxOut.extends, VECTOR3 { xboxOut.Extents.x, xboxOut.Extents.y, xboxOut.Extents.z }), kTol);
+        EXPECT_LT(MaxRelDiff(boxOut.center, VEC3 { xboxOut.Center.x, xboxOut.Center.y, xboxOut.Center.z }), kTol);
+        EXPECT_LT(MaxRelDiff(boxOut.extends, VEC3 { xboxOut.Extents.x, xboxOut.Extents.y, xboxOut.Extents.z }), kTol);
 
-        DirectX::BoundingSphere xsphere;
+        DirectX::BoundingSphere xsphere = {};
         std::memcpy(&xsphere, &sphere, sizeof(sphere));
-        DirectX::BoundingSphere xsphereOut;
+        DirectX::BoundingSphere xsphereOut = {};
         xsphere.Transform(xsphereOut, ToXM(srt));
         const SPHERE sphereOut = Xform(sphere, srt);
-        EXPECT_LT(MaxRelDiff(sphereOut.center, VECTOR3 { xsphereOut.Center.x, xsphereOut.Center.y, xsphereOut.Center.z }), kTol);
+        EXPECT_LT(MaxRelDiff(sphereOut.center, VEC3 { xsphereOut.Center.x, xsphereOut.Center.y, xsphereOut.Center.z }), kTol);
         EXPECT_LT(RelDiff(sphereOut.radius, xsphereOut.Radius), kTol);
 
         // jug 평면 법선은 안쪽, DirectXMath 는 바깥쪽이 양수

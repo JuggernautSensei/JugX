@@ -2,13 +2,8 @@
 //
 // LRU 정책: Find/Touch/At/operator[]는 해당 원소를 MRU(most-recently-used)로 승격시킨다.
 // Peek은 승격 없이 조회만 한다. 용량 초과 시 가장 오래 안 쓰인(LRU) 원소부터 제거된다.
-// 순회 순서(Begin~End, begin~end)는 항상 MRU -> LRU 순서다.
-#include <string>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include <JugX/JugX.h>
+// 순회 순서(Begin_~End, begin~end)는 항상 MRU -> LRU 순서다.
+#include "pch.h"
 
 using namespace jug;
 
@@ -237,8 +232,8 @@ TEST(LruCache, IterationOrderIsMruToLru)
     cache.Insert(2, "b");
     cache.Insert(3, "c");   // 순서: 3, 2, 1
 
-    std::vector<int> keys;
-    for (const auto& [key, value] : cache)
+    std::vector<int> keys = {};
+    for (const auto& [key, value]: cache)
     {
         keys.push_back(key);
     }
@@ -252,9 +247,9 @@ TEST(LruCache, ConstIterationWorks)
     cache.Insert(1, "a");
     cache.Insert(2, "b");
 
-    const IntCache& constCache = cache;
-    std::vector<int> keys;
-    for (const auto& [key, value] : constCache)
+    const IntCache&  constCache = cache;
+    std::vector<int> keys       = {};
+    for (const auto& [key, value]: constCache)
     {
         keys.push_back(key);
     }

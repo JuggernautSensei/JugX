@@ -5,12 +5,6 @@ namespace jug
 
 namespace callable_detail
 {
-    template<size_t kSize>
-    using Storage = ARRAY<std::byte, kSize> alignas(alignof(void*));
-
-    template<typename Fn, size_t kSize, typename DecayedFn = std::decay_t<Fn>>
-    concept SmallFnT = sizeof(DecayedFn) <= kSize && alignof(DecayedFn) <= alignof(void*);
-
     enum class eOperation
     {
         Destroy,
@@ -18,80 +12,128 @@ namespace callable_detail
         Move,
     };
 
-    using VTableFn = void (*)(eOperation _op, void* _pDst, void* _pSrc);
+    template<typename T, size_t kSize>
+    concept SmallFnT = sizeof(T) <= kSize && alignof(T) <= alignof(void*) && std::is_nothrow_move_constructible_v<T>;
 
-    template<typename Fn, size_t kSize>
-    void VTableImpl(
-        const eOperation _op,
-        void*            _pDst,
-        void*            _pSrc)
+    template<typename T, size_t kSize>
+    concept TriviallyStorable = SmallFnT<T, kSize> && std::is_trivially_copyable_v<T> && std::is_trivially_destructible_v<T>;
+
+    // storage에 객체를 직접 저장
+    template<typename T, size_t kSize>
+    struct SboPolicy
     {
-        using Storage   = Storage<kSize>;
-        using DecayedFn = std::decay_t<Fn>;
+        using StorageT = ARRAY<std::byte, kSize>;
 
-        switch (_op)
+        static T& Get(
+            StorageT& _storage)
         {
-            case eOperation::Destroy:
-            {
-                Storage* pDst = static_cast<Storage*>(_pDst);
-                if constexpr (SmallFnT<DecayedFn, kSize>)
-                {
-                    DecayedFn* pObj = reinterpret_cast<DecayedFn*>(pDst->data());
-                    std::destroy_at(pObj);   // 객체 소멸자 호출. 메모리는 Callable 객체가 소멸하면서 공멸
-                }
-                else
-                {
-                    DecayedFn* pObj = *reinterpret_cast<DecayedFn**>(pDst->data());
-                    delete pObj;   // 객체가 힙에 저장되어 있기 때문에 delete로 소멸
-                }
-                break;
-            }
-
-            case eOperation::Copy:
-            {
-                Storage* pDst = static_cast<Storage*>(_pDst);
-                Storage* pSrc = static_cast<Storage*>(_pSrc);
-                if constexpr (SmallFnT<DecayedFn, kSize>)
-                {
-                    // pSrc에 객체가 직접 저장되어 있기에, pDst측에 복사 생성.
-                    DecayedFn* pSrcObj = reinterpret_cast<DecayedFn*>(pSrc->data());
-                    std::construct_at(reinterpret_cast<DecayedFn*>(pDst->data()), *pSrcObj);
-                }
-                else
-                {
-                    // pSrc에 힙 포인터가 저장되어 있기에 힙에 복사 생성 후 포인터만 저장
-                    DecayedFn* pSrcObj                           = *reinterpret_cast<DecayedFn**>(pSrc->data());
-                    DecayedFn* pDstObj                           = new DecayedFn(*pSrcObj);
-                    *reinterpret_cast<DecayedFn**>(pDst->data()) = pDstObj;
-                }
-                break;
-            }
-
-            case eOperation::Move:
-            {
-                Storage* pDst = static_cast<Storage*>(_pDst);
-                Storage* pSrc = static_cast<Storage*>(_pSrc);
-                if constexpr (SmallFnT<DecayedFn, kSize>)
-                {
-                    // pSrc에 객체가 직접 저장되어 있기에, pDst측에 이동 생성.
-                    DecayedFn* pSrcObj = reinterpret_cast<DecayedFn*>(pSrc->data());
-                    std::construct_at(reinterpret_cast<DecayedFn*>(pDst->data()), std::move(*pSrcObj));
-                    std::destroy_at(pSrcObj);
-                }
-                else
-                {
-                    // storage에 heap 포인터가 저장되어있음. 포인터만 이동
-                    DecayedFn* pSrcObj                           = *reinterpret_cast<DecayedFn**>(pSrc->data());
-                    *reinterpret_cast<DecayedFn**>(pDst->data()) = pSrcObj;
-                    *reinterpret_cast<DecayedFn**>(pSrc->data()) = nullptr;
-                }
-                break;
-            }
-
-            default:
-                JUG_ASSERT(false, "Unknown eOperation type");
+            return *reinterpret_cast<T*>(_storage.data());
         }
-    }
+
+        template<typename U>
+        static void Create(
+            StorageT& _storage,
+            U&&       _value)
+        {
+            std::construct_at(reinterpret_cast<T*>(_storage.data()), std::forward<U>(_value));
+        }
+
+        static void Manage(
+            const eOperation _op,
+            StorageT*        _pDst,
+            StorageT*        _pSrc)
+        {
+            switch (_op)
+            {
+                case eOperation::Destroy:
+                {
+                    std::destroy_at(&Get(*_pDst));   // 메모리는 Callable 객체가 소멸하면서 공멸
+                    break;
+                }
+
+                case eOperation::Copy:
+                {
+                    std::construct_at(reinterpret_cast<T*>(_pDst->data()), Get(*_pSrc));
+                    break;
+                }
+
+                case eOperation::Move:
+                {
+                    std::construct_at(reinterpret_cast<T*>(_pDst->data()), std::move(Get(*_pSrc)));
+                    std::destroy_at(&Get(*_pSrc));
+                    break;
+                }
+
+                default:
+                    JUG_ASSERT(false, "Unknown eOperation type");
+            }
+        }
+    };
+
+    // 힙에 객체를 생성하고 storage에는 포인터만 저장
+    template<typename T, size_t kSize>
+    struct HeapPolicy
+    {
+        using StorageT = ARRAY<std::byte, kSize>;
+
+        static T& Get(
+            StorageT& _storage)
+        {
+            return *PtrRef_(_storage);
+        }
+
+        template<typename U>
+        static void Create(
+            StorageT& _storage,
+            U&&       _value)
+        {
+            PtrRef_(_storage) = new T(std::forward<U>(_value));
+        }
+
+        static void Manage(
+            const eOperation _op,
+            StorageT*        _pDst,
+            StorageT*        _pSrc)
+        {
+            switch (_op)
+            {
+                case eOperation::Destroy:
+                {
+                    delete PtrRef_(*_pDst);
+                    break;
+                }
+
+                case eOperation::Copy:
+                {
+                    // 힙에 복사 생성 후 포인터만 저장
+                    PtrRef_(*_pDst) = new T(*PtrRef_(*_pSrc));
+                    break;
+                }
+
+                case eOperation::Move:
+                {
+                    // 포인터만 이동
+                    PtrRef_(*_pDst) = PtrRef_(*_pSrc);
+                    PtrRef_(*_pSrc) = nullptr;
+                    break;
+                }
+
+                default:
+                    JUG_ASSERT(false, "Unknown eOperation type");
+            }
+        }
+
+    private:
+        static T*& PtrRef_(
+            StorageT& _storage)
+        {
+            return *reinterpret_cast<T**>(_storage.data());
+        }
+    };
+
+    template<typename T, size_t kSize>
+    using PolicyT = std::conditional_t<SmallFnT<T, kSize>, SboPolicy<T, kSize>, HeapPolicy<T, kSize>>;
+
 }   // namespace callable_detail
 
 // ===========================================================================
@@ -106,9 +148,10 @@ class BaseCallable<kSize, kbOverflow, R(Args...)>   // NOLINT
 {
     static_assert(kSize >= sizeof(void*), "kSize must be at least sizeof(void*)");
 
-    using StorageT   = callable_detail::Storage<kSize>;
+    using StorageT   = ARRAY<std::byte, kSize>;
     using CallableFn = R (*)(Args...);
     using Fn         = R (*)(StorageT& _pStorage, Args... _args);
+    using VTableFn   = void (*)(callable_detail::eOperation _op, StorageT* _pDst, StorageT* _pSrc);
 
 public:
     BaseCallable() = default;
@@ -172,10 +215,7 @@ public:
     {
         Reset_();
 
-        m_vtableFn = nullptr;
-        m_fn       = [](StorageT&, Args... _args) -> R {
-            return Fn(std::forward<Args>(_args)...);   // 단순 함수 호출
-        };
+        m_fn = &InvokeStatic_<Fn>;
     }
 
     // 클래스 멤버 함수 포인터. 호출자 객체의 수명을 보장하지 않음.
@@ -188,53 +228,28 @@ public:
 
         Reset_();
 
-        *reinterpret_cast<Caller**>(m_storage.data()) = _pCaller;   // 호출자 객체의 주소만 저장
-        m_vtableFn                                    = nullptr;
-        m_fn                                          = [](StorageT& _pStorage, Args... _args) -> R {
-            return (*reinterpret_cast<Caller**>(_pStorage.data())->*Method)(std::forward<Args>(_args)...);
-        };
+        callable_detail::SboPolicy<Caller*, kSize>::Create(m_storage, _pCaller);   // 호출자 객체의 주소만 저장
+        m_fn = &InvokeMethod_<Method, Caller>;
     }
 
     // 비캡쳐 + 캡쳐 람다. 함수자.
     template<typename Fn>
-        requires std::is_invocable_r_v<R, Fn, Args...> && (kbOverflow || callable_detail::SmallFnT<Fn, kSize>)
+        requires std::is_invocable_r_v<R, std::decay_t<Fn>&, Args...> && (kbOverflow || callable_detail::SmallFnT<std::decay_t<Fn>, kSize>)
     void Connect(
         Fn&& _fn)
     {
+        using DecayedFn = std::decay_t<Fn>;
+        using Policy    = callable_detail::PolicyT<DecayedFn, kSize>;
+
         Reset_();
 
-        if constexpr (std::constructible_from<Fn, CallableFn>)   // 함수 포인터 최적화
-        {
-            *reinterpret_cast<CallableFn*>(m_storage.data()) = _fn;
-            m_vtableFn                                       = nullptr;
-            m_fn                                             = [](StorageT& _pStorage, Args... _args) -> R {
-                return (*reinterpret_cast<CallableFn*>(_pStorage.data()))(std::forward<Args>(_args)...);
-            };
-        }
-        else
-        {
-            using DecayedFn = std::decay_t<Fn>;
+        Policy::Create(m_storage, std::forward<Fn>(_fn));
+        m_fn = &Invoke_<Policy>;
 
-            if constexpr (callable_detail::SmallFnT<Fn, kSize>)
-            {
-                // SBO. storage에 직접 객체를 생성
-                std::construct_at(reinterpret_cast<DecayedFn*>(m_storage.data()), std::forward<Fn>(_fn));
-                m_fn = [](StorageT& _pStorage, Args... _args) -> R {
-                    return (*reinterpret_cast<DecayedFn*>(_pStorage.data()))(std::forward<Args>(_args)...);
-                };
-            }
-            else
-            {
-                // 힙 할당. storage에 포인터를 저장
-                DecayedFn* pHeap                                 = new DecayedFn(std::forward<Fn>(_fn));
-                *reinterpret_cast<DecayedFn**>(m_storage.data()) = pHeap;
-                m_fn                                             = [](StorageT& _pStorage, Args... _args) {
-                    return (**reinterpret_cast<DecayedFn**>(_pStorage.data()))(std::forward<Args>(_args)...);
-                };
-            }
-
-            // vtable 설정
-            m_vtableFn = callable_detail::VTableImpl<Fn, kSize>;
+        // 함수 포인터, non-capturing 람다 등은 관리자 없이 memcpy 복사
+        if constexpr (!callable_detail::TriviallyStorable<DecayedFn, kSize>)
+        {
+            m_vtableFn = &Policy::Manage;
         }
     }
 
@@ -243,16 +258,16 @@ public:
         Reset_();
     }
 
-    [[nodiscard]] R operator()(
+    R operator()(
         Args... args) const
     {
         JUG_ASSERT(m_fn, "BaseCallable is not connected");
-        return m_fn(const_cast<StorageT&>(m_storage), std::forward<Args>(args)...);
+        return m_fn(m_storage, std::forward<Args>(args)...);
     }
 
     explicit operator bool() const
     {
-        return m_fn;
+        return m_fn != nullptr;
     }
 
     [[nodiscard]] bool operator==(
@@ -261,13 +276,31 @@ public:
         return m_fn == nullptr;
     }
 
-    [[nodiscard]] bool operator!=(
-        const nullptr_t) const
+private:
+    template<typename Policy>
+    static R Invoke_(
+        StorageT& _storage,
+        Args... _args)
     {
-        return m_fn;
+        return Policy::Get(_storage)(std::forward<Args>(_args)...);
     }
 
-private:
+    template<auto Fn>
+    static R InvokeStatic_(
+        StorageT&,
+        Args... _args)
+    {
+        return Fn(std::forward<Args>(_args)...);
+    }
+
+    template<auto Method, typename Caller>
+    static R InvokeMethod_(
+        StorageT& _storage,
+        Args... _args)
+    {
+        return (callable_detail::SboPolicy<Caller*, kSize>::Get(_storage)->*Method)(std::forward<Args>(_args)...);
+    }
+
     void Reset_()
     {
         if (!m_fn)
@@ -280,7 +313,6 @@ private:
             m_vtableFn(callable_detail::eOperation::Destroy, &m_storage, nullptr);
         }
 
-        m_storage  = {};
         m_fn       = nullptr;
         m_vtableFn = nullptr;
     }
@@ -297,7 +329,7 @@ private:
 
         if (_other.m_vtableFn)
         {
-            _other.m_vtableFn(callable_detail::eOperation::Copy, &m_storage, const_cast<StorageT*>(&_other.m_storage));
+            _other.m_vtableFn(callable_detail::eOperation::Copy, &m_storage, &_other.m_storage);
         }
         else
         {
@@ -313,7 +345,7 @@ private:
     {
         JUG_ASSERT(*this == nullptr, "OnMove_ should only be called on a disconnected BaseCallable");
 
-        if (_other.m_fn == nullptr)
+        if (!_other.m_fn)
         {
             return;
         }
@@ -327,15 +359,16 @@ private:
             m_storage = _other.m_storage;
         }
 
-        m_fn              = _other.m_fn;
-        m_vtableFn        = _other.m_vtableFn;
+        m_fn       = _other.m_fn;
+        m_vtableFn = _other.m_vtableFn;
+
         _other.m_fn       = nullptr;
         _other.m_vtableFn = nullptr;
     }
 
-    Fn                        m_fn       = nullptr;
-    callable_detail::VTableFn m_vtableFn = nullptr;
-    StorageT                  m_storage;
+    Fn       m_fn                                      = nullptr;
+    VTableFn m_vtableFn                                = nullptr;
+    alignas(alignof(void*)) mutable StorageT m_storage = {};
 };
 
 // ===========================================================================
@@ -348,7 +381,7 @@ template<typename FuncSignature, size_t kSize = kCallableDefaultSize, bool kbOve
 using Callable = BaseCallable<kSize, kbOverflow, FuncSignature>;
 
 // ===========================================================================
-//  Fn Signature Deduction
+//  FuncSignature Signature Deduction
 // ===========================================================================
 
 template<typename T>
@@ -356,6 +389,12 @@ struct FuncSignature;
 
 template<typename R, typename... Args>
 struct FuncSignature<R (*)(Args...)>
+{
+    using Type = R(Args...);
+};
+
+template<typename R, typename... Args>
+struct FuncSignature<R (*)(Args...) noexcept>
 {
     using Type = R(Args...);
 };
@@ -375,6 +414,18 @@ struct MethodSignature<R (Caller::*)(Args...) const>
     using Type = R(Args...);
 };
 
+template<typename R, typename Caller, typename... Args>
+struct MethodSignature<R (Caller::*)(Args...) noexcept>
+{
+    using Type = R(Args...);
+};
+
+template<typename R, typename Caller, typename... Args>
+struct MethodSignature<R (Caller::*)(Args...) const noexcept>
+{
+    using Type = R(Args...);
+};
+
 template<typename Functor>
 using FunctorSignature = decltype(&std::decay_t<Functor>::operator());
 
@@ -383,30 +434,39 @@ using FunctorSignature = decltype(&std::decay_t<Functor>::operator());
 // ===========================================================================
 
 // 함수 포인터, 글로벌/정적 함수, non-capturing 람다
-template<auto Fn, typename Signature = FuncSignature<decltype(Fn)>>
-[[nodiscard]] auto Bind()
+template<auto Fn>
+[[nodiscard]] Callable<typename FuncSignature<decltype(Fn)>::Type> Bind()
 {
-    Callable<typename Signature::Type> callable = {};
+    using Signature = FuncSignature<decltype(Fn)>;
+    using Type      = typename Signature::Type;
+
+    Callable<Type> callable = nullptr;
     callable.template Connect<Fn>();
     return callable;
 }
 
 // 클래스 멤버 함수 포인터
-template<auto Method, typename Caller, typename Signature = MethodSignature<decltype(Method)>>
-[[nodiscard]] auto Bind(
+template<auto Method, typename Caller>
+[[nodiscard]] Callable<typename MethodSignature<decltype(Method)>::Type> Bind(
     Caller* _pCaller)
 {
-    Callable<typename Signature::Type> callable = {};
+    using Signature = MethodSignature<decltype(Method)>;
+    using Type      = typename Signature::Type;
+
+    Callable<Type> callable = nullptr;
     callable.template Connect<Method>(_pCaller);
     return callable;
 }
 
 // 람다, functor, capturing 람다
-template<typename Fn, typename Signature = MethodSignature<FunctorSignature<Fn>>>
-[[nodiscard]] auto Bind(
+template<typename Fn>
+[[nodiscard]] Callable<typename MethodSignature<FunctorSignature<Fn>>::Type> Bind(
     Fn&& func)
 {
-    Callable<typename Signature::Type> callable = {};
+    using Signature = MethodSignature<FunctorSignature<Fn>>;
+    using Type      = typename Signature::Type;
+
+    Callable<Type> callable = nullptr;
     callable.Connect(std::forward<Fn>(func));
     return callable;
 }

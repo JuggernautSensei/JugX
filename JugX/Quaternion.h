@@ -5,7 +5,7 @@
 namespace jug
 {
 
-struct MATRIX;
+struct MAT4;
 
 struct alignas(16) QUAT
 {
@@ -23,14 +23,14 @@ struct alignas(16) QUAT
     }
 
     JUG_MATH_API constexpr QUAT(
-        const VECTOR3 _imaginary,
-        const float   _real)
+        const VEC3  _imaginary,
+        const float _real)
         : v { _imaginary, _real }
     {
     }
 
     explicit JUG_MATH_API constexpr QUAT(
-        const VECTOR4 _xyzw)
+        const VEC4 _xyzw)
         : v { _xyzw }
     {
     }
@@ -58,8 +58,8 @@ struct alignas(16) QUAT
     // =======================================================
 
     [[nodiscard]] JUG_MATH_API static constexpr QUAT MakeFromTo(
-        const VECTOR3 _dirFrom,
-        const VECTOR3 _dirTo)
+        const VEC3 _dirFrom,
+        const VEC3 _dirTo)
     {
         JUG_ASSERT(IsNormalized(_dirFrom) && IsNormalized(_dirTo), "From and To must be normalized vectors");
 
@@ -82,8 +82,8 @@ struct alignas(16) QUAT
     }
 
     [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromAxisAngle(
-        const VECTOR3 _axis,
-        const float   _rad)
+        const VEC3  _axis,
+        const float _rad)
     {
         JUG_ASSERT(IsNormalized(_axis), "Rotation axis must be normalized");
 
@@ -93,7 +93,7 @@ struct alignas(16) QUAT
 
     // pitch(x) -> yaw(y) -> roll(z)
     [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromEuler(
-        const VECTOR3 _pyrRad)
+        const VEC3 _pyrRad)
     {
         const auto [s, c]   = simd::SinCos(simd::Mult(_pyrRad.ToM128(), simd::SetAll(0.5f)));
         const simd::M128 p0 = simd::Shuffle<0, 2, 2, 2>(simd::Shuffle2<0, 0, 0, 0>(s, c));
@@ -109,7 +109,7 @@ struct alignas(16) QUAT
     }
 
     [[nodiscard]] JUG_MATH_API constexpr static QUAT MakeFromMatrix(
-        const MATRIX& _mtx);
+        const MAT4& _mtx);
 
     // =======================================================
     //  Access
@@ -127,7 +127,7 @@ struct alignas(16) QUAT
         return v[_index];
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 GetImaginary() const
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 GetImaginary() const
     {
         return v.ToVector3();
     }
@@ -179,8 +179,8 @@ struct alignas(16) QUAT
     [[nodiscard]] JUG_MATH_API constexpr QUAT operator*(
         const QUAT _other) const
     {
-        const simd::M128 q1  = ToM128();
-        const simd::M128 q2  = _other.ToM128();
+        const simd::M128 q1 = ToM128();
+        const simd::M128 q2 = _other.ToM128();
         // 부호 상수를 마지막에 곱해야 SSE2 에서 상수 레지스터 복사(movaps)가 안 생김
         const simd::M128 wx = simd::MultAdd(simd::Mult(simd::Splat<0>(q2), simd::Shuffle<3, 2, 1, 0>(q1)), simd::Set(1.f, -1.f, 1.f, -1.f), simd::Mult(simd::Splat<3>(q2), q1));
         const simd::M128 yz = simd::MultAdd(simd::Mult(simd::Splat<2>(q2), simd::Shuffle<1, 0, 3, 2>(q1)), simd::Set(-1.f, 1.f, 1.f, -1.f), simd::Mult(simd::Mult(simd::Splat<1>(q2), simd::Shuffle<2, 3, 0, 1>(q1)), simd::Set(1.f, 1.f, -1.f, -1.f)));
@@ -240,10 +240,17 @@ struct alignas(16) QUAT
     // =======================================================
 
     [[nodiscard]] JUG_MATH_API constexpr AXIS_ANGLE ToAxisAngle() const;
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3    ToEuler() const;
+    [[nodiscard]] JUG_MATH_API constexpr VEC3       ToEuler() const;
 
-    const static QUAT kZero;
-    const static QUAT kIdentity;
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT Zero()
+    {
+        return QUAT { 0.f, 0.f, 0.f, 0.f };
+    }
+
+    [[nodiscard]] JUG_MATH_API constexpr static QUAT Identity()
+    {
+        return QUAT { 0.f, 0.f, 0.f, 1.f };
+    }
 
     constexpr static size_t kDim = 4;
 
@@ -258,7 +265,7 @@ struct alignas(16) QUAT
             float w;
         };
 
-        VECTOR4         v;
+        VEC4            v;
         ARRAY<float, 4> e;
     };
     JUG_DISABLE_ANON_WARNING_END
@@ -267,20 +274,6 @@ struct alignas(16) QUAT
 static_assert(sizeof(QUAT) == 16, "QUAT must be tightly packed");
 static_assert(alignof(QUAT) == 16, "QUAT must be 16-byte aligned");
 static_assert(PodT<QUAT>, "QUAT must be POD type.");
-
-// =======================================================
-//  Constants
-// =======================================================
-
-inline constexpr QUAT QUAT::kZero     = { 0.f, 0.f, 0.f, 0.f };
-inline constexpr QUAT QUAT::kIdentity = { 0.f, 0.f, 0.f, 1.f };
-
-template<>
-struct MathConstants<QUAT>
-{
-    constexpr static QUAT kZero     = QUAT::kZero;
-    constexpr static QUAT kIdentity = QUAT::kIdentity;
-};
 
 // ======================================================
 //  Basic
@@ -349,7 +342,7 @@ struct MathConstants<QUAT>
     const simd::M128 lenSq = simd::Dot4V(q, q);
     if (IsZeroApprox(simd::Get<0>(lenSq)))
     {
-        return QUAT::kZero;
+        return QUAT::Zero();
     }
     return QUAT::FromM128(simd::Div(simd::Xor(q, simd::Set(-0.f, -0.f, -0.f, 0.f)), lenSq));
 }
@@ -358,32 +351,33 @@ struct MathConstants<QUAT>
 //  Vector
 // =======================================================
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 Rotate(
-    const VECTOR3 _v,
-    const QUAT    _q)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 Rotate(
+    const VEC3 _v,
+    const QUAT _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUAT must be normalized");
     const simd::M128 q = _q.ToM128();
     const simd::M128 v = _v.ToM128();
     const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
-    return VECTOR3::FromM128(simd::Add(simd::MultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
+    return VEC3::FromM128(simd::Add(simd::MultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 RotateInv(
-    const VECTOR3 _v,
-    const QUAT    _q)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 RotateInv(
+    const VEC3 _v,
+    const QUAT _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUAT must be normalized");
     const simd::M128 q = _q.ToM128();
     const simd::M128 v = _v.ToM128();
     const simd::M128 t = simd::Cross3(q, simd::Add(v, v));
-    return VECTOR3::FromM128(simd::Add(simd::NegMultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
+    return VEC3::FromM128(simd::Add(simd::NegMultAdd(simd::Splat<3>(q), t, v), simd::Cross3(q, t)));
 }
 
 // =======================================================
 //  Interpolation
 // =======================================================
 
+// 선형 보간 후 정규화
 [[nodiscard]] JUG_MATH_API constexpr QUAT Nlerp(
     const QUAT  _x,
     const QUAT  _y,
@@ -396,6 +390,7 @@ struct MathConstants<QUAT>
     return QUAT::FromM128(simd::NormalizeBy(q, simd::Dot4V(q, q)));
 }
 
+// 구면 선형 보간
 [[nodiscard]] JUG_MATH_API constexpr QUAT Slerp(
     const QUAT  _x,
     const QUAT  _y,
@@ -436,12 +431,12 @@ JUG_MATH_API constexpr AXIS_ANGLE QUAT::ToAxisAngle() const
     const QUAT shortest = v[3] < 0.f ? -(*this) : *this;
 
     AXIS_ANGLE ret;
-    ret.rad             = 2.f * ACos(Clamp(shortest[3], -1.f, 1.f));
-    const VECTOR3 img   = shortest.GetImaginary();
-    const float   lenSq = LengthSq(img);
+    ret.rad           = 2.f * ACos(Clamp(shortest[3], -1.f, 1.f));
+    const VEC3  img   = shortest.GetImaginary();
+    const float lenSq = LengthSq(img);
     if (IsZeroApprox(lenSq))   // 회전이 없으면 축이 정의되지 않는다 - +X 로 대체
     {
-        ret.axis = MathConstants<VECTOR3>::kUnitX;
+        ret.axis = VEC3::UnitX();
         return ret;
     }
 
@@ -449,7 +444,7 @@ JUG_MATH_API constexpr AXIS_ANGLE QUAT::ToAxisAngle() const
     return ret;
 }
 
-JUG_MATH_API constexpr VECTOR3 QUAT::ToEuler() const
+JUG_MATH_API constexpr VEC3 QUAT::ToEuler() const
 {
     JUG_ASSERT(IsNormalized(*this), "QUAT must be normalized");
 
@@ -463,7 +458,7 @@ JUG_MATH_API constexpr VECTOR3 QUAT::ToEuler() const
         const float m00    = 1.f - 2.f * (qy * qy + qz * qz);
         const float m02    = 2.f * (qx * qz - qy * qw);
         const float yawRad = ATan2(-m02, m00);
-        return VECTOR3 { pitchRad, yawRad, 0.f };
+        return VEC3 { pitchRad, yawRad, 0.f };
     }
 
     const float m20     = 2.f * (qx * qz + qy * qw);
@@ -472,7 +467,7 @@ JUG_MATH_API constexpr VECTOR3 QUAT::ToEuler() const
     const float m11     = 1.f - 2.f * (qx * qx + qz * qz);
     const float yawRad  = ATan2(m20, m22);
     const float rollRad = ATan2(m01, m11);
-    return VECTOR3 { pitchRad, yawRad, rollRad };
+    return VEC3 { pitchRad, yawRad, rollRad };
 }
 
 }   // namespace jug

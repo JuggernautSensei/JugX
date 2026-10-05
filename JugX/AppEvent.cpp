@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "ApplicationEvent.h"
+#include "AppEvent.h"
 
 #include <SDL3/SDL_keyboard.h>
 
@@ -20,22 +20,6 @@ String QuitEvent::ToString() const
 String LowMemoryEvent::ToString() const
 {
     return "LowMemoryEvent";
-}
-
-SystemEvent::SystemEvent(
-    const SDL_Event& _event)
-    : m_pEvent(&_event)
-{
-}
-
-const SDL_Event& SystemEvent::GetEvent() const
-{
-    return *m_pEvent;
-}
-
-String SystemEvent::ToString() const
-{
-    return Format("SystemEvent: type: {}", m_pEvent->type);
 }
 
 // ===========================================
@@ -307,11 +291,11 @@ String DisplayContentScaleChangedEvent::ToString() const
 KeyDownEvent::KeyDownEvent(
     const SDL_WindowID   _wndId,
     const eKey           _key,
-    const Flags<eKeyMod> _mods,
+    const Flags<eKeyMod> _flags,
     const bool           _bRepeat)
     : m_wndID(_wndId)
     , m_key(_key)
-    , m_mods(_mods)
+    , m_flags(_flags)
     , m_bRepeat(_bRepeat)
 {
 }
@@ -328,7 +312,7 @@ eKey KeyDownEvent::GetKey() const
 
 Flags<eKeyMod> KeyDownEvent::GetMods() const
 {
-    return m_mods;
+    return m_flags;
 }
 
 bool KeyDownEvent::IsRepeat() const
@@ -338,16 +322,16 @@ bool KeyDownEvent::IsRepeat() const
 
 String KeyDownEvent::ToString() const
 {
-    return Format("KeyDownEvent: window: {}, key: {}, mods: {:#x}, repeat: {}", m_wndID, NameOf(m_key), m_mods.GetFlags(), m_bRepeat);
+    return Format("KeyDownEvent: window: {}, key: {}, mods: {:#x}, repeat: {}", m_wndID, NameOf(m_key), m_flags.GetFlags(), m_bRepeat);
 }
 
 KeyUpEvent::KeyUpEvent(
     const SDL_WindowID   _wndId,
     const eKey           _key,
-    const Flags<eKeyMod> _mods)
+    const Flags<eKeyMod> _flags)
     : m_wndID(_wndId)
     , m_key(_key)
-    , m_mods(_mods)
+    , m_flags(_flags)
 {
 }
 
@@ -363,12 +347,12 @@ eKey KeyUpEvent::GetKey() const
 
 Flags<eKeyMod> KeyUpEvent::GetMods() const
 {
-    return m_mods;
+    return m_flags;
 }
 
 String KeyUpEvent::ToString() const
 {
-    return Format("KeyUpEvent: window: {}, key: {}, mods: {:#x}", m_wndID, NameOf(m_key), m_mods.GetFlags());
+    return Format("KeyUpEvent: window: {}, key: {}, mods: {:#x}", m_wndID, NameOf(m_key), m_flags.GetFlags());
 }
 
 TextInputEvent::TextInputEvent(

@@ -44,15 +44,15 @@ namespace
 
 JsonReader JsonReader::ArrayIterator::operator*() const
 {
-    JUG_ASSERT(m_pValue, "dereferencing an end iterator");
-    return JsonReader { m_pValue };
+    JUG_ASSERT(m_pValueOrNull, "dereferencing an end iterator");
+    return JsonReader { m_pValueOrNull };
 }
 
 JsonReader::ArrayIterator& JsonReader::ArrayIterator::operator++()
 {
-    JUG_ASSERT(m_pValue, "incrementing an end iterator");
+    JUG_ASSERT(m_pValueOrNull, "incrementing an end iterator");
     --m_remain;
-    m_pValue = (m_remain > 0) ? unsafe_yyjson_get_next(m_pValue) : nullptr;
+    m_pValueOrNull = (m_remain > 0) ? unsafe_yyjson_get_next(m_pValueOrNull) : nullptr;
     return *this;
 }
 
@@ -67,7 +67,7 @@ JsonReader::ArrayIterator JsonReader::ArrayIterator::operator++(
 bool JsonReader::ArrayIterator::operator==(
     const ArrayIterator& _other) const
 {
-    return m_pValue == _other.m_pValue;
+    return m_pValueOrNull == _other.m_pValueOrNull;
 }
 
 std::strong_ordering JsonReader::ArrayIterator::operator<=>(
@@ -152,7 +152,7 @@ JsonReader::ArrayIterator JsonReader::EndArray() const
     return ArrayIterator {};
 }
 
-JsonReader::ArrayRange JsonReader::GetArray() const
+JsonReader::ArrayRange JsonReader::GetArrayRange() const
 {
     return ArrayRange { BeginArray() };
 }
@@ -179,7 +179,7 @@ JsonReader::ObjectIterator JsonReader::EndObject() const
     return ObjectIterator {};
 }
 
-JsonReader::ObjectRange JsonReader::GetObject() const
+JsonReader::ObjectRange JsonReader::GetObjectRange() const
 {
     return ObjectRange { BeginObject() };
 }
@@ -322,18 +322,18 @@ Result<const char*> JsonReader::Read_(
 
 std::pair<StringView, JsonReader> JsonReader::ObjectIterator::operator*() const
 {
-    JUG_ASSERT(m_pKey, "dereferencing an end iterator");
+    JUG_ASSERT(m_pKeyOrNull, "dereferencing an end iterator");
     return {
-        StringView { unsafe_yyjson_get_str(m_pKey), unsafe_yyjson_get_len(m_pKey) },
-        JsonReader { m_pKey + 1 }
+        StringView { unsafe_yyjson_get_str(m_pKeyOrNull), unsafe_yyjson_get_len(m_pKeyOrNull) },
+        JsonReader { m_pKeyOrNull + 1 }
     };
 }
 
 JsonReader::ObjectIterator& JsonReader::ObjectIterator::operator++()
 {
-    JUG_ASSERT(m_pKey, "incrementing an end iterator");
+    JUG_ASSERT(m_pKeyOrNull, "incrementing an end iterator");
     --m_remain;
-    m_pKey = (m_remain > 0) ? unsafe_yyjson_get_next(m_pKey + 1) : nullptr;
+    m_pKeyOrNull = (m_remain > 0) ? unsafe_yyjson_get_next(m_pKeyOrNull + 1) : nullptr;
     return *this;
 }
 
@@ -348,7 +348,7 @@ JsonReader::ObjectIterator JsonReader::ObjectIterator::operator++(
 bool JsonReader::ObjectIterator::operator==(
     const ObjectIterator& _other) const
 {
-    return m_pKey == _other.m_pKey;
+    return m_pKeyOrNull == _other.m_pKeyOrNull;
 }
 
 std::strong_ordering JsonReader::ObjectIterator::operator<=>(
@@ -364,7 +364,7 @@ std::strong_ordering JsonReader::ObjectIterator::operator<=>(
 JsonReader::ArrayIterator::ArrayIterator(
     yyjson_val*  _pValue,
     const size_t _remain)
-    : m_pValue(_pValue)
+    : m_pValueOrNull(_pValue)
       , m_remain(_remain)
 {
 }
@@ -372,7 +372,7 @@ JsonReader::ArrayIterator::ArrayIterator(
 JsonReader::ObjectIterator::ObjectIterator(
     yyjson_val*  _pKey,
     const size_t _remain)
-    : m_pKey(_pKey)
+    : m_pKeyOrNull(_pKey)
       , m_remain(_remain)
 {
 }

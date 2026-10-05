@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Callable.h"
 
 namespace jug
 {
@@ -11,8 +12,27 @@ enum class eTimeUnit
     Sec
 };
 
-[[nodiscard]] float  TimeCastF(uint64_t _count, eTimeUnit _unit);
-[[nodiscard]] double TimeCast(uint64_t _count, eTimeUnit _unit);
+[[nodiscard]] float      TimeCastF(uint64_t _count, eTimeUnit _unit);
+[[nodiscard]] double     TimeCast(uint64_t _count, eTimeUnit _unit);
+[[nodiscard]] eTimeUnit  ToReadableTimeUnit(uint64_t _count);
+[[nodiscard]] StringView ToTimeUnitString(eTimeUnit _unit);   // ns, us, ms, s
+
+struct ReadableTime
+{
+    eTimeUnit  unit     = eTimeUnit::Nano;
+    double     time     = 0.0;
+    StringView unitName = {};
+};
+
+struct ReadableTimeF
+{
+    eTimeUnit  unit     = eTimeUnit::Nano;
+    float      time     = 0.f;
+    StringView unitName = {};
+};
+
+[[nodiscard]] ReadableTime  ToReadableTime(uint64_t _count);
+[[nodiscard]] ReadableTimeF ToReadableTimeF(uint64_t _count);
 
 class Timer
 {

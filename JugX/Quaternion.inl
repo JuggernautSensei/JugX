@@ -5,7 +5,7 @@ namespace jug
 {
 
 [[nodiscard]] JUG_MATH_API constexpr QUAT QUAT::MakeFromMatrix(
-    const MATRIX& _mtx)
+    const MAT4& _mtx)
 {
     const float m00 = _mtx[0][0], m01 = _mtx[0][1], m02 = _mtx[0][2];
     const float m10 = _mtx[1][0], m11 = _mtx[1][1], m12 = _mtx[1][2];

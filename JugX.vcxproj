@@ -25,9 +25,10 @@
     <ClInclude Include="JugX\Buffer.h" />
     <ClInclude Include="JugX\Config.h" />
     <ClInclude Include="JugX\Error.h" />
-    <ClInclude Include="JugX\Application.h" />
+    <ClInclude Include="JugX\App.h" />
     <ClInclude Include="JugX\Event.h" />
-    <ClInclude Include="JugX\ApplicationEvent.h" />
+    <ClInclude Include="JugX\AppEvent.h" />
+    <ClInclude Include="JugX\File.h" />
     <ClInclude Include="JugX\JsonString.h" />
     <ClInclude Include="JugX\KeyCode.h" />
     <ClInclude Include="JugX\EventDispatcher.h" />
@@ -36,7 +37,9 @@
     <ClInclude Include="JugX\FileWriter.h" />
     <ClInclude Include="JugX\JsonAdlSerializer.h" />
     <ClInclude Include="JugX\LruCache.h" />
+    <ClInclude Include="JugX\InvalidIndex.h" />
     <ClInclude Include="JugX\NoopHasher.h" />
+    <ClInclude Include="JugX\Optional.h" />
     <ClInclude Include="JugX\OS.h" />
     <ClInclude Include="JugX\pch.h" />
     <ClInclude Include="JugX\Random.h" />
@@ -47,8 +50,6 @@
     <ClInclude Include="JugX\Tag.h" />
     <ClInclude Include="JugX\Typedef.h" />
     <ClInclude Include="JugX\AxisAngle.h" />
-    <ClInclude Include="JugX\ConsoleLogger.h" />
-    <ClInclude Include="JugX\FileLogger.h" />
     <ClInclude Include="JugX\FixedBlockMemoryPool.h" />
     <ClInclude Include="JugX\Callable.h" />
     <ClInclude Include="JugX\Collision.h" />
@@ -58,10 +59,7 @@
     <ClInclude Include="JugX\EnumRefl.h" />
     <ClInclude Include="JugX\Alloc.h" />
     <ClInclude Include="JugX\CoreLogger.h" />
-    <ClInclude Include="JugX\GroupLogger.h" />
-    <ClInclude Include="JugX\Logger.h" />
     <ClInclude Include="JugX\JsonSerializer.h" />
-    <ClInclude Include="JugX\MemoryLogger.h" />
     <ClInclude Include="JugX\StringEncoder.h" />
     <ClInclude Include="JugX\StringFormat.h" />
     <ClInclude Include="JugX\Timer.h" />
@@ -96,6 +94,7 @@
     <ClInclude Include="JugX\Scoped.h" />
     <ClInclude Include="JugX\SIMD.h" />
     <ClInclude Include="JugX\Sphere.h" />
+    <ClInclude Include="JugX\Transform.h" />
     <ClInclude Include="JugX\Triangle.h" />
     <ClInclude Include="JugX\TypeTraits.h" />
     <ClInclude Include="JugX\Vector.h" />
@@ -108,27 +107,25 @@
     <ClCompile Include="JugX\Alloc.cpp" />
     <ClCompile Include="JugX\Assert.cpp" />
     <ClCompile Include="JugX\Buffer.cpp" />
-    <ClCompile Include="JugX\ConsoleLogger.cpp" />
-    <ClCompile Include="JugX\Application.cpp" />
+    <ClCompile Include="JugX\App.cpp" />
     <ClCompile Include="JugX\Event.cpp" />
-    <ClCompile Include="JugX\ApplicationEvent.cpp" />
+    <ClCompile Include="JugX\AppEvent.cpp" />
+    <ClCompile Include="JugX\File.cpp" />
     <ClCompile Include="JugX\JsonString.cpp" />
     <ClCompile Include="JugX\KeyCode.cpp" />
     <ClCompile Include="JugX\EventDispatcher.cpp" />
     <ClCompile Include="JugX\Fatal.cpp" />
     <ClCompile Include="JugX\FileReader.cpp" />
     <ClCompile Include="JugX\FileReaderWriter.cpp" />
-    <ClCompile Include="JugX\FileLogger.cpp" />
     <ClCompile Include="JugX\CoreLogger.cpp" />
     <ClCompile Include="JugX\FileWriter.cpp" />
     <ClCompile Include="JugX\FixedBlockMemoryPool.cpp" />
-    <ClCompile Include="JugX\GroupLogger.cpp" />
     <ClCompile Include="JugX\JsonDeserializer.cpp" />
     <ClCompile Include="JugX\JsonSerializer.cpp" />
-    <ClCompile Include="JugX\Logger.cpp" />
     <ClCompile Include="JugX\MemoryArena.cpp" />
     <ClCompile Include="JugX\MemoryHasher.cpp" />
-    <ClCompile Include="JugX\MemoryLogger.cpp" />
+    <ClCompile Include="JugX\InvalidIndex.cpp" />
+    <ClCompile Include="JugX\Optional.cpp" />
     <ClCompile Include="JugX\OS.cpp" />
     <ClCompile Include="JugX\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -185,6 +182,7 @@
     <ClCompile Include="JugX\Sphere.cpp" />
     <ClCompile Include="JugX\StringHasher.cpp" />
     <ClCompile Include="JugX\StringParser.cpp" />
+    <ClCompile Include="JugX\Transform.cpp" />
     <ClCompile Include="JugX\Triangle.cpp" />
     <ClCompile Include="JugX\TypeRefl.cpp" />
     <ClCompile Include="JugX\TypeTraits.cpp" />
@@ -295,14 +293,16 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
     </ClCompile>
     <PostBuildEvent>
-      <Command>"C:\Users\Ahnjiwoo\AppData\Local\Python\bin\python.exe" "$(ProjectDir)Scripts\generate_header.py"</Command>
+      <Command>python "$(ProjectDir)Script\generate_header.py"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -315,14 +315,16 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatAngleIncludeAsExternal>true</TreatAngleIncludeAsExternal>
     </ClCompile>
     <PostBuildEvent>
-      <Command>"C:\Users\Ahnjiwoo\AppData\Local\Python\bin\python.exe" "$(ProjectDir)Scripts\generate_header.py"</Command>
+      <Command>python "$(ProjectDir)Script\generate_header.py"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -6,8 +6,6 @@ namespace jug
 
 enum class eKey
 {
-    None = 0,
-
     // ===========================================
     //  Alphabet
     // ===========================================
@@ -152,7 +150,7 @@ enum class eKey
     KpPeriod   = 99,
     KpEquals   = 103,
 
-    Application = 101,
+    App = 101,
     Menu        = 118,
 
     // ===========================================
@@ -169,8 +167,6 @@ enum class eKey
     RGui   = 231,
 
     Mode = 257,
-
-    Count = 512,
 };
 
 // ===========================================
@@ -179,12 +175,11 @@ enum class eKey
 
 enum class eMouse
 {
-    None,
-    Left,
-    Middle,
-    Right,
-    X1,
-    X2,
+    Left   = 1,
+    Middle = 2,
+    Right  = 3,
+    X1     = 4,
+    X2     = 5,
 };
 
 // ================================================================

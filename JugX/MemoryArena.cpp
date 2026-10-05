@@ -52,20 +52,21 @@ void* MemoryArena::Alloc(
 }
 
 void* MemoryArena::Alloc(
-    const size_t _size, const size_t _alignment)
+    const size_t _size,
+    const size_t _alignment)
 {
     JUG_ASSERT(std::has_single_bit(_alignment), "_alignment must be power of 2");
-    JUG_ASSERT(sizeof(LINK) + (_alignment - 1) + _size <= m_poolSize, "MemoryArena pool size is too small for the requested allocation size and alignment.\n");
+    JUG_ASSERT(sizeof(Link) + (_alignment - 1) + _size <= m_poolSize, "MemoryArena pool size is too small for the requested allocation size and alignment.\n");
 
     std::byte* pAlignedCur = m_pCur ? AlignUp(m_pCur, _alignment) : nullptr;
     if (!m_pPoolList || pAlignedCur + _size > m_pEnd)
     {
-        LINK* pHeader  = static_cast<LINK*>(jug::Alloc(m_poolSize));
-        pHeader->pLink = m_pPoolList;
-        m_pPoolList    = pHeader;
-        m_pCur         = reinterpret_cast<std::byte*>(pHeader) + sizeof(LINK);
-        m_pEnd         = reinterpret_cast<std::byte*>(pHeader) + m_poolSize;
-        pAlignedCur    = AlignUp(m_pCur, _alignment);
+        Link* pHeader        = static_cast<Link*>(jug::Alloc(m_poolSize));
+        pHeader->pLinkOrNull = m_pPoolList;
+        m_pPoolList          = pHeader;
+        m_pCur               = reinterpret_cast<std::byte*>(pHeader) + sizeof(Link);
+        m_pEnd               = reinterpret_cast<std::byte*>(pHeader) + m_poolSize;
+        pAlignedCur          = AlignUp(m_pCur, _alignment);
     }
 
     m_pCur = pAlignedCur + _size;
@@ -74,10 +75,10 @@ void* MemoryArena::Alloc(
 
 void MemoryArena::Reset()
 {
-    LINK* pPool = m_pPoolList;
+    Link* pPool = m_pPoolList;
     while (pPool)
     {
-        LINK* pNext = pPool->pLink;
+        Link* pNext = pPool->pLinkOrNull;
         jug::Free(pPool);
         pPool = pNext;
     }

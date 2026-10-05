@@ -10,14 +10,16 @@ enum class eSystemError
     OS,
 };
 
-struct ErrnoErrorCategory : public IErrorCategory
+class ErrnoErrorCategory : public IErrorCategory
 {
+public:
     [[nodiscard]] StringView GetName() const noexcept override;
     [[nodiscard]] String     MakeMessage(int _err) const override;
 };
 
-struct OsErrorCategory : public IErrorCategory
+class OsErrorCategory : public IErrorCategory
 {
+public:
     [[nodiscard]] StringView GetName() const noexcept override;
     [[nodiscard]] String     MakeMessage(int _err) const override;
 };

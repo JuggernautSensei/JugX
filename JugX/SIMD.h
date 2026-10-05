@@ -75,7 +75,7 @@ struct M128X4
     M128 r[4];
 };
 
-struct SIN_COS_RESULT
+struct SIN_COS
 {
     M128 sin;
     M128 cos;
@@ -1105,7 +1105,7 @@ JUG_MATH_API constexpr void JUG_VECTORCALL Transpose4(
     return NegMultAdd(Sub(t, magic), SetAll(3.141592654f), _x);
 }
 
-JUG_MATH_API constexpr SIN_COS_RESULT JUG_VECTORCALL SinCos(
+JUG_MATH_API constexpr SIN_COS JUG_VECTORCALL SinCos(
     const M128 _x)
 {
     M128       sign;

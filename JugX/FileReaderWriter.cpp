@@ -1,19 +1,20 @@
 ﻿#include "pch.h"
 #include "FileReaderWriter.h"
 
+#include <cerrno>
 #include <cstdint>
-#include <stdio.h>
 #include <cstdio>
 #include <utility>
 
 #include "Assert.h"
+#include "CoreLogger.h"
+#include "File.h"
+#include "Platform.h"
+#include "Result.h"
+#include "SystemError.h"
 
 namespace jug
 {
-
-// ===============================================
-//  File IO
-// ===============================================
 
 FileReaderWriter::FileReaderWriter(
     FileReaderWriter&& _other) noexcept
@@ -37,60 +38,55 @@ FileReaderWriter::~FileReaderWriter()
     Close();
 }
 
-void FileReaderWriter::Seek(
+Error FileReaderWriter::Seek(
     const int64_t     _offset,
     const eSeekOrigin _origin) const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
-
-    int origin = 0;
-    switch (_origin)
+    if (jug::Seek(m_pFile, _offset, _origin) != 0)
     {
-        case eSeekOrigin::Set:
-            origin = SEEK_SET;
-            break;
-        case eSeekOrigin::Cur:
-            origin = SEEK_CUR;
-            break;
-        case eSeekOrigin::End:
-            origin = SEEK_END;
-            break;
-        default:
-            JUG_ASSERT(false, "Invalid seek origin.\n");
+        const Error error = MakeSystemError(errno, eSystemError::Errno);
+        JUG_CORE_LOG_ERROR("Failed to seek file (offset {}): {}", _offset, error.MakeMessage());
+        return error;
     }
-
-    const int err = ::_fseeki64(m_pFile, _offset, origin);
-    JUG_ASSERT(err == 0, "Failed to seek file position.\n");
+    return kOK;
 }
 
-int64_t FileReaderWriter::Tell() const
+Result<size_t> FileReaderWriter::Tell() const
 {
     JUG_ASSERT(m_pFile, "File is not open.\n");
-
-    const int64_t n = ::_ftelli64(m_pFile);
-    JUG_ASSERT(n != -1, "Failed to tell file position.\n");
-    return n;
+    const int64_t pos = jug::Tell(m_pFile);
+    if (pos < 0)
+    {
+        const Error error = MakeSystemError(errno, eSystemError::Errno);
+        JUG_CORE_LOG_ERROR("Failed to tell file position: {}", error.MakeMessage());
+        return error;
+    }
+    return static_cast<size_t>(pos);
 }
 
-int64_t FileReaderWriter::GetSize() const
+Result<size_t> FileReaderWriter::GetSize() const
 {
-    const int64_t cur = Tell();
-    Seek(0, eSeekOrigin::End);
-    const int64_t size = Tell();
-    Seek(cur, eSeekOrigin::Set);
+    const Result<size_t> cur = Tell();
+    JUG_RETURN_IF_ERROR(cur);
+    JUG_RETURN_IF_ERROR(Seek(0, eSeekOrigin::End));
+    Result<size_t> size = Tell();
+    JUG_RETURN_IF_ERROR(Seek(static_cast<int64_t>(*cur), eSeekOrigin::Set));
     return size;
 }
 
-int64_t FileReaderWriter::GetRemain() const
+Result<size_t> FileReaderWriter::GetRemain() const
 {
-    const int64_t cur  = Tell();
-    const int64_t size = GetSize();
-    return size - cur;
+    const Result<size_t> cur = Tell();
+    JUG_RETURN_IF_ERROR(cur);
+    const Result<size_t> size = GetSize();
+    JUG_RETURN_IF_ERROR(size);
+    return *cur < *size ? *size - *cur : 0;
 }
 
-void FileReaderWriter::Rewind() const
+Error FileReaderWriter::Rewind() const
 {
-    Seek(0, eSeekOrigin::Set);
+    return Seek(0, eSeekOrigin::Set);
 }
 
 FILE* FileReaderWriter::GetFile() const
@@ -100,20 +96,24 @@ FILE* FileReaderWriter::GetFile() const
 
 bool FileReaderWriter::IsOpened() const
 {
-    return m_pFile;
+    return m_pFile != nullptr;
 }
 
-void FileReaderWriter::Close()
+Error FileReaderWriter::Close()
 {
-    if (m_pFile)
+    if (!m_pFile)
     {
-        if (::fclose(m_pFile) == EOF)
-        {
-            JUG_ASSERT(false, "Failed to close file.\n");
-        }
-
-        m_pFile = nullptr;
+        return kOK;
     }
+
+    FILE* pFile = std::exchange(m_pFile, nullptr);
+    if (::fclose(pFile) == EOF)
+    {
+        const Error error = MakeSystemError(errno, eSystemError::Errno);
+        JUG_CORE_LOG_ERROR("Failed to close file: {}", error.MakeMessage());
+        return error;
+    }
+    return kOK;
 }
 
 FileReaderWriter::operator bool() const

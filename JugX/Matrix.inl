@@ -4,7 +4,7 @@
 namespace jug
 {
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeRotation(
+JUG_MATH_API constexpr MAT4 MAT4::MakeRotation(
     const QUAT& _q)
 {
     JUG_ASSERT(IsNormalized(_q), "QUAT must be normalized");
@@ -12,20 +12,20 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeRotation(
     return FromM128X4(matrix_detail::RotationQuat(_q.ToM128()));
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeSRT(
-    const VECTOR3 _scale,
-    const QUAT&   _rotation,
-    const VECTOR3 _translation)
+JUG_MATH_API constexpr MAT4 MAT4::MakeSRT(
+    const VEC3 _scale,
+    const QUAT _rotation,
+    const VEC3 _translation)
 {
     JUG_ASSERT(IsNormalized(_rotation), "QUAT must be normalized");
 
     return FromM128X4(matrix_detail::ScaleTranslate(matrix_detail::RotationQuat(_rotation.ToM128()), _scale.ToM128(), _translation.ToM128()));
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeInvSRT(
-    const VECTOR3 _scale,
-    const QUAT    _rotation,
-    const VECTOR3 _translation)
+JUG_MATH_API constexpr MAT4 MAT4::MakeInvSRT(
+    const VEC3 _scale,
+    const QUAT _rotation,
+    const VEC3 _translation)
 {
     JUG_ASSERT(IsNormalized(_rotation), "QUAT must be normalized");
     JUG_ASSERT(!IsZeroApprox(_scale[0]) && !IsZeroApprox(_scale[1]) && !IsZeroApprox(_scale[2]), "Scale cannot have a zero component.");
@@ -33,9 +33,9 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeInvSRT(
     return FromM128X4(matrix_detail::InvSRT(matrix_detail::RotationQuat(_rotation.ToM128()), _scale.ToM128(), _translation.ToM128()));
 }
 
-JUG_MATH_API constexpr MATRIX MATRIX::MakeViewLookTo(
-    const VECTOR3 _eye,
-    const QUAT    _rotation)
+JUG_MATH_API constexpr MAT4 MAT4::MakeViewLookTo(
+    const VEC3 _eye,
+    const QUAT _rotation)
 {
     JUG_ASSERT(IsNormalized(_rotation), "QUAT must be normalized");
 
@@ -43,10 +43,10 @@ JUG_MATH_API constexpr MATRIX MATRIX::MakeViewLookTo(
 }
 
 JUG_MATH_API constexpr void Decompose(
-    const MATRIX& _mtx,
-    VECTOR3*      _pOutScaleOrNull,
-    QUAT*         _pOutRotationOrNull,
-    VECTOR3*      _pOutTranslationOrNull)
+    const MAT4& _mtx,
+    VEC3* const _pOutScaleOrNull,
+    QUAT* const _pOutRotationOrNull,
+    VEC3* const _pOutTranslationOrNull)
 {
     const simd::M128X4 m = _mtx.ToM128X4();
     if (_pOutRotationOrNull || _pOutScaleOrNull)
@@ -56,31 +56,37 @@ JUG_MATH_API constexpr void Decompose(
         simd::M128 z = simd::Mult(m.r[2], m.r[2]);
         simd::M128 w = simd::Zero();
         simd::Transpose4(x, y, z, w);
-        const simd::M128 scale = simd::Sqrt(simd::Add(simd::Add(x, y), simd::Add(z, w)));
+        simd::M128 scale = simd::Sqrt(simd::Add(simd::Add(x, y), simd::Add(z, w)));
+
+        if (simd::Get<0>(simd::Dot3V(simd::Cross3(m.r[0], m.r[1]), m.r[2])) < 0.f)
+        {
+            scale = simd::Mult(scale, simd::Set(-1.f, 1.f, 1.f, 1.f));
+        }
+
         if (_pOutScaleOrNull)
         {
-            *_pOutScaleOrNull = VECTOR3::FromM128(scale);
+            *_pOutScaleOrNull = VEC3::FromM128(scale);
         }
 
         if (_pOutRotationOrNull)
         {
-            JUG_ASSERT(simd::MoveMask(simd::CmpLt(scale, simd::SetAll(kEpsilon))) == 0b1000, "Scale components cannot be zero");
+            JUG_ASSERT(simd::MoveMask(simd::CmpLt(simd::Abs(scale), simd::SetAll(kEpsilon))) == 0b1000, "Scale components cannot be zero");
 
             const simd::M128 inv = simd::Div(simd::SetAll(1.f), scale);
-            *_pOutRotationOrNull = QUAT::MakeFromMatrix(MATRIX::FromM128X4(simd::M128X4 {
-                {
-                 simd::Mult(m.r[0], simd::Splat<0>(inv)),
-                 simd::Mult(m.r[1], simd::Splat<1>(inv)),
-                 simd::Mult(m.r[2], simd::Splat<2>(inv)),
-                 simd::Set(0.f, 0.f, 0.f, 1.f),
-                 }
-            }));
+
+            simd::M128X4 mat;
+            mat.r[0] = simd::Mult(m.r[0], simd::Splat<0>(inv));
+            mat.r[1] = simd::Mult(m.r[1], simd::Splat<1>(inv));
+            mat.r[2] = simd::Mult(m.r[2], simd::Splat<2>(inv));
+            mat.r[3] = simd::Set(0.f, 0.f, 0.f, 1.f);
+
+            *_pOutRotationOrNull = QUAT::MakeFromMatrix(MAT4::FromM128X4(mat));
         }
     }
 
     if (_pOutTranslationOrNull)
     {
-        *_pOutTranslationOrNull = VECTOR3::FromM128(m.r[3]);
+        *_pOutTranslationOrNull = VEC3::FromM128(m.r[3]);
     }
 }
 

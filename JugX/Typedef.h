@@ -7,7 +7,10 @@
 #include <set>
 #include <span>
 #include <vector>
-#ifndef __CUDACC__   // nvcc 가 거친 phmap 은 MSVC 호스트 컴파일에서 깨진다. CUDA TU 에선 해시 컨테이너를 쓰지 않는다.
+
+#include "Platform.h"
+
+#ifndef __CUDACC__   // parallel_hashmap 이 cuda build에서 깨짐
 #    include <parallel_hashmap/phmap.h>
 #endif
 

@@ -26,28 +26,21 @@ struct INTERVAL
         return (min + max) * 0.5f;
     }
 
-    static const INTERVAL kZero;
-    static const INTERVAL kUniverse;
+    [[nodiscard]] JUG_MATH_API static constexpr INTERVAL Zero()
+    {
+        return INTERVAL { 0.f, 0.f };
+    }
+
+    [[nodiscard]] JUG_MATH_API static constexpr INTERVAL Universe()
+    {
+        return INTERVAL { Min<float>(), Max<float>() };
+    }
 
     float min;
     float max;
 };
 
 static_assert(PodT<INTERVAL>, "INTERVAL must be POD type.");
-
-// =========================================================
-//  Constants
-// =========================================================
-
-inline constexpr INTERVAL INTERVAL::kZero     = INTERVAL { 0.f, 0.f };
-inline constexpr INTERVAL INTERVAL::kUniverse = INTERVAL { Min<float>(), Max<float>() };
-
-template<>
-struct MathConstants<INTERVAL>
-{
-    static constexpr INTERVAL kZero     = INTERVAL::kZero;
-    static constexpr INTERVAL kUniverse = INTERVAL::kUniverse;
-};
 
 // =======================================================
 //  Method

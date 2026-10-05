@@ -16,9 +16,9 @@ class MemoryArena
 {
     JUG_CLASS(MemoryArena, NO_COPY)
 
-    struct LINK
+    struct Link
     {
-        LINK* pLink;
+        Link* pLinkOrNull = nullptr;
     };
 
 public:
@@ -32,7 +32,7 @@ public:
     void  Reset();
 
 private:
-    LINK*      m_pPoolList = nullptr;   // 풀 리스트
+    Link*      m_pPoolList = nullptr;   // 풀 리스트
     std::byte* m_pCur      = nullptr;
     std::byte* m_pEnd      = nullptr;
     size_t     m_poolSize  = 0;

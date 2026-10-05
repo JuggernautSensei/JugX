@@ -50,8 +50,8 @@ public:
     private:
         ArrayIterator(yyjson_val* _pValue, size_t _remain);
 
-        yyjson_val* m_pValue = nullptr;
-        size_t      m_remain = 0;
+        yyjson_val* m_pValueOrNull = nullptr;
+        size_t      m_remain       = 0;
     };
 
     class ArrayRange
@@ -88,8 +88,8 @@ public:
     private:
         ObjectIterator(yyjson_val* _pKey, size_t _remain);
 
-        yyjson_val* m_pKey   = nullptr;
-        size_t      m_remain = 0;
+        yyjson_val* m_pKeyOrNull = nullptr;
+        size_t      m_remain     = 0;
     };
 
     class ObjectRange
@@ -147,11 +147,11 @@ public:
 
     [[nodiscard]] ArrayIterator BeginArray() const;
     [[nodiscard]] ArrayIterator EndArray() const;
-    [[nodiscard]] ArrayRange    GetArray() const;
+    [[nodiscard]] ArrayRange    GetArrayRange() const;
 
     [[nodiscard]] ObjectIterator BeginObject() const;
     [[nodiscard]] ObjectIterator EndObject() const;
-    [[nodiscard]] ObjectRange    GetObject() const;
+    [[nodiscard]] ObjectRange    GetObjectRange() const;
 
     // ======================================
     //  Utils
@@ -247,12 +247,12 @@ class JsonDeserializer
     JUG_CLASS(JsonDeserializer, NO_COPY)
 
 public:
-    [[nodiscard]] static Result<JsonDeserializer> Load(StringView _json, Flags<eJsonLoadOption> _flags = eJsonLoadOption::None);
-    [[nodiscard]] static Result<JsonDeserializer> LoadFromFile(const FilePath& _path, Flags<eJsonLoadOption> _flags = eJsonLoadOption::None);
-
     JsonDeserializer(JsonDeserializer&& _other) noexcept;
     JsonDeserializer& operator=(JsonDeserializer&& _other) noexcept;
     ~JsonDeserializer();
+
+    [[nodiscard]] static Result<JsonDeserializer> Load(StringView _json, Flags<eJsonLoadOption> _flags = eJsonLoadOption::None);
+    [[nodiscard]] static Result<JsonDeserializer> LoadFromFile(const FilePath& _path, Flags<eJsonLoadOption> _flags = eJsonLoadOption::None);
 
     [[nodiscard]] JsonReader GetReader() const;
 

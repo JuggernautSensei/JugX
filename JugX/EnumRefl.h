@@ -1,6 +1,16 @@
 ﻿#pragma once
 #include "Math.h"
+#include "InvalidIndex.h"
+#include "Optional.h"
 #include "StringHasher.h"
+
+#ifndef JUG_ENUM_REFL_RANGE_MIN
+#    define JUG_ENUM_REFL_RANGE_MIN 0
+#endif
+
+#ifndef JUG_ENUM_REFL_RANGE_MAX
+#    define JUG_ENUM_REFL_RANGE_MAX 127
+#endif
 
 namespace jug
 {
@@ -8,9 +18,6 @@ namespace jug
 // =========================================================
 //  EnumRefl
 // =========================================================
-
-constexpr int kEnumReflMin = 0;
-constexpr int kEnumReflMax = 127;
 
 template<typename T>
 concept EnumT = std::is_enum_v<T>;
@@ -20,17 +27,9 @@ using UnderlyingT = std::underlying_type_t<E>;
 
 namespace enum_relf_detail
 {
-    inline constexpr int kMaxReflectRange = 4096;
-    inline constexpr int kInvalidIndex    = Max<int>();
-
-    template<EnumT E>
-    inline constexpr int kRangeMin = kEnumReflMin;
-
-    template<EnumT E>
-    inline constexpr int kRangeMax = kEnumReflMax;
-
-    template<EnumT E>
-    inline constexpr int kRangeSize = kRangeMax<E> - kRangeMin<E> + 1;
+    inline constexpr int kReflRangeMin = JUG_ENUM_REFL_RANGE_MIN;
+    inline constexpr int kReflRangeMax = JUG_ENUM_REFL_RANGE_MAX;
+    inline constexpr int kReflRange    = kReflRangeMax - kReflRangeMin + 1;
 
     template<EnumT E, E kValue>
     [[nodiscard]] constexpr StringView ExtractFullName()
@@ -76,63 +75,69 @@ namespace enum_relf_detail
     [[nodiscard]] constexpr size_t CountOfImpl(
         std::integer_sequence<int, kOffsets...>)
     {
-        return (static_cast<size_t>(IsValidName(ExtractFullName<E, static_cast<E>(kRangeMin<E> + kOffsets)>())) + ...);
+        return (static_cast<size_t>(IsValidName(ExtractFullName<E, static_cast<E>(kReflRangeMin + kOffsets)>())) + ...);
     }
 
     template<EnumT E>
-    inline constexpr size_t kCount = CountOfImpl<E>(std::make_integer_sequence<int, kRangeSize<E>> {});
+    inline constexpr size_t kCount = CountOfImpl<E>(std::make_integer_sequence<int, kReflRange> {});
 
     template<EnumT E>
     [[nodiscard]] constexpr bool IsOutOfRange()
     {
-        return IsValidName(ExtractFullName<E, static_cast<E>(kRangeMin<E> - 1)>())
-            || IsValidName(ExtractFullName<E, static_cast<E>(kRangeMax<E> + 1)>());
+        return IsValidName(ExtractFullName<E, static_cast<E>(kReflRangeMin - 1)>())
+            || IsValidName(ExtractFullName<E, static_cast<E>(kReflRangeMax + 1)>());
+    }
+
+    template<size_t kSize>
+    [[nodiscard]] constexpr ARRAY<size_t, kSize> MakeInvalidLut()
+    {
+        ARRAY<size_t, kSize> lut = {};
+        lut.fill(kInvalidIndex);
+        return lut;
     }
 
     template<EnumT E>
     struct Metadata
     {
-        static_assert(kRangeMin<E> <= kRangeMax<E>, "EnumRefl: EnumReflRange<E>::kMin must not exceed kMax");
-        static_assert(kRangeSize<E> <= kMaxReflectRange, "EnumRefl: EnumReflRange<E> is too wide (compile time explodes)");
-        static_assert(kCount<E> > 0, "EnumRefl: no enumerator found in range. specialize jug::EnumReflRange<E>");
-        static_assert(!IsOutOfRange<E>(), "EnumRefl: enumerator found outside range. specialize jug::EnumReflRange<E>");
+        static_assert(kReflRangeMin <= kReflRangeMax, "EnumRefl: JUG_ENUM_REFL_RANGE_MIN must not exceed JUG_ENUM_REFL_RANGE_MAX");
+        static_assert(kCount<E> > 0, "EnumRefl: no enumerator found in range. adjust JUG_ENUM_REFL_RANGE_MIN/MAX");
+        static_assert(!IsOutOfRange<E>(), "EnumRefl: enumerator found outside range. adjust JUG_ENUM_REFL_RANGE_MIN/MAX");
 
         ARRAY<E, kCount<E>>          values    = {};
         ARRAY<StringView, kCount<E>> names     = {};
         ARRAY<StringView, kCount<E>> fullNames = {};
         ARRAY<uint64_t, kCount<E>>   hashes    = {};
-        ARRAY<size_t, kRangeSize<E>> lut       = {};
-        E                            min       = static_cast<E>(kRangeMax<E>);
-        E                            max       = static_cast<E>(kRangeMin<E>);
+        ARRAY<size_t, kReflRange>    lut       = MakeInvalidLut<kReflRange>();   // 원소는 kInvalidIndex 가능
+        E                            min       = {};
+        E                            max       = {};
     };
 
     template<EnumT E, int... kOffsets>
     [[nodiscard]] constexpr Metadata<E> BuildMetadataImpl(
         std::integer_sequence<int, kOffsets...>)
     {
-        const ARRAY<StringView, kRangeSize<E>> fullNames = {
-            ExtractFullName<E, static_cast<E>(kRangeMin<E> + kOffsets)>()...
+        const ARRAY<StringView, kReflRange> fullNames = {
+            ExtractFullName<E, static_cast<E>(kReflRangeMin + kOffsets)>()...
         };
 
         Metadata<E> metadata = {};
         size_t      index    = 0;
-        for (int i = 0; i < kRangeSize<E>; ++i)
+        for (int i = 0; i < kReflRange; ++i)
         {
             if (!IsValidName(fullNames[i]))
             {
-                metadata.lut[i] = kInvalidIndex;
                 continue;
             }
 
             // metadata
-            const E e                 = static_cast<E>(kRangeMin<E> + i);
+            const E e                 = static_cast<E>(kReflRangeMin + i);
             metadata.values[index]    = e;
             metadata.names[index]     = ExtractName(fullNames[i]);
             metadata.fullNames[index] = fullNames[i];
             metadata.hashes[index]    = HashString(fullNames[i]);
             metadata.lut[i]           = index;
-            metadata.min              = e < metadata.min ? e : metadata.min;
-            metadata.max              = e > metadata.max ? e : metadata.max;
+            metadata.min              = index == 0 || e < metadata.min ? e : metadata.min;
+            metadata.max              = index == 0 || e > metadata.max ? e : metadata.max;
             ++index;
         }
         return metadata;
@@ -141,7 +146,7 @@ namespace enum_relf_detail
     template<EnumT E>
     constexpr Metadata<E> BuildMetadata()
     {
-        return BuildMetadataImpl<E>(std::make_integer_sequence<int, kRangeSize<E>> {});
+        return BuildMetadataImpl<E>(std::make_integer_sequence<int, kReflRange> {});
     }
 
     template<EnumT E>
@@ -154,15 +159,15 @@ namespace enum_relf_detail
     }
 
     template<EnumT E>
-    constexpr size_t GetIndexOrInvalid(
+    constexpr size_t FindIndexOrInvalid(
         const E _value)
     {
         const int value = static_cast<int>(_value);
-        if (value < kRangeMin<E> || value > kRangeMax<E>)
+        if (value < kReflRangeMin || value > kReflRangeMax)
         {
             return kInvalidIndex;
         }
-        return GetMetadata<E>().lut[value - kRangeMin<E>];
+        return GetMetadata<E>().lut[value - kReflRangeMin];
     }
 }   // namespace enum_relf_detail
 
@@ -187,43 +192,43 @@ template<EnumT E>
 [[nodiscard]] constexpr bool IsValid(
     const E _value)
 {
-    return enum_relf_detail::GetIndexOrInvalid<E>(_value) != enum_relf_detail::kInvalidIndex;
+    return enum_relf_detail::FindIndexOrInvalid<E>(_value) != kInvalidIndex;
 }
 
 template<EnumT E>
 [[nodiscard]] constexpr StringView NameOf(
     const E _value)
 {
-    const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(_value);
-    JUG_ASSERT(index != enum_relf_detail::kInvalidIndex, "NameOf() called with invalid enum value");
-    return enum_relf_detail::GetMetadata<E>().names[index];
+    const size_t indexOrInvalid = enum_relf_detail::FindIndexOrInvalid<E>(_value);
+    JUG_ASSERT(indexOrInvalid != kInvalidIndex, "NameOf() called with invalid enum value");
+    return enum_relf_detail::GetMetadata<E>().names[indexOrInvalid];
 }
 
 template<EnumT E>
 [[nodiscard]] constexpr StringView FullNameOf(
     const E _value)
 {
-    const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(_value);
-    JUG_ASSERT(index != enum_relf_detail::kInvalidIndex, "FullNameOf() called with invalid enum value");
-    return enum_relf_detail::GetMetadata<E>().fullNames[index];
+    const size_t indexOrInvalid = enum_relf_detail::FindIndexOrInvalid<E>(_value);
+    JUG_ASSERT(indexOrInvalid != kInvalidIndex, "FullNameOf() called with invalid enum value");
+    return enum_relf_detail::GetMetadata<E>().fullNames[indexOrInvalid];
 }
 
 template<EnumT E>
 [[nodiscard]] constexpr uint64_t HashOf(
     const E _value)
 {
-    const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(_value);
-    JUG_ASSERT(index != enum_relf_detail::kInvalidIndex, "FullNameOf() called with invalid enum value");
-    return enum_relf_detail::GetMetadata<E>().hashes[index];
+    const size_t indexOrInvalid = enum_relf_detail::FindIndexOrInvalid<E>(_value);
+    JUG_ASSERT(indexOrInvalid != kInvalidIndex, "HashOf() called with invalid enum value");
+    return enum_relf_detail::GetMetadata<E>().hashes[indexOrInvalid];
 }
 
 template<EnumT E>
 [[nodiscard]] constexpr size_t GetIndex(
     const E _value)
 {
-    const size_t seq = enum_relf_detail::GetIndexOrInvalid(_value);
-    JUG_ASSERT(seq != enum_relf_detail::kInvalidIndex, "invalid enum value");
-    return seq;
+    const size_t indexOrInvalid = enum_relf_detail::FindIndexOrInvalid(_value);
+    JUG_ASSERT(indexOrInvalid != kInvalidIndex, "GetIndex() called with invalid enum value");
+    return indexOrInvalid;
 }
 
 template<EnumT E>
@@ -257,7 +262,7 @@ template<EnumT E>
 }
 
 template<EnumT E>
-[[nodiscard]] constexpr std::optional<E> ParseAs(
+[[nodiscard]] constexpr Optional<E> ParseAs(
     const StringView _name)
 {
     const auto& metadata = enum_relf_detail::GetMetadata<E>();
@@ -277,20 +282,19 @@ template<EnumT E>
         }
     }
 
-    return std::nullopt;
+    return kNullopt;
 }
 
 template<EnumT E>
-[[nodiscard]] constexpr std::optional<E> ParseAs(
+[[nodiscard]] constexpr Optional<E> ParseAs(
     const UnderlyingT<E> _value)
 {
-    const size_t index = enum_relf_detail::GetIndexOrInvalid<E>(static_cast<E>(_value));
-    if (index == enum_relf_detail::kInvalidIndex)
+    const size_t indexOrInvalid = enum_relf_detail::FindIndexOrInvalid<E>(static_cast<E>(_value));
+    if (indexOrInvalid == kInvalidIndex)
     {
-        return std::nullopt;
+        return kNullopt;
     }
-
-    return enum_relf_detail::GetMetadata<E>().values[index];
+    return enum_relf_detail::GetMetadata<E>().values[indexOrInvalid];
 }
 
 // ===========================================================================

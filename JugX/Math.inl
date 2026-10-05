@@ -667,7 +667,7 @@ namespace math_detail
     return simd::Get<0>(simd::Cos(simd::SetAll(_x)));
 }
 
-JUG_MATH_API constexpr SIN_COS_RESULT SinCos(
+JUG_MATH_API constexpr SIN_COS SinCos(
     const float _x)
 {
     const simd::M128 sc = simd::SinCos1(_x);

@@ -6,38 +6,31 @@ namespace jug
 
 struct SPHERE
 {
-    JUG_MATH_API  SPHERE() = default;
+    JUG_MATH_API SPHERE() = default;
 
     JUG_MATH_API constexpr SPHERE(
-        const VECTOR3 _center,
-        const float   _radius)
+        const VEC3  _center,
+        const float _radius)
         : center(_center)
         , radius(_radius)
     {
     }
 
-    const static SPHERE kZero;
-    const static SPHERE kUnit;
+    [[nodiscard]] JUG_MATH_API static constexpr SPHERE Zero()
+    {
+        return SPHERE { VEC3::Zero(), 0.f };
+    }
 
-    VECTOR3 center;
-    float   radius;
+    [[nodiscard]] JUG_MATH_API static constexpr SPHERE Unit()
+    {
+        return SPHERE { VEC3::Zero(), 1.f };
+    }
+
+    VEC3  center;
+    float radius;
 };
 
 static_assert(PodT<SPHERE>, "SPHERE must be POD type.");
-
-// ========================================================
-//  Constants
-// ========================================================
-
-inline constexpr SPHERE SPHERE::kZero = SPHERE { Zero<VECTOR3>(), 0.f };
-inline constexpr SPHERE SPHERE::kUnit = SPHERE { Zero<VECTOR3>(), 1.f };
-
-template<>
-struct MathConstants<SPHERE>
-{
-    static constexpr SPHERE kZero = SPHERE::kZero;
-    static constexpr SPHERE kOne  = SPHERE::kUnit;
-};
 
 // ========================================================
 //  Method
@@ -46,10 +39,10 @@ struct MathConstants<SPHERE>
 // 아핀 행렬 전용.
 [[nodiscard]] JUG_MATH_API constexpr SPHERE Xform(
     const SPHERE& _sphere,
-    const MATRIX& _mtx)
+    const MAT4&   _mtx)
 {
     // (cx cy cz r)
-    simd::M128 s {};
+    simd::M128 s;
     if (std::is_constant_evaluated())
     {
         s = simd::Blend<0b1000>(_sphere.center.ToM128(), simd::SetAll(_sphere.radius));
@@ -70,7 +63,7 @@ struct MathConstants<SPHERE>
 
     if (std::is_constant_evaluated())
     {
-        return simd::NoInlineConstruct<SPHERE>(VECTOR3::FromM128(center), simd::Get<0>(radius));
+        return simd::NoInlineConstruct<SPHERE>(VEC3::FromM128(center), simd::Get<0>(radius));
     }
     else
     {

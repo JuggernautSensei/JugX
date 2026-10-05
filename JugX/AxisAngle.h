@@ -6,8 +6,8 @@ namespace jug
 
 struct AXIS_ANGLE
 {
-    VECTOR3 axis;
-    float   rad;
+    VEC3  axis;
+    float rad;
 };
 
 }   // namespace jug

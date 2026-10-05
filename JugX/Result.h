@@ -6,7 +6,7 @@ namespace jug
 
 namespace result_detail
 {
-    enum class eState
+    enum class eState : uint8_t
     {
         Invalid,
         Error,
@@ -18,78 +18,105 @@ template<typename T>
 class Result
 {
     static_assert(!std::is_same_v<T, Error>, "Result<T> cannot be used with Error type. Use Result<void> instead.");
+    static_assert(std::is_trivially_copyable_v<Error>, "Result<T> requires Error to be trivially copyable.");
 
 public:
+    // 소멸자
+    ~Result()
+    {
+        Reset();
+    }
+
+    // 복사 생성자
     Result(
-        const Result& _value)
-        : m_state(_value.m_state)
+        const Result& _other)
+        requires std::is_copy_constructible_v<T>
+        : m_state(_other.m_state)
     {
         if (m_state == result_detail::eState::Value)
         {
-            std::construct_at(std::addressof(m_value), _value.m_value);
+            std::construct_at(std::addressof(m_value), _other.m_value);
         }
         else if (m_state == result_detail::eState::Error)
         {
-            std::construct_at(std::addressof(m_error), _value.m_error);
+            std::construct_at(std::addressof(m_error), _other.m_error);
         }
     }
 
+    // 이동 생성자
     Result(
-        Result&& _value) noexcept
-        : m_state(_value.m_state)
+        Result&& _other) noexcept(std::is_nothrow_move_constructible_v<T>)
+        requires std::is_move_constructible_v<T>
+        : m_state(_other.m_state)
     {
         if (m_state == result_detail::eState::Value)
         {
-            std::construct_at(std::addressof(m_value), std::move(_value.m_value));
+            std::construct_at(std::addressof(m_value), std::move(_other.m_value));
         }
         else if (m_state == result_detail::eState::Error)
         {
-            std::construct_at(std::addressof(m_error), _value.m_error);
+            std::construct_at(std::addressof(m_error), _other.m_error);
         }
-        _value.Reset();
     }
 
+    // 복사 대입 연산자
     Result& operator=(
-        const Result& _value)
+        const Result& _other)
+        requires(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>)
     {
-        if (this != &_value)
+        if (this != &_other)
         {
-            Reset();
-            m_state = _value.m_state;
-            if (m_state == result_detail::eState::Value)
+            if (m_state == result_detail::eState::Value && _other.m_state == result_detail::eState::Value)
             {
-                std::construct_at(std::addressof(m_value), _value.m_value);
+                m_value = _other.m_value;
             }
-            else if (m_state == result_detail::eState::Error)
+            else
             {
-                std::construct_at(std::addressof(m_error), _value.m_error);
+                Reset();
+                m_state = _other.m_state;
+                if (m_state == result_detail::eState::Value)
+                {
+                    std::construct_at(std::addressof(m_value), _other.m_value);
+                }
+                else if (m_state == result_detail::eState::Error)
+                {
+                    std::construct_at(std::addressof(m_error), _other.m_error);
+                }
             }
         }
         return *this;
     }
 
+    // 이동 대입 연산자
     Result& operator=(
-        Result&& _value) noexcept
+        Result&& _other) noexcept
+        requires(std::is_move_constructible_v<T> && std::is_move_assignable_v<T>)
     {
-        if (this != &_value)
+        if (this != &_other)
         {
-            Reset();
-            m_state = _value.m_state;
-            if (m_state == result_detail::eState::Value)
+            if (m_state == result_detail::eState::Value && _other.m_state == result_detail::eState::Value)
             {
-                std::construct_at(std::addressof(m_value), std::move(_value.m_value));
+                m_value = std::move(_other.m_value);
             }
-            else if (m_state == result_detail::eState::Error)
+            else
             {
-                std::construct_at(std::addressof(m_error), _value.m_error);
+                Reset();
+                m_state = _other.m_state;
+                if (m_state == result_detail::eState::Value)
+                {
+                    std::construct_at(std::addressof(m_value), std::move(_other.m_value));
+                }
+                else if (m_state == result_detail::eState::Error)
+                {
+                    std::construct_at(std::addressof(m_error), _other.m_error);
+                }
             }
-            _value.Reset();
         }
         return *this;
     }
 
     // =====================================
-    //  Value
+    //  GetValue
     // =====================================
 
     /* implicit */ Result(   // NOLINT
@@ -107,8 +134,8 @@ public:
     }
 
     template<typename... Args>
-        requires std::is_constructible_v<T, Args...>
-    /* implicit */ Result(   // NOLINT
+    explicit Result(   // NOLINT
+        const std::in_place_t,
         Args&&... _args)
         : m_state(result_detail::eState::Value)
     {
@@ -130,17 +157,6 @@ public:
         Reset();
         m_state = result_detail::eState::Value;
         std::construct_at(std::addressof(m_value), std::move(_value));
-        return *this;
-    }
-
-    template<typename... Args>
-        requires std::is_constructible_v<T, Args...>
-    Result& operator=(
-        Args&&... _args)
-    {
-        Reset();
-        m_state = result_detail::eState::Value;
-        std::construct_at(std::addressof(m_value), std::forward<Args>(_args)...);
         return *this;
     }
 
@@ -182,17 +198,8 @@ public:
         return *this;
     }
 
-    // ===========================================
-    //  Destructor
-    // ===========================================
-
-    ~Result()
-    {
-        Reset();
-    }
-
     // ====================================
-    //  Utils
+    //  Access
     // ====================================
 
     [[nodiscard]] bool HasValue() const
@@ -202,19 +209,19 @@ public:
 
     [[nodiscard]] T& GetValue()
     {
-        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value.");
         return m_value;
     }
 
     [[nodiscard]] const T& GetValue() const
     {
-        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value.");
         return m_value;
     }
 
     [[nodiscard]] T Take()
     {
-        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value");
+        JUG_ASSERT(m_state == result_detail::eState::Value, "Result does not contain a value.");
         T value = std::move(m_value);
         m_state = result_detail::eState::Invalid;
         std::destroy_at(std::addressof(m_value));
@@ -248,7 +255,7 @@ public:
 
     [[nodiscard]] Error GetError() const
     {
-        JUG_ASSERT(m_state == result_detail::eState::Error, "Result does not contain an error");
+        JUG_ASSERT(m_state == result_detail::eState::Error, "Result does not contain an error.");
         return m_error;
     }
 
@@ -261,7 +268,10 @@ public:
     {
         if (m_state == result_detail::eState::Value)
         {
-            std::destroy_at(std::addressof(m_value));
+            if constexpr (!std::is_trivially_destructible_v<T>)
+            {
+                std::destroy_at(std::addressof(m_value));
+            }
         }
         m_state = result_detail::eState::Invalid;
     }
@@ -276,7 +286,7 @@ private:
 };
 
 // =====================================
-//  Result<void>
+//  Result<void> (pure error)
 // =====================================
 
 template<>
@@ -296,12 +306,12 @@ public:
     template<ErrorCodeT E>
     /* implicit */ Result(
         const E _enum)
-        : m_error(make_error_code(_enum))
+        : m_error(_enum)
     {
     }
 
     // ====================================
-    //  Utils
+    //  Access
     // ====================================
 
     [[nodiscard]] bool IsOK() const
@@ -333,6 +343,21 @@ private:
     Error m_error = kOK;
 };
 
+// ===========================================
+//  Inplace Factory
+// ===========================================
+
+template<typename T, typename... Args>
+[[nodiscard]] Result<T> MakeResult(
+    Args&&... _args)
+{
+    return Result<T> { std::in_place, std::forward<Args>(_args)... };
+}
+
+// ===========================================
+//  Utils
+// ===========================================
+
 namespace result_detail
 {
 
@@ -357,6 +382,10 @@ namespace result_detail
 
 }   // namespace jug
 
-#define JUG_RETURN_IF_ERROR(_expr)                                \
-    if (const auto& _ret = (_expr); result_detail::IsError(_ret)) \
-    return result_detail::GetError(_ret)\
+#define JUG_RETURN_IF_ERROR(_expr)                                       \
+    JUG_BEGIN_MACRO_BLOCK                                                \
+    if (const auto& _ret = (_expr); ::jug::result_detail::IsError(_ret)) \
+    {                                                                    \
+        return ::jug::result_detail::GetError(_ret);                     \
+    }                                                                    \
+    JUG_END_MACRO_BLOCK

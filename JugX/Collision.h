@@ -19,7 +19,7 @@ namespace jug
 //   Contains     : 첫 번째 도형이 두 번째 도형을 완전히 포함하는지 판정한다.
 // ====================================================
 
-constexpr INTERVAL kDefaultInterval = INTERVAL { 0.f, MathConstants<float>::kMax };
+constexpr INTERVAL kDefaultInterval = INTERVAL { 0.f, Max<float>() };
 
 namespace collision_detail
 {
@@ -27,9 +27,9 @@ namespace collision_detail
     // AABB/OBB 에 대한 공통 타입
     struct BOX
     {
-        VECTOR3           center;
-        VECTOR3           extents;
-        ARRAY<VECTOR3, 3> axes;
+        VEC3           center;
+        VEC3           extents;
+        ARRAY<VEC3, 3> axes;
     };
 
     [[nodiscard]] JUG_MATH_API constexpr BOX MakeBox(
@@ -38,9 +38,9 @@ namespace collision_detail
         BOX box;
         box.center  = _aabb.center;
         box.extents = Abs(_aabb.extends);
-        box.axes[0] = MathConstants<VECTOR3>::kUnitX;
-        box.axes[1] = MathConstants<VECTOR3>::kUnitY;
-        box.axes[2] = MathConstants<VECTOR3>::kUnitZ;
+        box.axes[0] = VEC3::UnitX();
+        box.axes[1] = VEC3::UnitY();
+        box.axes[2] = VEC3::UnitZ();
         return box;
     }
 
@@ -51,36 +51,36 @@ namespace collision_detail
         box.center  = _obb.GetCenter();
         box.extents = _obb.GetExtents();
 
-        const VECTOR3 invExtents = RcpSafe(box.extents);
+        const VEC3 invExtents = RcpSafe(box.extents);
         for (size_t i = 0; i < 3; ++i)
         {
-            const VECTOR4 row = _obb.mtx[i];
-            box.axes[i]       = VECTOR3 { row[0], row[1], row[2] } * invExtents[i];
+            const VEC4 row = _obb.mtx[i];
+            box.axes[i]    = VEC3 { row[0], row[1], row[2] } * invExtents[i];
         }
         return box;
     }
 
     // 박스를 _axis 로 투영했을 때의 반지름
     [[nodiscard]] JUG_MATH_API constexpr float ProjectedRadius(
-        const BOX&    _box,
-        const VECTOR3 _axis)
+        const BOX& _box,
+        const VEC3 _axis)
     {
         return _box.extents[0] * Abs(Dot(_axis, _box.axes[0]))
              + _box.extents[1] * Abs(Dot(_axis, _box.axes[1]))
              + _box.extents[2] * Abs(Dot(_axis, _box.axes[2]));
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 ToBoxLocal(
-        const BOX&    _box,
-        const VECTOR3 _point)
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 ToBoxLocal(
+        const BOX& _box,
+        const VEC3 _point)
     {
-        const VECTOR3 d = _point - _box.center;
-        return VECTOR3 { Dot(d, _box.axes[0]), Dot(d, _box.axes[1]), Dot(d, _box.axes[2]) };
+        const VEC3 d = _point - _box.center;
+        return VEC3 { Dot(d, _box.axes[0]), Dot(d, _box.axes[1]), Dot(d, _box.axes[2]) };
     }
 
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 ToBoxWorld(
-        const BOX&    _box,
-        const VECTOR3 _local)
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 ToBoxWorld(
+        const BOX& _box,
+        const VEC3 _local)
     {
         return _box.center
              + _box.axes[0] * _local[0]
@@ -89,10 +89,10 @@ namespace collision_detail
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool ContainBoxLocalPoint(
-        const BOX&    _box,
-        const VECTOR3 _point)
+        const BOX& _box,
+        const VEC3 _point)
     {
-        const VECTOR3 l = Abs(ToBoxLocal(_box, _point));
+        const VEC3 l = Abs(ToBoxLocal(_box, _point));
         return l[0] <= _box.extents[0] + kEpsilon
             && l[1] <= _box.extents[1] + kEpsilon
             && l[2] <= _box.extents[2] + kEpsilon;
@@ -106,8 +106,8 @@ namespace collision_detail
         const BOX& _a,
         const BOX& _b)
     {
-        ARRAY<ARRAY<float, 3>, 3> r;
-        ARRAY<ARRAY<float, 3>, 3> absR;
+        ARRAY<ARRAY<float, 3>, 3> r    = {};
+        ARRAY<ARRAY<float, 3>, 3> absR = {};
 
         for (int i = 0; i < 3; ++i)
         {
@@ -119,10 +119,10 @@ namespace collision_detail
             }
         }
 
-        const VECTOR3         d  = _b.center - _a.center;
+        const VEC3            d  = _b.center - _a.center;
         const ARRAY<float, 3> t  = { Dot(d, _a.axes[0]), Dot(d, _a.axes[1]), Dot(d, _a.axes[2]) };
-        const VECTOR3         ea = _a.extents;
-        const VECTOR3         eb = _b.extents;
+        const VEC3            ea = _a.extents;
+        const VEC3            eb = _b.extents;
 
         // A 의 면 법선 3축
         for (int i = 0; i < 3; ++i)
@@ -201,7 +201,7 @@ namespace collision_detail
         const BOX& _a,
         const BOX& _b)
     {
-        const VECTOR3 d = _b.center - _a.center;
+        const VEC3 d = _b.center - _a.center;
         for (int i = 0; i < 3; ++i)
         {
             const float t  = Dot(d, _a.axes[i]);
@@ -220,11 +220,11 @@ namespace collision_detail
 
     // 원점 중심 / 반너비 _e 인 박스와 세 점이 _axis 위에서 분리되는가.
     [[nodiscard]] JUG_MATH_API constexpr bool SeparatedBoxTriAxis(
-        const VECTOR3 _axis,
-        const VECTOR3 _e,
-        const VECTOR3 _v0,
-        const VECTOR3 _v1,
-        const VECTOR3 _v2)
+        const VEC3 _axis,
+        const VEC3 _e,
+        const VEC3 _v0,
+        const VEC3 _v1,
+        const VEC3 _v2)
     {
         if (IsZeroApprox(LengthSq(_axis)))   // 퇴화 축은 분리축이 될 수 없다
         {
@@ -239,7 +239,7 @@ namespace collision_detail
     }
 
     [[nodiscard]] JUG_MATH_API constexpr bool SeparatedTriTriAxis(
-        const VECTOR3   _axis,
+        const VEC3      _axis,
         const TRIANGLE& _a,
         const TRIANGLE& _b)
     {
@@ -261,25 +261,25 @@ namespace collision_detail
         const BOX&      _box,
         const TRIANGLE& _tri)
     {
-        const VECTOR3 e  = _box.extents;
-        const VECTOR3 v0 = ToBoxLocal(_box, _tri.p0);
-        const VECTOR3 v1 = ToBoxLocal(_box, _tri.p1);
-        const VECTOR3 v2 = ToBoxLocal(_box, _tri.p2);
+        const VEC3 e  = _box.extents;
+        const VEC3 v0 = ToBoxLocal(_box, _tri.p0);
+        const VEC3 v1 = ToBoxLocal(_box, _tri.p1);
+        const VEC3 v2 = ToBoxLocal(_box, _tri.p2);
 
-        const VECTOR3 f0 = v1 - v0;
-        const VECTOR3 f1 = v2 - v1;
-        const VECTOR3 f2 = v0 - v2;
+        const VEC3 f0 = v1 - v0;
+        const VEC3 f1 = v2 - v1;
+        const VEC3 f2 = v0 - v2;
 
         // 9축: 박스 축 × 삼각형 변. 박스 축이 단위 기저이므로 외적을 전개해 둔다.
-        const VECTOR3 a00 { 0.f, -f0[2], f0[1] };
-        const VECTOR3 a01 { 0.f, -f1[2], f1[1] };
-        const VECTOR3 a02 { 0.f, -f2[2], f2[1] };
-        const VECTOR3 a10 { f0[2], 0.f, -f0[0] };
-        const VECTOR3 a11 { f1[2], 0.f, -f1[0] };
-        const VECTOR3 a12 { f2[2], 0.f, -f2[0] };
-        const VECTOR3 a20 { -f0[1], f0[0], 0.f };
-        const VECTOR3 a21 { -f1[1], f1[0], 0.f };
-        const VECTOR3 a22 { -f2[1], f2[0], 0.f };
+        const VEC3 a00 { 0.f, -f0[2], f0[1] };
+        const VEC3 a01 { 0.f, -f1[2], f1[1] };
+        const VEC3 a02 { 0.f, -f2[2], f2[1] };
+        const VEC3 a10 { f0[2], 0.f, -f0[0] };
+        const VEC3 a11 { f1[2], 0.f, -f1[0] };
+        const VEC3 a12 { f2[2], 0.f, -f2[0] };
+        const VEC3 a20 { -f0[1], f0[0], 0.f };
+        const VEC3 a21 { -f1[1], f1[0], 0.f };
+        const VEC3 a22 { -f2[1], f2[0], 0.f };
 
         if (SeparatedBoxTriAxis(a00, e, v0, v1, v2)
             || SeparatedBoxTriAxis(a01, e, v0, v1, v2)
@@ -295,15 +295,15 @@ namespace collision_detail
         }
 
         // 3축: 박스의 면 법선
-        if (SeparatedBoxTriAxis(MathConstants<VECTOR3>::kUnitX, e, v0, v1, v2)
-            || SeparatedBoxTriAxis(MathConstants<VECTOR3>::kUnitY, e, v0, v1, v2)
-            || SeparatedBoxTriAxis(MathConstants<VECTOR3>::kUnitZ, e, v0, v1, v2))
+        if (SeparatedBoxTriAxis(VEC3::UnitX(), e, v0, v1, v2)
+            || SeparatedBoxTriAxis(VEC3::UnitY(), e, v0, v1, v2)
+            || SeparatedBoxTriAxis(VEC3::UnitZ(), e, v0, v1, v2))
         {
             return false;
         }
 
         // 1축: 삼각형의 면 법선
-        const VECTOR3 n = Cross(f0, f1);
+        const VEC3 n = Cross(f0, f1);
         if (IsZeroApprox(LengthSq(n)))   // 퇴화 삼각형
         {
             return true;
@@ -318,7 +318,7 @@ namespace collision_detail
     //  Ray helper
     // ====================================================
 
-    struct SLAB_RESULT
+    struct SLAB
     {
         float tEnter;
         float tExit;
@@ -326,17 +326,17 @@ namespace collision_detail
     };
 
     // 원점 중심 / 반너비 _extents 인 박스에 대한 슬랩 테스트.
-    [[nodiscard]] JUG_MATH_API constexpr SLAB_RESULT RaycastSlab(
-        const VECTOR3 _origin,
-        const VECTOR3 _dir,
-        const VECTOR3 _extents)
+    [[nodiscard]] JUG_MATH_API constexpr SLAB RaycastSlab(
+        const VEC3 _origin,
+        const VEC3 _dir,
+        const VEC3 _extents)
     {
-        JUG_ASSERT(IsNormalized(_dir), "Ray direction must be normalized to use RaycastSlab");
+        JUG_ASSERT(IsNormalized(_dir), "RAY direction must be normalized to use RaycastSlab");
 
         if (std::is_constant_evaluated())
         {
-            float tEnter = -MathConstants<float>::kMax;
-            float tExit  = MathConstants<float>::kMax;
+            float tEnter = -Max<float>();
+            float tExit  = Max<float>();
 
             for (int i = 0; i < 3; ++i)
             {
@@ -348,7 +348,7 @@ namespace collision_detail
                 {
                     if (Abs(o) > e)
                     {
-                        return SLAB_RESULT { tEnter, tExit, false };
+                        return SLAB { tEnter, tExit, false };
                     }
                     continue;
                 }
@@ -359,7 +359,7 @@ namespace collision_detail
                 tEnter          = Max(tEnter, Min(t0, t1));
                 tExit           = Min(tExit, Max(t0, t1));
             }
-            return SLAB_RESULT { tEnter, tExit, tExit >= tEnter };
+            return SLAB { tEnter, tExit, tExit >= tEnter };
         }
 
         const float invX = 1.f / _dir[0];
@@ -376,13 +376,13 @@ namespace collision_detail
         const float tEnter = Max(Max(Min(lx, hx), Min(ly, hy)), Min(lz, hz));
         const float tExit  = Min(Min(Max(lx, hx), Max(ly, hy)), Max(lz, hz));
 
-        return SLAB_RESULT { tEnter, tExit, tExit >= tEnter };
+        return SLAB { tEnter, tExit, tExit >= tEnter };
     }
 
     // 슬랩 히트 지점의 바깥 방향 법선을 구한다.
-    [[nodiscard]] JUG_MATH_API constexpr VECTOR3 CalcSlabNormal(
-        const VECTOR3 _localHit,
-        const VECTOR3 _extents)
+    [[nodiscard]] JUG_MATH_API constexpr VEC3 CalcSlabNormal(
+        const VEC3 _localHit,
+        const VEC3 _extents)
     {
         const float nx = _extents[0] > 0.f ? _localHit[0] / _extents[0] : 0.f;
         const float ny = _extents[1] > 0.f ? _localHit[1] / _extents[1] : 0.f;
@@ -394,13 +394,13 @@ namespace collision_detail
 
         if (ax >= ay && ax >= az)
         {
-            return VECTOR3 { nx >= 0.f ? 1.f : -1.f, 0.f, 0.f };
+            return VEC3 { nx >= 0.f ? 1.f : -1.f, 0.f, 0.f };
         }
         if (ay >= az)
         {
-            return VECTOR3 { 0.f, ny >= 0.f ? 1.f : -1.f, 0.f };
+            return VEC3 { 0.f, ny >= 0.f ? 1.f : -1.f, 0.f };
         }
-        return VECTOR3 { 0.f, 0.f, nz >= 0.f ? 1.f : -1.f };
+        return VEC3 { 0.f, 0.f, nz >= 0.f ? 1.f : -1.f };
     }
 
     // [_tEnter, _tExit] 중 _interval 안에 들어오는 가장 가까운 t 를 고른다.
@@ -429,15 +429,15 @@ namespace collision_detail
 
     // 법선은 항상 광선을 마주보도록 뒤집는다.
     JUG_MATH_API constexpr void FillHit(
-        HIT* const    _pOutHit,
-        const RAY&    _ray,
-        const float   _t,
-        const VECTOR3 _outwardNormal)
+        HIT&        _outHit,
+        const RAY&  _ray,
+        const float _t,
+        const VEC3  _outwardNormal)
     {
-        _pOutHit->t          = _t;
-        _pOutHit->point      = RayAt(_ray, _t);
-        _pOutHit->bFrontFace = Dot(_ray.dir, _outwardNormal) < 0.f;
-        _pOutHit->normal     = _pOutHit->bFrontFace ? _outwardNormal : -_outwardNormal;
+        _outHit.t          = _t;
+        _outHit.point      = RayAt(_ray, _t);
+        _outHit.bFrontFace = Dot(_ray.dir, _outwardNormal) < 0.f;
+        _outHit.normal     = _outHit.bFrontFace ? _outwardNormal : -_outwardNormal;
     }
 
 }   // namespace collision_detail
@@ -448,28 +448,28 @@ namespace collision_detail
 //   _point가 기하 내부에 있을 경우. _point를 바로 리턴한다.
 // ====================================================
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
-    const AABB&   _aabb,
-    const VECTOR3 _point)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 ClosestPoint(
+    const AABB& _aabb,
+    const VEC3  _point)
 {
     return Clamp(_point, _aabb.GetMin(), _aabb.GetMax());
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
-    const OBB&    _obb,
-    const VECTOR3 _point)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 ClosestPoint(
+    const OBB& _obb,
+    const VEC3 _point)
 {
     const collision_detail::BOX box   = collision_detail::MakeBox(_obb);
-    const VECTOR3               local = collision_detail::ToBoxLocal(box, _point);
+    const VEC3                  local = collision_detail::ToBoxLocal(box, _point);
     return collision_detail::ToBoxWorld(box, Clamp(local, -box.extents, box.extents));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
+[[nodiscard]] JUG_MATH_API constexpr VEC3 ClosestPoint(
     const SPHERE& _sphere,
-    const VECTOR3 _point)
+    const VEC3    _point)
 {
-    const VECTOR3 d     = _point - _sphere.center;
-    const float   lenSq = LengthSq(d);
+    const VEC3  d     = _point - _sphere.center;
+    const float lenSq = LengthSq(d);
     if (lenSq <= _sphere.radius * _sphere.radius)   // 내부
     {
         return _point;
@@ -477,31 +477,31 @@ namespace collision_detail
     return _sphere.center + d * (_sphere.radius * RSqrt(lenSq));
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
-    const PLANE   _plane,
-    const VECTOR3 _point)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 ClosestPoint(
+    const PLANE _plane,
+    const VEC3  _point)
 {
     return _point - _plane.normal * Distance(_plane, _point);
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 ClosestPoint(
+[[nodiscard]] JUG_MATH_API constexpr VEC3 ClosestPoint(
     const TRIANGLE& _triangle,
-    const VECTOR3   _point)
+    const VEC3      _point)
 {
-    const VECTOR3 ab = _triangle.p1 - _triangle.p0;
-    const VECTOR3 ac = _triangle.p2 - _triangle.p0;
+    const VEC3 ab = _triangle.p1 - _triangle.p0;
+    const VEC3 ac = _triangle.p2 - _triangle.p0;
 
-    const VECTOR3 ap = _point - _triangle.p0;
-    const float   d1 = Dot(ab, ap);
-    const float   d2 = Dot(ac, ap);
+    const VEC3  ap = _point - _triangle.p0;
+    const float d1 = Dot(ab, ap);
+    const float d2 = Dot(ac, ap);
     if (d1 <= 0.f && d2 <= 0.f)   // 정점 p0 영역
     {
         return _triangle.p0;
     }
 
-    const VECTOR3 bp = _point - _triangle.p1;
-    const float   d3 = Dot(ab, bp);
-    const float   d4 = Dot(ac, bp);
+    const VEC3  bp = _point - _triangle.p1;
+    const float d3 = Dot(ab, bp);
+    const float d4 = Dot(ac, bp);
     if (d3 >= 0.f && d4 <= d3)   // 정점 p1 영역
     {
         return _triangle.p1;
@@ -513,9 +513,9 @@ namespace collision_detail
         return _triangle.p0 + ab * (d1 / (d1 - d3));
     }
 
-    const VECTOR3 cp = _point - _triangle.p2;
-    const float   d5 = Dot(ab, cp);
-    const float   d6 = Dot(ac, cp);
+    const VEC3  cp = _point - _triangle.p2;
+    const float d5 = Dot(ab, cp);
+    const float d6 = Dot(ac, cp);
     if (d6 >= 0.f && d5 <= d6)   // 정점 p2 영역
     {
         return _triangle.p2;
@@ -543,82 +543,75 @@ namespace collision_detail
 //   _ray.dir 은 정규화되어 있다고 가정한다.
 // ====================================================
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&     _ray,
     const AABB&    _aabb,
-    HIT* const     _pOutHitOrNull = nullptr,
-    const INTERVAL _interval      = kDefaultInterval)
+    const INTERVAL _interval = kDefaultInterval)
 {
-    const collision_detail::SLAB_RESULT slab = collision_detail::RaycastSlab(_ray.origin - _aabb.center, _ray.dir, Abs(_aabb.extends));
+    const collision_detail::SLAB slab = collision_detail::RaycastSlab(_ray.origin - _aabb.center, _ray.dir, Abs(_aabb.extends));
     if (!slab.bValid)
     {
-        return false;
+        return kNullopt;
     }
 
     float t;
     bool  bIsEnter;
     if (!collision_detail::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        const VECTOR3 localHit = _ray.origin + _ray.dir * t - _aabb.center;
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, collision_detail::CalcSlabNormal(localHit, Abs(_aabb.extends)));
-    }
-    return true;
+    HIT hit = {};
+    const VEC3 localHit = _ray.origin + _ray.dir * t - _aabb.center;
+    collision_detail::FillHit(hit, _ray, t, collision_detail::CalcSlabNormal(localHit, Abs(_aabb.extends)));
+    return hit;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&     _ray,
     const OBB&     _obb,
-    HIT* const     _pOutHitOrNull = nullptr,
-    const INTERVAL _interval      = kDefaultInterval)
+    const INTERVAL _interval = kDefaultInterval)
 {
     const collision_detail::BOX box      = collision_detail::MakeBox(_obb);
-    const VECTOR3               localPos = collision_detail::ToBoxLocal(box, _ray.origin);
-    const VECTOR3               localDir = VECTOR3 { Dot(_ray.dir, box.axes[0]), Dot(_ray.dir, box.axes[1]), Dot(_ray.dir, box.axes[2]) };
+    const VEC3                  localPos = collision_detail::ToBoxLocal(box, _ray.origin);
+    const VEC3                  localDir = VEC3 { Dot(_ray.dir, box.axes[0]), Dot(_ray.dir, box.axes[1]), Dot(_ray.dir, box.axes[2]) };
 
-    const collision_detail::SLAB_RESULT slab = collision_detail::RaycastSlab(localPos, localDir, box.extents);
+    const collision_detail::SLAB slab = collision_detail::RaycastSlab(localPos, localDir, box.extents);
     if (!slab.bValid)
     {
-        return false;
+        return kNullopt;
     }
 
     float t        = 0.f;
     bool  bIsEnter = false;
     if (!collision_detail::SelectRayT(slab.tEnter, slab.tExit, _interval, &t, &bIsEnter))
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        const VECTOR3 localHit    = localPos + localDir * t;
-        const VECTOR3 localNormal = collision_detail::CalcSlabNormal(localHit, box.extents);
+    HIT hit = {};
+    const VEC3 localHit    = localPos + localDir * t;
+    const VEC3 localNormal = collision_detail::CalcSlabNormal(localHit, box.extents);
 
-        // 로컬 법선을 박스 축으로 되돌린다. 성분이 하나만 ±1 이라 축 하나만 살아남는다.
-        const VECTOR3 outward = box.axes[0] * localNormal[0] + box.axes[1] * localNormal[1] + box.axes[2] * localNormal[2];
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, outward);
-    }
-    return true;
+    // 로컬 법선을 박스 축으로 되돌린다. 성분이 하나만 ±1 이라 축 하나만 살아남는다.
+    const VEC3 outward = box.axes[0] * localNormal[0] + box.axes[1] * localNormal[1] + box.axes[2] * localNormal[2];
+    collision_detail::FillHit(hit, _ray, t, outward);
+    return hit;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&     _ray,
     const SPHERE&  _sphere,
-    HIT* const     _pOutHitOrNull = nullptr,
-    const INTERVAL _interval      = kDefaultInterval)
+    const INTERVAL _interval = kDefaultInterval)
 {
-    const VECTOR3 oc    = _ray.origin - _sphere.center;
-    const float   a     = LengthSq(_ray.dir);
-    const float   halfB = Dot(oc, _ray.dir);
-    const float   c     = LengthSq(oc) - _sphere.radius * _sphere.radius;
-    const float   disc  = halfB * halfB - a * c;
+    const VEC3  oc    = _ray.origin - _sphere.center;
+    const float a     = LengthSq(_ray.dir);
+    const float halfB = Dot(oc, _ray.dir);
+    const float c     = LengthSq(oc) - _sphere.radius * _sphere.radius;
+    const float disc  = halfB * halfB - a * c;
     if (disc < 0.f || IsZeroApprox(a))
     {
-        return false;
+        return kNullopt;
     }
 
     const float sq   = Sqrt(disc);
@@ -628,95 +621,86 @@ namespace collision_detail
     bool  bIsEnter = false;
     if (!collision_detail::SelectRayT((-halfB - sq) * invA, (-halfB + sq) * invA, _interval, &t, &bIsEnter))
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        const VECTOR3 point   = RayAt(_ray, t);
-        const VECTOR3 outward = Normalize(point - _sphere.center);
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, outward);
-    }
-    return true;
+    HIT hit = {};
+    const VEC3 point   = RayAt(_ray, t);
+    const VEC3 outward = Normalize(point - _sphere.center);
+    collision_detail::FillHit(hit, _ray, t, outward);
+    return hit;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&     _ray,
     const PLANE    _plane,
-    HIT* const     _pOutHitOrNull = nullptr,
-    const INTERVAL _interval      = kDefaultInterval)
+    const INTERVAL _interval = kDefaultInterval)
 {
     const float denom = Dot(_plane.normal, _ray.dir);
     if (Abs(denom) < kEpsilon)   // 평행
     {
-        return false;
+        return kNullopt;
     }
 
     const float t = -(Dot(_plane.normal, _ray.origin) + _plane.d) / denom;
     if (t < _interval.min || t > _interval.max)
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, _plane.normal);
-    }
-    return true;
+    HIT hit = {};
+    collision_detail::FillHit(hit, _ray, t, _plane.normal);
+    return hit;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&      _ray,
     const TRIANGLE& _triangle,
-    HIT* const      _pOutHitOrNull = nullptr,
-    const INTERVAL  _interval      = kDefaultInterval)
+    const INTERVAL  _interval = kDefaultInterval)
 {
-    const VECTOR3 edge1 = _triangle.p1 - _triangle.p0;
-    const VECTOR3 edge2 = _triangle.p2 - _triangle.p0;
-    const VECTOR3 pvec  = Cross(_ray.dir, edge2);
-    const float   det   = Dot(edge1, pvec);
+    const VEC3  edge1 = _triangle.p1 - _triangle.p0;
+    const VEC3  edge2 = _triangle.p2 - _triangle.p0;
+    const VEC3  pvec  = Cross(_ray.dir, edge2);
+    const float det   = Dot(edge1, pvec);
     if (Abs(det) < kEpsilon)   // 평행하거나 퇴화 삼각형
     {
-        return false;
+        return kNullopt;
     }
 
-    const float   invDet = 1.f / det;
-    const VECTOR3 tvec   = _ray.origin - _triangle.p0;
+    const float invDet = 1.f / det;
+    const VEC3  tvec   = _ray.origin - _triangle.p0;
 
     const float u = Dot(tvec, pvec) * invDet;
     if (u < 0.f || u > 1.f)
     {
-        return false;
+        return kNullopt;
     }
 
-    const VECTOR3 qvec = Cross(tvec, edge1);
-    const float   v    = Dot(_ray.dir, qvec) * invDet;
+    const VEC3  qvec = Cross(tvec, edge1);
+    const float v    = Dot(_ray.dir, qvec) * invDet;
     if (v < 0.f || u + v > 1.f)
     {
-        return false;
+        return kNullopt;
     }
 
     const float t = Dot(edge2, qvec) * invDet;
     if (t < _interval.min || t > _interval.max)
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, Normalize(Cross(edge1, edge2)));
-    }
-    return true;
+    HIT hit = {};
+    collision_detail::FillHit(hit, _ray, t, Normalize(Cross(edge1, edge2)));
+    return hit;
 }
 
-[[nodiscard]] JUG_MATH_API constexpr bool Raycast(
+[[nodiscard]] JUG_MATH_API constexpr Optional<HIT> Raycast(
     const RAY&     _ray,
     const FRUSTUM& _frustum,
-    HIT* const     _pOutHitOrNull = nullptr,
-    const INTERVAL _interval      = kDefaultInterval)
+    const INTERVAL _interval = kDefaultInterval)
 {
-    float tEnter     = -MathConstants<float>::kMax;
-    float tExit      = MathConstants<float>::kMax;
+    float tEnter     = -Max<float>();
+    float tExit      = Max<float>();
     int   enterPlane = -1;
     int   exitPlane  = -1;
 
@@ -730,7 +714,7 @@ namespace collision_detail
         {
             if (num < 0.f)   // 바깥쪽에서 평행 -> 절대 만나지 않음
             {
-                return false;
+                return kNullopt;
             }
             continue;
         }
@@ -755,7 +739,7 @@ namespace collision_detail
 
         if (tEnter > tExit)
         {
-            return false;
+            return kNullopt;
         }
     }
 
@@ -763,21 +747,19 @@ namespace collision_detail
     bool  bIsEnter = false;
     if (!collision_detail::SelectRayT(tEnter, tExit, _interval, &t, &bIsEnter))
     {
-        return false;
+        return kNullopt;
     }
 
     const int planeIndex = bIsEnter ? enterPlane : exitPlane;
     if (planeIndex < 0)   // 경계가 없는 방향 -> 유효한 히트가 아니다
     {
-        return false;
+        return kNullopt;
     }
 
-    if (_pOutHitOrNull)
-    {
-        // 절두체 법선은 안쪽을 향하므로 바깥 법선은 부호를 뒤집는다.
-        collision_detail::FillHit(_pOutHitOrNull, _ray, t, -_frustum.planes[static_cast<size_t>(planeIndex)].normal);
-    }
-    return true;
+    HIT hit = {};
+    // 절두체 법선은 안쪽을 향하므로 바깥 법선은 부호를 뒤집는다.
+    collision_detail::FillHit(hit, _ray, t, -_frustum.planes[static_cast<size_t>(planeIndex)].normal);
+    return hit;
 }
 
 namespace collision_detail
@@ -787,11 +769,11 @@ namespace collision_detail
     // ===================================================
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
-        const AABB&   _aabb,
-        const VECTOR3 _point)
+        const AABB& _aabb,
+        const VEC3  _point)
     {
-        const VECTOR3 min = _aabb.GetMin();
-        const VECTOR3 max = _aabb.GetMax();
+        const VEC3 min = _aabb.GetMin();
+        const VEC3 max = _aabb.GetMax();
         return _point[0] >= min[0] && _point[0] <= max[0]
             && _point[1] >= min[1] && _point[1] <= max[1]
             && _point[2] >= min[2] && _point[2] <= max[2];
@@ -801,10 +783,10 @@ namespace collision_detail
         const AABB& _x,
         const AABB& _y)
     {
-        const VECTOR3 minX = _x.GetMin();
-        const VECTOR3 maxX = _x.GetMax();
-        const VECTOR3 minY = _y.GetMin();
-        const VECTOR3 maxY = _y.GetMax();
+        const VEC3 minX = _x.GetMin();
+        const VEC3 maxX = _x.GetMax();
+        const VEC3 minY = _y.GetMin();
+        const VEC3 maxY = _y.GetMax();
         return minX[0] <= maxY[0] && maxX[0] >= minY[0]
             && minX[1] <= maxY[1] && maxX[1] >= minY[1]
             && minX[2] <= maxY[2] && maxX[2] >= minY[2];
@@ -821,7 +803,7 @@ namespace collision_detail
         const AABB&   _aabb,
         const SPHERE& _sphere)
     {
-        const VECTOR3 closest = ClosestPoint(_aabb, _sphere.center);
+        const VEC3 closest = ClosestPoint(_aabb, _sphere.center);
         return DistanceSq(closest, _sphere.center) <= _sphere.radius * _sphere.radius;
     }
 
@@ -864,17 +846,17 @@ namespace collision_detail
         {
             const float* pPlane = reinterpret_cast<const float*>(_frustum.planes.GetPtr());
             const float* pBox   = reinterpret_cast<const float*>(&_aabb);
-            const __m256 p01  = _mm256_loadu_ps(pPlane);
-            const __m256 p23  = _mm256_loadu_ps(pPlane + 8);
-            const __m256 p45  = _mm256_loadu_ps(pPlane + 16);
-            const __m256 lo   = _mm256_unpacklo_ps(p01, p23);
-            const __m256 hi   = _mm256_unpackhi_ps(p01, p23);
-            const __m256 lo45 = _mm256_unpacklo_ps(p45, _mm256_setzero_ps());
-            const __m256 hi45 = _mm256_unpackhi_ps(p45, _mm256_setzero_ps());
-            const __m256 nx   = _mm256_shuffle_ps(lo, lo45, 0x44);
-            const __m256 ny   = _mm256_shuffle_ps(lo, lo45, 0xee);
-            const __m256 nz   = _mm256_shuffle_ps(hi, hi45, 0x44);
-            const __m256 d    = _mm256_shuffle_ps(hi, hi45, 0xee);
+            const __m256 p01    = _mm256_loadu_ps(pPlane);
+            const __m256 p23    = _mm256_loadu_ps(pPlane + 8);
+            const __m256 p45    = _mm256_loadu_ps(pPlane + 16);
+            const __m256 lo     = _mm256_unpacklo_ps(p01, p23);
+            const __m256 hi     = _mm256_unpackhi_ps(p01, p23);
+            const __m256 lo45   = _mm256_unpacklo_ps(p45, _mm256_setzero_ps());
+            const __m256 hi45   = _mm256_unpackhi_ps(p45, _mm256_setzero_ps());
+            const __m256 nx     = _mm256_shuffle_ps(lo, lo45, 0x44);
+            const __m256 ny     = _mm256_shuffle_ps(lo, lo45, 0xee);
+            const __m256 nz     = _mm256_shuffle_ps(hi, hi45, 0x44);
+            const __m256 d      = _mm256_shuffle_ps(hi, hi45, 0xee);
 
             // dist + r < 0 이면 평면 바깥으로 완전히 밀려남
             const __m256 sign = _mm256_set1_ps(-0.f);
@@ -933,7 +915,7 @@ namespace collision_detail
         const AABB& _aabb,
         const RAY&  _ray)
     {
-        return Raycast(_ray, _aabb);
+        return Raycast(_ray, _aabb).HasValue();
     }
 
     // ===================================================
@@ -941,8 +923,8 @@ namespace collision_detail
     // ===================================================
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
-        const OBB&    _obb,
-        const VECTOR3 _point)
+        const OBB& _obb,
+        const VEC3 _point)
     {
         return ContainBoxLocalPoint(MakeBox(_obb), _point);
     }
@@ -958,7 +940,7 @@ namespace collision_detail
         const OBB&    _obb,
         const SPHERE& _sphere)
     {
-        const VECTOR3 closest = ClosestPoint(_obb, _sphere.center);
+        const VEC3 closest = ClosestPoint(_obb, _sphere.center);
         return DistanceSq(closest, _sphere.center) <= _sphere.radius * _sphere.radius;
     }
 
@@ -1002,7 +984,7 @@ namespace collision_detail
         const OBB& _obb,
         const RAY& _ray)
     {
-        return Raycast(_ray, _obb);
+        return Raycast(_ray, _obb).HasValue();
     }
 
     // ===================================================
@@ -1011,7 +993,7 @@ namespace collision_detail
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
         const SPHERE& _sphere,
-        const VECTOR3 _point)
+        const VEC3    _point)
     {
         return DistanceSq(_sphere.center, _point) <= _sphere.radius * _sphere.radius;
     }
@@ -1028,7 +1010,7 @@ namespace collision_detail
         const SPHERE&   _sphere,
         const TRIANGLE& _triangle)
     {
-        const VECTOR3 closest = ClosestPoint(_triangle, _sphere.center);
+        const VEC3 closest = ClosestPoint(_triangle, _sphere.center);
         return DistanceSq(closest, _sphere.center) <= _sphere.radius * _sphere.radius;
     }
 
@@ -1057,7 +1039,7 @@ namespace collision_detail
         const SPHERE& _sphere,
         const RAY&    _ray)
     {
-        return Raycast(_ray, _sphere);
+        return Raycast(_ray, _sphere).HasValue();
     }
 
     // ===================================================
@@ -1066,9 +1048,9 @@ namespace collision_detail
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
         const TRIANGLE& _triangle,
-        const VECTOR3   _point)
+        const VEC3      _point)
     {
-        const VECTOR3 closest = ClosestPoint(_triangle, _point);
+        const VEC3 closest = ClosestPoint(_triangle, _point);
         return DistanceSq(closest, _point) <= kEpsilon * kEpsilon;
     }
 
@@ -1076,11 +1058,11 @@ namespace collision_detail
         const TRIANGLE& _x,
         const TRIANGLE& _y)
     {
-        const VECTOR3 aEdges[3] = { _x.p1 - _x.p0, _x.p2 - _x.p1, _x.p0 - _x.p2 };
-        const VECTOR3 bEdges[3] = { _y.p1 - _y.p0, _y.p2 - _y.p1, _y.p0 - _y.p2 };
+        const VEC3 aEdges[3] = { _x.p1 - _x.p0, _x.p2 - _x.p1, _x.p0 - _x.p2 };
+        const VEC3 bEdges[3] = { _y.p1 - _y.p0, _y.p2 - _y.p1, _y.p0 - _y.p2 };
 
-        const VECTOR3 aNormal = Cross(aEdges[0], aEdges[1]);
-        const VECTOR3 bNormal = Cross(bEdges[0], bEdges[1]);
+        const VEC3 aNormal = Cross(aEdges[0], aEdges[1]);
+        const VEC3 bNormal = Cross(bEdges[0], bEdges[1]);
 
         if (SeparatedTriTriAxis(aNormal, _x, _y) || SeparatedTriTriAxis(bNormal, _x, _y))
         {
@@ -1142,7 +1124,7 @@ namespace collision_detail
         const TRIANGLE& _triangle,
         const RAY&      _ray)
     {
-        return Raycast(_ray, _triangle);
+        return Raycast(_ray, _triangle).HasValue();
     }
 
     // =================================================
@@ -1150,8 +1132,8 @@ namespace collision_detail
     // =================================================
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
-        const PLANE   _plane,
-        const VECTOR3 _point)
+        const PLANE _plane,
+        const VEC3  _point)
     {
         return IsZeroApprox(Distance(_plane, _point));
     }
@@ -1173,7 +1155,7 @@ namespace collision_detail
         const PLANE    _plane,
         const FRUSTUM& _frustum)
     {
-        const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
+        const DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = _frustum.CalcCorners();
 
         bool bAnyFront  = false;
         bool bAnyBehind = false;
@@ -1190,7 +1172,7 @@ namespace collision_detail
         const PLANE _plane,
         const RAY&  _ray)
     {
-        return Raycast(_ray, _plane);
+        return Raycast(_ray, _plane).HasValue();
     }
 
     // =================================================
@@ -1199,7 +1181,7 @@ namespace collision_detail
 
     [[nodiscard]] JUG_MATH_API constexpr bool Intersect(
         const FRUSTUM& _frustum,
-        const VECTOR3  _point)
+        const VEC3     _point)
     {
         for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
         {
@@ -1216,8 +1198,8 @@ namespace collision_detail
         const FRUSTUM& _x,
         const FRUSTUM& _y)
     {
-        const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> cornersX = _x.CalcCorners();
-        const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> cornersY = _y.CalcCorners();
+        const DIRECT_ENUM_ARRAY<eCorner, VEC3> cornersX = _x.CalcCorners();
+        const DIRECT_ENUM_ARRAY<eCorner, VEC3> cornersY = _y.CalcCorners();
         for (const eFrustumPlane e0: RangeOf<eFrustumPlane>())
         {
             const PLANE plane   = _x.planes[e0];
@@ -1261,7 +1243,7 @@ namespace collision_detail
         const FRUSTUM& _frustum,
         const RAY&     _ray)
     {
-        return Raycast(_ray, _frustum);
+        return Raycast(_ray, _frustum).HasValue();
     }
 
 }   // namespace collision_detail
@@ -1301,15 +1283,15 @@ template<typename T, typename U>
 // ====================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsFront(
-    const PLANE   _plane,
-    const VECTOR3 _point)
+    const PLANE _plane,
+    const VEC3  _point)
 {
     return Distance(_plane, _point) > 0.f;
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool IsBehind(
-    const PLANE   _plane,
-    const VECTOR3 _point)
+    const PLANE _plane,
+    const VEC3  _point)
 {
     return Distance(_plane, _point) < 0.f;
 }
@@ -1413,8 +1395,8 @@ template<typename T>
 // ====================================================
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
-    const AABB&   _aabb,
-    const VECTOR3 _point)
+    const AABB& _aabb,
+    const VEC3  _point)
 {
     return collision_detail::Intersect(_aabb, _point);
 }
@@ -1423,10 +1405,10 @@ template<typename T>
     const AABB& _x,
     const AABB& _y)
 {
-    const VECTOR3 min0 = _x.GetMin();
-    const VECTOR3 max0 = _x.GetMax();
-    const VECTOR3 min1 = _y.GetMin();
-    const VECTOR3 max1 = _y.GetMax();
+    const VEC3 min0 = _x.GetMin();
+    const VEC3 max0 = _x.GetMax();
+    const VEC3 min1 = _y.GetMin();
+    const VEC3 max1 = _y.GetMax();
     return min1[0] >= min0[0] && max1[0] <= max0[0]
         && min1[1] >= min0[1] && max1[1] <= max0[1]
         && min1[2] >= min0[2] && max1[2] <= max0[2];
@@ -1443,9 +1425,9 @@ template<typename T>
     const AABB&   _aabb,
     const SPHERE& _sphere)
 {
-    const VECTOR3 min = _aabb.GetMin();
-    const VECTOR3 max = _aabb.GetMax();
-    const float   r   = _sphere.radius;
+    const VEC3  min = _aabb.GetMin();
+    const VEC3  max = _aabb.GetMax();
+    const float r   = _sphere.radius;
     return _sphere.center[0] - r >= min[0] && _sphere.center[0] + r <= max[0]
         && _sphere.center[1] - r >= min[1] && _sphere.center[1] + r <= max[1]
         && _sphere.center[2] - r >= min[2] && _sphere.center[2] + r <= max[2];
@@ -1464,7 +1446,7 @@ template<typename T>
     const AABB&    _aabb,
     const FRUSTUM& _frustum)
 {
-    const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
+    const DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = _frustum.CalcCorners();
     for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::Intersect(_aabb, corners[e]))
@@ -1476,8 +1458,8 @@ template<typename T>
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
-    const OBB&    _obb,
-    const VECTOR3 _point)
+    const OBB& _obb,
+    const VEC3 _point)
 {
     return collision_detail::ContainBoxLocalPoint(collision_detail::MakeBox(_obb), _point);
 }
@@ -1501,7 +1483,7 @@ template<typename T>
     const SPHERE& _sphere)
 {
     const collision_detail::BOX box   = collision_detail::MakeBox(_obb);
-    const VECTOR3               local = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
+    const VEC3                  local = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
     return local[0] + _sphere.radius <= box.extents[0]
         && local[1] + _sphere.radius <= box.extents[1]
         && local[2] + _sphere.radius <= box.extents[2];
@@ -1521,8 +1503,8 @@ template<typename T>
     const OBB&     _obb,
     const FRUSTUM& _frustum)
 {
-    const collision_detail::BOX               box     = collision_detail::MakeBox(_obb);
-    const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
+    const collision_detail::BOX            box     = collision_detail::MakeBox(_obb);
+    const DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = _frustum.CalcCorners();
     for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::ContainBoxLocalPoint(box, corners[e]))
@@ -1535,7 +1517,7 @@ template<typename T>
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const SPHERE& _sphere,
-    const VECTOR3 _point)
+    const VEC3    _point)
 {
     return collision_detail::Intersect(_sphere, _point);
 }
@@ -1545,7 +1527,7 @@ template<typename T>
     const AABB&   _aabb)
 {
     // 박스에서 구 중심으로부터 가장 먼 점까지의 거리로 판정한다.
-    const VECTOR3 farthest = Abs(_aabb.center - _sphere.center) + Abs(_aabb.extends);
+    const VEC3 farthest = Abs(_aabb.center - _sphere.center) + Abs(_aabb.extends);
     return LengthSq(farthest) <= _sphere.radius * _sphere.radius;
 }
 
@@ -1554,8 +1536,8 @@ template<typename T>
     const OBB&    _obb)
 {
     const collision_detail::BOX box      = collision_detail::MakeBox(_obb);
-    const VECTOR3               local    = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
-    const VECTOR3               farthest = local + box.extents;   // 박스 축은 정규 직교이므로 로컬 거리 = 월드 거리
+    const VEC3                  local    = Abs(collision_detail::ToBoxLocal(box, _sphere.center));
+    const VEC3                  farthest = local + box.extents;   // 박스 축은 정규 직교이므로 로컬 거리 = 월드 거리
     return LengthSq(farthest) <= _sphere.radius * _sphere.radius;
 }
 
@@ -1585,8 +1567,8 @@ template<typename T>
     const SPHERE&  _sphere,
     const FRUSTUM& _frustum)
 {
-    const float                               rSq     = _sphere.radius * _sphere.radius;
-    const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _frustum.CalcCorners();
+    const float                            rSq     = _sphere.radius * _sphere.radius;
+    const DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = _frustum.CalcCorners();
     for (const eCorner e: RangeOf<eCorner>())
     {
         if (DistanceSq(_sphere.center, corners[e]) > rSq)
@@ -1599,14 +1581,14 @@ template<typename T>
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const TRIANGLE& _triangle,
-    const VECTOR3   _point)
+    const VEC3      _point)
 {
     return collision_detail::Intersect(_triangle, _point);
 }
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
-    const PLANE   _plane,
-    const VECTOR3 _point)
+    const PLANE _plane,
+    const VEC3  _point)
 {
     return collision_detail::Intersect(_plane, _point);
 }
@@ -1622,7 +1604,7 @@ template<typename T>
 
 [[nodiscard]] JUG_MATH_API constexpr bool Contains(
     const FRUSTUM& _frustum,
-    const VECTOR3  _point)
+    const VEC3     _point)
 {
     return collision_detail::Intersect(_frustum, _point);
 }
@@ -1631,7 +1613,7 @@ template<typename T>
     const FRUSTUM& _frustum,
     const AABB&    _aabb)
 {
-    const VECTOR3 extents = Abs(_aabb.extends);
+    const VEC3 extents = Abs(_aabb.extends);
     for (size_t i = 0; i < _frustum.planes.GetSize(); ++i)
     {
         const PLANE plane = _frustum.planes[i];
@@ -1686,7 +1668,7 @@ template<typename T>
     const FRUSTUM& _x,
     const FRUSTUM& _y)
 {
-    const DIRECT_ENUM_ARRAY<eCorner, VECTOR3> corners = _y.CalcCorners();
+    const DIRECT_ENUM_ARRAY<eCorner, VEC3> corners = _y.CalcCorners();
     for (const eCorner e: RangeOf<eCorner>())
     {
         if (!collision_detail::Intersect(_x, corners[e]))

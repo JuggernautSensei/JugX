@@ -1,17 +1,5 @@
 ﻿// JsonSerializer / JsonDeserializer + JsonWriter / JsonReader 동작 검증용 테스트 (Google Test)
-#include <algorithm>
-#include <cstdint>
-#include <filesystem>
-#include <limits>
-#include <string>
-#include <type_traits>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include <JugX/JugX.h>
-
-using namespace jug;
+#include "pch.h"
 
 // ==========================================================
 //  설계 불변식 - 값 핸들은 아무것도 소유하지 않는 포인터 뭉치여야 함
@@ -21,7 +9,7 @@ static_assert(sizeof(JsonReader) == sizeof(void*), "JsonReader must be a single 
 static_assert(std::is_trivially_copyable_v<JsonReader>, "JsonReader must be trivially copyable");
 static_assert(std::is_trivially_destructible_v<JsonReader>, "JsonReader must own nothing");
 
-static_assert(sizeof(JsonWriter) == 2 * sizeof(void*), "JsonWriter must be exactly (doc, value)");
+static_assert(sizeof(JsonWriter) == 2 * sizeof(void*), "JsonWriter must be exactly (doc, time)");
 static_assert(std::is_trivially_copyable_v<JsonWriter>, "JsonWriter must be trivially copyable");
 static_assert(std::is_trivially_destructible_v<JsonWriter>, "JsonWriter must own nothing");
 
@@ -144,11 +132,11 @@ private:
 
 struct Person
 {
-    std::string              name;
+    std::string              name       = {};
     int                      age        = 0;
     bool                     isEmployed = false;
-    std::vector<std::string> skills;
-    Vector3                  position;
+    std::vector<std::string> skills     = {};
+    Vector3                  position   = {};
 
     void Serialize(
         JsonWriter& _writer) const
@@ -180,9 +168,9 @@ struct Person
         Result<JsonReader> skillArray = _reader.FindField("skills");
         JUG_RETURN_IF_ERROR(skillArray);
 
-        std::vector<std::string> skills;
+        std::vector<std::string> skills = {};
         skills.reserve(skillArray.GetValue().GetSize());
-        for (const JsonReader& element: skillArray.GetValue().GetArray())
+        for (const JsonReader& element: skillArray.GetValue().GetArrayRange())
         {
             Result<std::string> skill = element.Read<std::string>();
             JUG_RETURN_IF_ERROR(skill);
@@ -232,13 +220,11 @@ enum class Suit : uint8_t
 
 }   // namespace test
 
-// JsonAdlSerializer<T> 특수화는 원래 템플릿을 감싸는 네임스페이스 안에서만 선언 가능함 -
-// namespace test 안에서 ::jug::JsonAdlSerializer<...> 로 쓰는 건 MSVC 확장이라 clang에서 막힘.
 namespace jug
 {
 
 template<>
-struct JsonAdlSerializer<test::Rgba>
+struct JsonAdlSerializer<test::Rgba> 
 {
     static void Serialize(
         JsonWriter&       _writer,
@@ -256,14 +242,14 @@ struct JsonAdlSerializer<test::Rgba>
     {
         uint8_t* pChannels[] = { nullptr, nullptr, nullptr, nullptr };
 
-        test::Rgba color;
-        pChannels[0] = &color.r;
-        pChannels[1] = &color.g;
-        pChannels[2] = &color.b;
-        pChannels[3] = &color.a;
+        test::Rgba color = {};
+        pChannels[0]     = &color.r;
+        pChannels[1]     = &color.g;
+        pChannels[2]     = &color.b;
+        pChannels[3]     = &color.a;
 
         size_t index = 0;
-        for (const JsonReader& element: _reader.GetArray())
+        for (const JsonReader& element: _reader.GetArrayRange())
         {
             if (index >= 4)
             {
@@ -340,7 +326,7 @@ struct JsonAdlSerializer<test::Suit>
             case test::Suit::Hearts: _writer.Write("Hearts"); return;
             case test::Suit::Spades: _writer.Write("Spades"); return;
         }
-        JUG_ASSERT(false, "Unknown Suit value");
+        JUG_ASSERT(false, "Unknown Suit time");
     }
 
     [[nodiscard]] static Result<test::Suit> Deserialize(
@@ -365,8 +351,8 @@ struct JsonAdlSerializer<test::Suit>
 
 TEST(JsonReader, PrimitiveRoundTrip)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("boolTrue", true);
     writer.WriteField("boolFalse", false);
@@ -403,8 +389,8 @@ TEST(JsonReader, PrimitiveRoundTrip)
 
 TEST(JsonReader, NestedObject)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     {
         JsonWriter outer = writer.BeginObjectField("outer");
@@ -430,8 +416,8 @@ TEST(JsonReader, NestedObject)
 
 TEST(JsonReader, ArrayRange)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetArray();
     for (int i = 0; i < 5; ++i)
     {
@@ -450,7 +436,7 @@ TEST(JsonReader, ArrayRange)
     EXPECT_EQ(reader.GetSize(), 7u);
 
     int index = 0;
-    for (const JsonReader& element: reader.GetArray())
+    for (const JsonReader& element: reader.GetArrayRange())
     {
         if (index < 5)
         {
@@ -493,9 +479,9 @@ TEST(JsonReader, ObjectRange)
     JsonDeserializer deserializer = test::MakeDeserializer(R"({"a":1,"b":2,"c":3})");
     JsonReader       reader       = deserializer.GetReader();
 
-    std::vector<std::string> keys;
-    int                      sum = 0;
-    for (const auto& [key, value]: reader.GetObject())
+    std::vector<std::string> keys = {};
+    int                      sum  = 0;
+    for (const auto& [key, value]: reader.GetObjectRange())
     {
         keys.emplace_back(key);
         sum += value.Read<int>().GetValue();
@@ -514,7 +500,7 @@ TEST(JsonReader, ObjectRangeStructuredBinding)
     JsonReader       reader       = deserializer.GetReader();
 
     int sum = 0;
-    for (auto [key, value]: reader.GetObject())
+    for (auto [key, value]: reader.GetObjectRange())
     {
         EXPECT_FALSE(key.empty());
         sum += value.Read<int>().GetValue();
@@ -705,8 +691,8 @@ TEST(JsonReader, CustomTypes)
     const test::Handle  handle { 4242 };
     const test::Version version { 3, 7 };
 
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("position", position);
     writer.WriteField("color", color);
@@ -735,7 +721,7 @@ TEST(JsonReader, CustomTypes)
     EXPECT_EQ(positions.GetSize(), 2u);
 
     int index = 0;
-    for (const JsonReader& element: positions.GetArray())
+    for (const JsonReader& element: positions.GetArrayRange())
     {
         const test::Vector3 expected = (index == 0) ? position : test::Vector3 { 9.0f, 9.0f, 9.0f };
         EXPECT_EQ(element.Read<test::Vector3>().GetValue(), expected);
@@ -746,14 +732,14 @@ TEST(JsonReader, CustomTypes)
 
 TEST(JsonReader, PersonEndToEnd)
 {
-    test::Person person;
-    person.name       = "John Doe";
-    person.age        = 30;
-    person.isEmployed = true;
-    person.skills     = { "JavaScript", "Python" };
-    person.position   = { 1.0f, 2.0f, 3.0f };
+    test::Person person = {};
+    person.name         = "John Doe";
+    person.age          = 30;
+    person.isEmployed   = true;
+    person.skills       = { "JavaScript", "Python" };
+    person.position     = { 1.0f, 2.0f, 3.0f };
 
-    JsonSerializer serializer;
+    JsonSerializer serializer = {};
     serializer.GetWriter().Write(person);
 
     Result<std::string> jsonOr = test::SaveToString(serializer);
@@ -769,8 +755,8 @@ TEST(JsonReader, UnicodeAndEscapes)
 {
     constexpr std::string_view text = "한글 \"인용\" \\역슬래시\\ \n줄바꿈\t탭";
 
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("text", text);
     writer.WriteField("한글키", "값");
@@ -788,7 +774,7 @@ TEST(JsonReader, DeepNestingViaHandleReassignment)
 {
     constexpr int kDepth = 64;
 
-    std::string json;
+    std::string json = {};
     for (int i = 0; i < kDepth; ++i)
         json += "[";
     json += "42";
@@ -807,7 +793,7 @@ TEST(JsonReader, DeepNestingViaHandleReassignment)
 
 TEST(JsonReader, ScalarRoot)
 {
-    JsonSerializer serializer;
+    JsonSerializer serializer = {};
     serializer.GetWriter().Write("bare");
 
     Result<std::string> jsonOr = test::SaveToString(serializer);
@@ -850,8 +836,8 @@ TEST(JsonReader, HandleIsFreelyCopyable)
 
 TEST(JsonWriter, NarrowIntegerAndFloatTypes)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("i8", static_cast<int8_t>(-12));
     writer.WriteField("u8", static_cast<uint8_t>(200));
@@ -868,7 +854,7 @@ TEST(JsonWriter, NarrowIntegerAndFloatTypes)
 
 TEST(JsonWriter, CustomAdlTakesPriorityOverPrimitiveForEnum)
 {
-    JsonSerializer serializer;
+    JsonSerializer serializer = {};
     serializer.GetWriter().Write(test::Suit::Hearts);
 
     Result<std::string> jsonOr = test::SaveToString(serializer);
@@ -878,7 +864,7 @@ TEST(JsonWriter, CustomAdlTakesPriorityOverPrimitiveForEnum)
 
 TEST(JsonWriter, PlainEnumWithoutAdlSpecializationStaysRawInteger)
 {
-    JsonSerializer serializer;
+    JsonSerializer serializer = {};
     serializer.GetWriter().Write(test::eColor::Blue);
 
     Result<std::string> jsonOr = test::SaveToString(serializer);
@@ -888,8 +874,8 @@ TEST(JsonWriter, PlainEnumWithoutAdlSpecializationStaysRawInteger)
 
 TEST(JsonWriter, Pretty)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("a", 1);
 
@@ -904,8 +890,8 @@ TEST(JsonWriter, Pretty)
 
 TEST(JsonWriter, WriteOptions)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("k", "한/글");
 
@@ -923,8 +909,8 @@ TEST(JsonWriter, WriteOptions)
 
 TEST(JsonWriter, ManualObjectField)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
 
     JsonWriter nested = writer.BeginObjectField("nested");
@@ -938,8 +924,8 @@ TEST(JsonWriter, ManualObjectField)
 
 TEST(JsonWriter, ManualArrayField)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
 
     JsonWriter nested = writer.BeginArrayField("nested");
@@ -953,8 +939,8 @@ TEST(JsonWriter, ManualArrayField)
 
 TEST(JsonWriter, NullAndNonFiniteReal)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("null", nullptr);
     writer.WriteField("inf", std::numeric_limits<double>::infinity());
@@ -973,7 +959,7 @@ TEST(JsonWriter, NullAndNonFiniteReal)
 
 TEST(JsonWriter, MoveSemantics)
 {
-    JsonSerializer first;
+    JsonSerializer first = {};
     {
         JsonWriter writer = first.GetWriter();
         writer.SetObject();
@@ -991,8 +977,8 @@ TEST(JsonWriter, DeepNestingViaHandleReassignment)
 {
     constexpr int kDepth = 64;
 
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetArray();
 
     JsonWriter cursor = writer.PushBackArray();
@@ -1005,7 +991,7 @@ TEST(JsonWriter, DeepNestingViaHandleReassignment)
     Result<std::string> jsonOr = test::SaveToString(serializer);
     ASSERT_TRUE(jsonOr.HasValue());
 
-    std::string expected;
+    std::string expected = {};
     for (int i = 0; i < kDepth + 1; ++i)
         expected += "[";
     expected += "42";
@@ -1016,8 +1002,8 @@ TEST(JsonWriter, DeepNestingViaHandleReassignment)
 
 TEST(JsonWriter, HandleIsFreelyCopyable)
 {
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
 
     JsonWriter arr  = writer.BeginArrayField("a");
@@ -1033,7 +1019,7 @@ TEST(JsonWriter, HandleIsFreelyCopyable)
 
 TEST(JsonWriter, GetWriterReturnsExistingRoot)
 {
-    JsonSerializer serializer;
+    JsonSerializer serializer = {};
     serializer.GetWriter().SetObject();
 
     serializer.GetWriter().WriteField("a", 1);
@@ -1052,8 +1038,8 @@ TEST(JsonSerializer, FileRoundTrip)
 {
     const std::filesystem::path path = std::filesystem::temp_directory_path() / std::filesystem::path { u8"jugx_한글_test.json" };
 
-    JsonSerializer serializer;
-    JsonWriter     writer = serializer.GetWriter();
+    JsonSerializer serializer = {};
+    JsonWriter     writer     = serializer.GetWriter();
     writer.SetObject();
     writer.WriteField("saved", true);
     writer.WriteField("count", 12345);

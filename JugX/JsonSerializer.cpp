@@ -208,7 +208,7 @@ Result<JsonString> JsonSerializer::Save(
         return eSerializeError::OutputFailed;
     }
 
-    return { pStr, len };
+    return MakeResult<JsonString>(pStr, len);
 }
 
 Error JsonSerializer::SaveToFile(

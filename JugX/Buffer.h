@@ -104,6 +104,15 @@ public:
         }
     }
 
+    void Reserve(
+        const size_t _capacity)
+    {
+        if (_capacity > m_capacity)
+        {
+            Grow_(_capacity);
+        }
+    }
+
     void Reset()
     {
         if (m_pData)
@@ -150,6 +159,11 @@ public:
         return m_capacity;
     }
 
+    [[nodiscard]] bool IsEmpty() const
+    {
+        return m_size == 0;
+    }
+
     [[nodiscard]] Iterator Begin()
     {
         return m_pData;
@@ -190,12 +204,17 @@ public:
 
     [[nodiscard]] value_type* data()
     {
-        return GetPtr();
+        return m_pData;
     }
 
     [[nodiscard]] const value_type* data() const
     {
-        return GetPtr();
+        return m_pData;
+    }
+
+    [[nodiscard]] size_t size() const
+    {
+        return m_size;
     }
 
     [[nodiscard]] iterator begin()
@@ -250,5 +269,7 @@ private:
     size_t                      m_size     = 0;
     size_t                      m_capacity = 0;
 };
+
+using ByteBuffer = Buffer<std::byte>;
 
 }   // namespace jug

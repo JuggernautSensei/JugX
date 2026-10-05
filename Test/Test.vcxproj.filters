@@ -14,6 +14,12 @@
     <ClCompile Include="MathTest.cpp">
       <Filter>Math</Filter>
     </ClCompile>
+    <ClCompile Include="EnumReflTest.cpp">
+      <Filter>Reflection</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Base</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Serializer">
@@ -25,5 +31,16 @@
     <Filter Include="Math">
       <UniqueIdentifier>{8e1f6c2a-4b7d-4d3e-9a51-2f6b0c9d7e14}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Reflection">
+      <UniqueIdentifier>{e3eb2006-192c-4d36-b766-304e5a767899}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base">
+      <UniqueIdentifier>{8514824a-6c20-4a90-8f9f-3b2d66c5c76e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h">
+      <Filter>Base</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -110,6 +110,11 @@ const MutableMemoryView::value_type* MutableMemoryView::data() const
     return m_pMem;
 }
 
+size_t MutableMemoryView::size() const
+{
+    return m_size;
+}
+
 MutableMemoryView::iterator MutableMemoryView::begin()
 {
     return m_pMem;
@@ -231,6 +236,11 @@ MemoryView::ConstIterator MemoryView::CEnd() const
 MemoryView::value_type* MemoryView::data() const
 {
     return m_pMem;
+}
+
+size_t MemoryView::size() const
+{
+    return m_size;
 }
 
 MemoryView::const_iterator MemoryView::begin() const

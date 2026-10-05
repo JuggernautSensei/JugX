@@ -79,3 +79,4 @@ template<std::unsigned_integral T>
 }
 
 }   // namespace jug
+

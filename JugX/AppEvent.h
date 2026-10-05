@@ -7,24 +7,7 @@ namespace jug
 {
 
 // ===========================================
-//  System (Raw SDL Event)
-// ===========================================
-
-class SystemEvent : public Event
-{
-public:
-    explicit SystemEvent(const SDL_Event& _event);
-
-    [[nodiscard]] const SDL_Event& GetEvent() const;
-    [[nodiscard]] String           ToString() const override;
-    JUG_EVENT_BODY(SystemEvent);
-
-private:
-    const SDL_Event* m_pEvent = nullptr;
-};
-
-// ===========================================
-//  Application
+//  App
 // ===========================================
 
 class QuitEvent : public Event
@@ -317,7 +300,7 @@ private:
 class KeyDownEvent : public Event
 {
 public:
-    KeyDownEvent(SDL_WindowID _wndId, eKey _key, Flags<eKeyMod> _mods, bool _bRepeat);
+    KeyDownEvent(SDL_WindowID _wndId, eKey _key, Flags<eKeyMod> _flags, bool _bRepeat);
 
     [[nodiscard]] SDL_WindowID   GetWindow() const;
     [[nodiscard]] eKey           GetKey() const;
@@ -329,15 +312,15 @@ public:
 
 private:
     SDL_WindowID   m_wndID   = {};
-    eKey           m_key     = eKey::None;
-    Flags<eKeyMod> m_mods    = {};
+    eKey           m_key     = {};
+    Flags<eKeyMod> m_flags   = eKeyMod::None;
     bool           m_bRepeat = false;
 };
 
 class KeyUpEvent : public Event
 {
 public:
-    KeyUpEvent(SDL_WindowID _wndId, eKey _key, Flags<eKeyMod> _mods);
+    KeyUpEvent(SDL_WindowID _wndId, eKey _key, Flags<eKeyMod> _flags);
 
     [[nodiscard]] SDL_WindowID   GetWindow() const;
     [[nodiscard]] eKey           GetKey() const;
@@ -348,8 +331,8 @@ public:
 
 private:
     SDL_WindowID   m_wndID = {};
-    eKey           m_key   = eKey::None;
-    Flags<eKeyMod> m_mods  = {};
+    eKey           m_key   = {};
+    Flags<eKeyMod> m_flags = eKeyMod::None;
 };
 
 class TextInputEvent : public Event
@@ -430,7 +413,7 @@ public:
 
 private:
     SDL_WindowID m_wndID  = {};
-    eMouse       m_button = eMouse::None;
+    eMouse       m_button = {};
     float        m_x      = 0.f;
     float        m_y      = 0.f;
     int32_t      m_clicks = 0;
@@ -451,7 +434,7 @@ public:
 
 private:
     SDL_WindowID m_wndID  = {};
-    eMouse       m_button = eMouse::None;
+    eMouse       m_button = {};
     float        m_x      = 0.f;
     float        m_y      = 0.f;
 };

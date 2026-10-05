@@ -1,6 +1,8 @@
 ﻿#include "pch.h"
 #include "Timer.h"
 
+#include "EnumArray.h"
+
 namespace jug
 {
 
@@ -19,7 +21,7 @@ float TimeCastF(
         case eTimeUnit::Sec:
             return static_cast<float>(_count) * 1e-9f;
         default:
-            JUG_ASSERT(false, "Invalid time unit.\n");
+            JUG_ASSERT(false, "Invalid time unit.");
             return 0.f;
     }
 }
@@ -39,9 +41,52 @@ double TimeCast(
         case eTimeUnit::Sec:
             return static_cast<double>(_count) * 1e-9;
         default:
-            JUG_ASSERT(false, "Invalid time unit.\n");
-            return 0.;
+            JUG_ASSERT(false, "Invalid time unit.");
+            return 0.0;
     }
+}
+
+eTimeUnit ToReadableTimeUnit(
+    const uint64_t _count)
+{
+    if (_count < 1'000)
+    {
+        return eTimeUnit::Nano;
+    }
+    else if (_count < 1'000'000)
+    {
+        return eTimeUnit::Micro;
+    }
+    else if (_count < 1'000'000'000)
+    {
+        return eTimeUnit::Milli;
+    }
+
+    return eTimeUnit::Sec;
+}
+
+StringView ToTimeUnitString(
+    const eTimeUnit _unit)
+{
+    constexpr ENUM_ARRAY<eTimeUnit, StringView> kUnitStrings = {
+        { "ns", "us", "ms", "s" }
+    };
+
+    return kUnitStrings[_unit];
+}
+
+ReadableTime ToReadableTime(
+    const uint64_t _count)
+{
+    const eTimeUnit unit = ToReadableTimeUnit(_count);
+    return ReadableTime { unit, TimeCast(_count, unit), ToTimeUnitString(unit) };
+}
+
+ReadableTimeF ToReadableTimeF(
+    const uint64_t _count)
+{
+    const eTimeUnit unit = ToReadableTimeUnit(_count);
+    return ReadableTimeF { unit, TimeCastF(_count, unit), ToTimeUnitString(unit) };
 }
 
 void Timer::Start()

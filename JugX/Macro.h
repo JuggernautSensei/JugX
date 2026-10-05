@@ -89,6 +89,12 @@
 #endif
 
 // ===========================================
+//  Align
+// ===========================================
+
+#define JUG_ALIGN_DECL(_align, _type) alignas(_align) _type
+
+// ===========================================
 //  Misc
 // ===========================================
 
@@ -101,7 +107,6 @@
 #define JUG_END_MACRO_BLOCK \
     }                       \
     while (false)
-
 
 #define JUG_UNREACHABLE_RETURN(T) \
     return T {}

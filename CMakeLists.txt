@@ -35,6 +35,7 @@ endif()
 find_package(SDL3 CONFIG REQUIRED)
 find_package(utf8cpp CONFIG REQUIRED)
 find_package(yyjson CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
 # parallel-hashmap ships headers only -- vcpkg installs no CMake package for
 # it, so locate the header directly instead of find_package().
@@ -70,10 +71,12 @@ target_precompile_headers(JugX PUBLIC
     "$<INSTALL_INTERFACE:$<INSTALL_PREFIX>/${CMAKE_INSTALL_INCLUDEDIR}/JugX/pch.h>"
 )
 
-# SDL3 and phmap appear in public headers (OS.h, Typedef.h); the rest do not.
+# SDL3, phmap and spdlog appear in public headers (OS.h, Typedef.h, CoreLogger.h);
+# the rest do not.
 target_link_libraries(JugX
     PUBLIC
         SDL3::SDL3
+        spdlog::spdlog
     PRIVATE
         utf8cpp::utf8cpp
         yyjson::yyjson

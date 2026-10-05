@@ -15,7 +15,7 @@ struct VectorTraits
 };
 
 template<typename T, size_t N>
-struct VectorTraits<VECTOR<T, N>>
+struct VectorTraits<VEC<T, N>>
 {
     static constexpr bool kIsVector = true;
 
@@ -55,11 +55,11 @@ template<VectorT V>
 }
 
 template<>
-[[nodiscard]] JUG_MATH_API constexpr VECTOR4 operator/(
-    const float   _scalar,
-    const VECTOR4 _v)
+[[nodiscard]] JUG_MATH_API constexpr VEC4 operator/(
+    const float _scalar,
+    const VEC4  _v)
 {
-    return VECTOR4::FromM128(simd::Div(simd::SetAll(_scalar), _v.ToM128()));
+    return VEC4::FromM128(simd::Div(simd::SetAll(_scalar), _v.ToM128()));
 }
 
 // =======================================================
@@ -213,15 +213,15 @@ template<VectorT V>
 }
 
 [[nodiscard]] JUG_MATH_API constexpr float Cross(
-    const VECTOR2 _x,
-    const VECTOR2 _y)
+    const VEC2 _x,
+    const VEC2 _y)
 {
     return _x[0] * _y[1] - _x[1] * _y[0];
 }
 
-[[nodiscard]] JUG_MATH_API constexpr VECTOR3 Cross(
-    const VECTOR3 _x,
-    const VECTOR3 _y)
+[[nodiscard]] JUG_MATH_API constexpr VEC3 Cross(
+    const VEC3 _x,
+    const VEC3 _y)
 {
     return {
         _x[1] * _y[2] - _x[2] * _y[1],

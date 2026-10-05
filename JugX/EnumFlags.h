@@ -5,8 +5,8 @@
 namespace jug
 {
 
-JUG_DEFINE_TAG(ZeroFlagType, kZeroFlag)
-JUG_DEFINE_TAG(AllFlagType, kAllFlag)
+JUG_DEFINE_TAG(NoneFlagsType, kNoneFlags)
+JUG_DEFINE_TAG(AllFlagsType, kAllFlags)
 
 // ==========================================================
 //  EnumFlags
@@ -29,13 +29,13 @@ public:
     }
 
     /* implicit */ constexpr BaseFlags(
-        const ZeroFlagType) noexcept
+        const NoneFlagsType) noexcept
         : m_flags(0)
     {
     }
 
     /* implicit */ constexpr BaseFlags(
-        const AllFlagType) noexcept
+        const AllFlagsType) noexcept
         : m_flags(static_cast<UnderlyingT>(~static_cast<UnderlyingT>(0)))
     {
     }
@@ -85,6 +85,20 @@ public:
         m_flags = static_cast<UnderlyingT>(m_flags & static_cast<UnderlyingT>(~_value.m_flags));
     }
 
+    constexpr void Set(
+        const BaseFlags _value,
+        const bool      _bEnable) noexcept
+    {
+        if (_bEnable)
+        {
+            Enable(_value);
+        }
+        else
+        {
+            Disable(_value);
+        }
+    }
+
     constexpr void Toggle(
         const BaseFlags _value) noexcept
     {
@@ -130,7 +144,7 @@ public:
         return BaseFlags { static_cast<UnderlyingT>(m_flags ^ _other.m_flags) };
     }
 
-    [[nodiscard]]constexpr bool operator==(
+    [[nodiscard]] constexpr bool operator==(
         const BaseFlags _other) const noexcept
     {
         return m_flags == _other.m_flags;
@@ -152,7 +166,7 @@ private:
     {
         if constexpr (!kbBitmaskItself && std::is_signed_v<UnderlyingT>)
         {
-            JUG_ASSERT(ToUnderlying(_value) >= 0, "BaseFlags: enum value must be non-negative");
+            JUG_ASSERT(ToUnderlying(_value) >= 0, "BaseFlags: enum time must be non-negative");
         }
 
         if constexpr (kbBitmaskItself)
@@ -161,7 +175,7 @@ private:
         }
         else
         {
-            JUG_ASSERT(ToUnderlying(_value) < std::numeric_limits<UnderlyingT>::digits, "BaseFlags: enum value must be less than the number of bits in the underlying type");
+            JUG_ASSERT(ToUnderlying(_value) < std::numeric_limits<UnderlyingT>::digits, "BaseFlags: enum time must be less than the number of bits in the underlying type");
             return static_cast<UnderlyingT>(static_cast<UnderlyingT>(1) << static_cast<UnderlyingT>(_value));
         }
     }

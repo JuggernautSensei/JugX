@@ -9,72 +9,77 @@ namespace jug
 {
 
 // ===========================================
-//  Math Constants
+//  Constants
 // ===========================================
 
-template<typename T>
-struct MathConstants;
+template<ArithmeticT T>
+[[nodiscard]] JUG_MATH_API constexpr T Zero()
+{
+    return T { 0 };
+}
 
-#define JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(_type)                          \
-    template<>                                                               \
-    struct MathConstants<_type>                                              \
-    {                                                                        \
-        constexpr static _type kMax  = std::numeric_limits<_type>::max();    \
-        constexpr static _type kMin  = std::numeric_limits<_type>::lowest(); \
-        constexpr static _type kZero = _type { 0 };                          \
-        constexpr static _type kOne  = _type { 1 };                          \
+template<ArithmeticT T>
+[[nodiscard]] JUG_MATH_API constexpr T One()
+{
+    return T { 1 };
+}
+
+template<ArithmeticT T>
+[[nodiscard]] JUG_MATH_API constexpr T Max()
+{
+    return std::numeric_limits<T>::max();
+}
+
+template<ArithmeticT T>
+[[nodiscard]] JUG_MATH_API constexpr T Min()
+{
+    return std::numeric_limits<T>::lowest();
+}
+
+#define MATH_CONSTANTS(_constant)                      \
+    template<typename T>                               \
+        requires requires { T::_constant(); }          \
+    [[nodiscard]] JUG_MATH_API constexpr T _constant() \
+    {                                                  \
+        return T::_constant();                         \
     }
 
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(int8_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(uint8_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(int16_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(uint16_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(int32_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(uint32_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(int64_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(uint64_t);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(float);
-JUG_DEFINE_ARITHMETIC_MATH_CONSTANTS(double);
+MATH_CONSTANTS(Zero)
+MATH_CONSTANTS(One)
+MATH_CONSTANTS(Right)
+MATH_CONSTANTS(Up)
+MATH_CONSTANTS(Forward)
+MATH_CONSTANTS(UnitX)
+MATH_CONSTANTS(UnitY)
+MATH_CONSTANTS(UnitZ)
+MATH_CONSTANTS(UnitW)
+MATH_CONSTANTS(Max)
+MATH_CONSTANTS(Min)
+MATH_CONSTANTS(Identity)
+MATH_CONSTANTS(Unit)
+MATH_CONSTANTS(Universe)
 
-#define JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(_constant)         \
-    template<typename T>                                      \
-        requires requires { MathConstants<T>::k##_constant; } \
-    [[nodiscard]] JUG_MATH_API constexpr T _constant()        \
-    {                                                         \
-        return MathConstants<T>::k##_constant;                \
-    }   // namespace jug
+#undef MATH_CONSTANTS
 
-#define JUG_DEFINE_MATH_CONSTANTS_SHORTCUT_INVERSE(_constant, _base) \
-    template<typename T>                                             \
-        requires requires { MathConstants<T>::k##_constant; }        \
-    [[nodiscard]] JUG_MATH_API constexpr T _constant()               \
-    {                                                                \
-        return -_base<T>();                                          \
+#define MATH_CONSTANTS_INV(_constant, _base)           \
+    template<typename T>                               \
+        requires requires { T::_base(); }              \
+    [[nodiscard]] JUG_MATH_API constexpr T _constant() \
+    {                                                  \
+        return -T::_base();                            \
     }
 
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Zero);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(One);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Right);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT_INVERSE(Left, Right);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Up);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT_INVERSE(Down, Up);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Forward);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT_INVERSE(Backward, Forward);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(UnitX);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(UnitY);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(UnitZ);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(UnitW);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Max);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Min);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Identity);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Unit);
-JUG_DEFINE_MATH_CONSTANTS_SHORTCUT(Universe);
+MATH_CONSTANTS_INV(Left, Right)
+MATH_CONSTANTS_INV(Down, Up)
+MATH_CONSTANTS_INV(Backward, Forward)
+
+#undef MATH_CONSTANTS_INV
 
 // ===========================================
 //  Structs
 // ===========================================
 
-struct SIN_COS_RESULT
+struct SIN_COS
 {
     float sin;
     float cos;
@@ -184,42 +189,42 @@ constexpr static float kSqrt2      = 1.41421356237309504880f;
 constexpr static float kLogNat2    = 0.6931471805599453f;
 constexpr static float kInvLogNat2 = 1.4426950408889634f;
 
-[[nodiscard]] JUG_MATH_API constexpr float          ToDeg(float _rad);
-[[nodiscard]] JUG_MATH_API constexpr float          ToRad(float _deg);
-[[nodiscard]] JUG_MATH_API constexpr bool           IsZeroApprox(float _x, float _epsilon = kEpsilon);
-[[nodiscard]] JUG_MATH_API constexpr bool           IsEqualApprox(float _x, float _y, float _epsilon = kEpsilon);
-[[nodiscard]] JUG_MATH_API constexpr float          Trunc(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Fract(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Floor(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Ceil(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Round(float _x);
-[[nodiscard]] JUG_MATH_API constexpr bool           IsNan(float _f);
-[[nodiscard]] JUG_MATH_API constexpr bool           IsFinite(float _f);
-[[nodiscard]] JUG_MATH_API constexpr bool           IsInfinite(float _f);
-[[nodiscard]] JUG_MATH_API constexpr float          RcpSafe(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Lerp(float _x, float _y, float _t);
-[[nodiscard]] JUG_MATH_API constexpr float          InvLerp(float _x, float _y, float _value);
-[[nodiscard]] JUG_MATH_API constexpr float          SmoothStep(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Bias(float _time, float _bias);
-[[nodiscard]] JUG_MATH_API constexpr float          Gain(float _time, float _gain);
-[[nodiscard]] JUG_MATH_API constexpr float          Log(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Log2(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Exp(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Exp2(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Pow(float _x, float _y);
-[[nodiscard]] JUG_MATH_API constexpr float          Sqrt(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          RSqrt(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Saturate(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Sin(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Cos(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          Tan(float _x);
-[[nodiscard]] JUG_MATH_API constexpr SIN_COS_RESULT SinCos(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          ACos(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          ASin(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          ATan2(float _y, float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          ATan(float _x);
-[[nodiscard]] JUG_MATH_API constexpr float          AngleDiff(float _x, float _y);
-[[nodiscard]] JUG_MATH_API constexpr float          AngleLerp(float _x, float _y, float _t);
+[[nodiscard]] JUG_MATH_API constexpr float   ToDeg(float _rad);
+[[nodiscard]] JUG_MATH_API constexpr float   ToRad(float _deg);
+[[nodiscard]] JUG_MATH_API constexpr bool    IsZeroApprox(float _x, float _epsilon = kEpsilon);
+[[nodiscard]] JUG_MATH_API constexpr bool    IsEqualApprox(float _x, float _y, float _epsilon = kEpsilon);
+[[nodiscard]] JUG_MATH_API constexpr float   Trunc(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Fract(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Floor(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Ceil(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Round(float _x);
+[[nodiscard]] JUG_MATH_API constexpr bool    IsNan(float _f);
+[[nodiscard]] JUG_MATH_API constexpr bool    IsFinite(float _f);
+[[nodiscard]] JUG_MATH_API constexpr bool    IsInfinite(float _f);
+[[nodiscard]] JUG_MATH_API constexpr float   RcpSafe(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Lerp(float _x, float _y, float _t);
+[[nodiscard]] JUG_MATH_API constexpr float   InvLerp(float _x, float _y, float _value);
+[[nodiscard]] JUG_MATH_API constexpr float   SmoothStep(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Bias(float _time, float _bias);
+[[nodiscard]] JUG_MATH_API constexpr float   Gain(float _time, float _gain);
+[[nodiscard]] JUG_MATH_API constexpr float   Log(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Log2(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Exp(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Exp2(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Pow(float _x, float _y);
+[[nodiscard]] JUG_MATH_API constexpr float   Sqrt(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   RSqrt(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Saturate(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Sin(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Cos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   Tan(float _x);
+[[nodiscard]] JUG_MATH_API constexpr SIN_COS SinCos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   ACos(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   ASin(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   ATan2(float _y, float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   ATan(float _x);
+[[nodiscard]] JUG_MATH_API constexpr float   AngleDiff(float _x, float _y);
+[[nodiscard]] JUG_MATH_API constexpr float   AngleLerp(float _x, float _y, float _t);
 
 }   // namespace jug
 
