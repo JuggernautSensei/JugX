@@ -30,4 +30,7 @@ private:
     Error Open_(const FilePath& _path, bool _bAppend);
 };
 
+// 파일을 만들어(이미 있으면 덮어씀) _data 를 통째로 씀. 빈 데이터는 빈 파일
+[[nodiscard]] Error WriteFile(const FilePath& _path, MemoryView _data);
+
 }   // namespace jug

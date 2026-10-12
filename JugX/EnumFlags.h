@@ -189,4 +189,32 @@ using Flags = BaseFlags<E, true>;
 template<EnumT E>
 using IndexedFlags = BaseFlags<E, false>;
 
+// ==========================================================
+//  택일 그룹 (비트 패킹)
+//   0 << n (default), 1 << n, 2 << n ... 으로 나란히 놓은 값들 중 하나만 고르는 그룹
+// ==========================================================
+
+// _lowestNotZero: 0 이 아닌 가장 작은 값, _highest: 가장 큰 값
+template<EnumT E, typename U = UnderlyingT<E>>
+[[nodiscard]] constexpr U MakeFieldMask(
+    const E _lowestNotZero,
+    const E _highest)
+{
+    JUG_ASSERT(static_cast<U>(_lowestNotZero) > 0, "_lowestNotZero must be greater than zero");
+    JUG_ASSERT(static_cast<U>(_lowestNotZero) <= static_cast<U>(_highest), "_lowestNotZero must not exceed _highest");
+
+    const U high = static_cast<U>(std::bit_ceil(static_cast<U>(static_cast<U>(_highest) + 1)) - 1);
+    const U low  = static_cast<U>(std::bit_floor(static_cast<U>(_lowestNotZero)) - 1);
+    return static_cast<U>(high ^ low);
+}
+
+// 그룹 값을 0 부터 시작하는 번호로 꺼냄 (0 << n 이면 0, 1 << n 이면 1 ...)
+template<EnumT E>
+[[nodiscard]] constexpr uint32_t ExtractField(
+    const Flags<E> _flags,
+    const Flags<E> _mask)
+{
+    return static_cast<uint32_t>((_flags & _mask).GetFlags()) >> std::countr_zero(_mask.GetFlags());
+}
+
 }   // namespace jug

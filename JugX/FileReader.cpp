@@ -91,6 +91,30 @@ bool FileReader::IsEOF() const
     return ::feof(m_pFile) != 0;
 }
 
+Result<ByteBuffer> ReadFile(
+    const FilePath& _path)
+{
+    Result<FileReader> reader = FileReader::Open(_path);
+    JUG_RETURN_IF_ERROR(reader);
+
+    const Result<size_t> size = reader->GetSize();
+    JUG_RETURN_IF_ERROR(size);
+    if (*size == 0)
+    {
+        return ByteBuffer {};
+    }
+
+    ByteBuffer           buffer  = { kNoInit, *size };
+    const Result<size_t> numRead = reader->Read(MutableMemoryView { buffer.GetPtr(), buffer.GetSize() });
+    JUG_RETURN_IF_ERROR(numRead);
+    if (*numRead != *size)
+    {
+        JUG_CORE_LOG_ERROR("Failed to read the whole file '{}': expected {} bytes, but read {} bytes", _path.string(), *size, *numRead);
+        return MakeSystemError(std::errc::io_error);
+    }
+    return std::move(buffer);
+}
+
 Error FileReader::Open_(
     const FilePath& _path)
 {

@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Buffer.h"
 #include "FileReaderWriter.h"
 #include "MemoryView.h"
 #include "Result.h"
@@ -20,5 +21,8 @@ private:
     FileReader() = default;
     Error Open_(const FilePath& _path);
 };
+
+// 파일 전체를 읽음. 빈 파일은 에러가 아니라 빈 버퍼 (판단은 호출자 몫)
+[[nodiscard]] Result<ByteBuffer> ReadFile(const FilePath& _path);
 
 }   // namespace jug

@@ -141,6 +141,21 @@ Error FileWriter::Flush() const
     return kOK;
 }
 
+Error WriteFile(
+    const FilePath&  _path,
+    const MemoryView _data)
+{
+    Result<FileWriter> writer = FileWriter::Open(_path);
+    JUG_RETURN_IF_ERROR(writer);
+
+    if (!_data.IsEmpty())
+    {
+        const Result<size_t> numWritten = writer->Write(_data);
+        JUG_RETURN_IF_ERROR(numWritten);
+    }
+    return writer->Close();   // 버퍼가 여기서 비워지므로 실패를 놓치지 않음
+}
+
 Error FileWriter::Open_(
     const FilePath& _path,
     const bool      _bAppend)
