@@ -38,6 +38,7 @@
     <ClInclude Include="JugX\JsonAdlSerializer.h" />
     <ClInclude Include="JugX\LruCache.h" />
     <ClInclude Include="JugX\InvalidIndex.h" />
+    <ClInclude Include="JugX\MallocAllocator.h" />
     <ClInclude Include="JugX\NoopHasher.h" />
     <ClInclude Include="JugX\Optional.h" />
     <ClInclude Include="JugX\OS.h" />
@@ -122,6 +123,7 @@
     <ClCompile Include="JugX\FixedBlockMemoryPool.cpp" />
     <ClCompile Include="JugX\JsonDeserializer.cpp" />
     <ClCompile Include="JugX\JsonSerializer.cpp" />
+    <ClCompile Include="JugX\MallocAllocator.cpp" />
     <ClCompile Include="JugX\MemoryArena.cpp" />
     <ClCompile Include="JugX\MemoryHasher.cpp" />
     <ClCompile Include="JugX\InvalidIndex.cpp" />

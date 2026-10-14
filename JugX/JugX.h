@@ -50,6 +50,7 @@
 #include "JsonString.h"
 #include "KeyCode.h"
 #include "LruCache.h"
+#include "MallocAllocator.h"
 #include "Math.h"
 #include "Matrix.h"
 #include "MemoryArena.h"

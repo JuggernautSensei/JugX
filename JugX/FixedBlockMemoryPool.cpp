@@ -76,7 +76,7 @@ void* FixedBlockMemoryPool::Alloc()
         const size_t poolSize       = poolHeaderSize + m_alignedBlockSize * m_numBlocksPerPool;
         JUG_ASSERT(IsAligned(poolSize, m_blockAlign), "poolSize must be aligned to m_blockAlign");
 
-        void* pPool    = jug::Alloc(poolSize, m_blockAlign);
+        void* pPool    = jug::Malloc(poolSize, m_blockAlign);
         Link* pHeader        = static_cast<Link*>(pPool);
         pHeader->pLinkOrNull = m_pPoolList;
         m_pPoolList          = pHeader;

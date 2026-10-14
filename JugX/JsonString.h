@@ -3,8 +3,7 @@
 namespace jug
 {
 
-// for stringify
-
+// json 의 stringify를 위한 string wrapper
 class JsonString
 {
     JUG_CLASS(JsonString, NO_COPY)

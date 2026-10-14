@@ -3,57 +3,79 @@
 
 #include <bit>
 #include <cstddef>
-#include <new>
+#include <cstdlib>
+
+#if !defined(_WIN32)
+#    if defined(__unix__) || defined(__APPLE__)
+#        include <stdlib.h>
+#    else
+#        error "Unsupported platform for aligned allocation"
+#    endif
+#endif
 
 #include "Assert.h"
 
 namespace jug
 {
 
-void* Alloc(
-    const size_t _size)
+void* Malloc(
+    const size_t _size) noexcept
 {
-    return ::operator new(_size);
+    return std::malloc(_size);
 }
 
 void Free(
-    void* _ptr)
+    void* _ptr) noexcept
 {
-    ::operator delete(_ptr);
+    std::free(_ptr);
 }
 
-void* Alloc(
+void* Malloc(
     const size_t _size,
-    const size_t _alignment)
+    const size_t _alignment) noexcept
 {
     JUG_ASSERT(std::has_single_bit(_alignment), "_alignment must be power of 2");
 
-    // alignedxxx 는 성능이 낮으므로, alignof(std::max_align_t) 이하의 정렬은 일반 new를 사용
+    // 기본 정렬 범위에서는 일반 malloc 사용
     if (_alignment <= alignof(std::max_align_t))
     {
-        return ::operator new(_size);
+        return std::malloc(_size);
     }
-    else
+
+#if defined(_WIN32)
+
+    return ::_aligned_malloc(_size, _alignment);
+
+#else
+
+    void* ptr = nullptr;
+    if (::posix_memalign(&ptr, _alignment, _size) != 0)
     {
-        return ::operator new(_size, static_cast<std::align_val_t>(_alignment));
+        return nullptr;
     }
+
+    return ptr;
+
+#endif
 }
 
 void Free(
     void*        _ptr,
-    const size_t _alignment)
+    const size_t _alignment) noexcept
 {
     JUG_ASSERT(std::has_single_bit(_alignment), "_alignment must be power of 2");
 
-    // alignedxxx 는 성능이 낮으므로, alignof(std::max_align_t) 이하의 정렬은 일반 delete를 사용
-    if (_alignment <= alignof(std::max_align_t))
+#if defined(_WIN32)
+
+    if (_alignment > alignof(std::max_align_t))
     {
-        ::operator delete(_ptr);
+        ::_aligned_free(_ptr);
+        return;
     }
-    else
-    {
-        ::operator delete(_ptr, static_cast<std::align_val_t>(_alignment));
-    }
+
+#endif
+
+    std::free(_ptr);
 }
 
 }   // namespace jug

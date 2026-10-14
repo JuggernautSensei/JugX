@@ -45,7 +45,7 @@ public:
         ResizeUninitialized(_size);
     }
 
-    // 소유권을 넘겨받는 생성자. _pData 는 Alloc 으로 해제 가능한 메모리여야 하고, 이후 Buffer 가 해제함.
+    // 소유권을 넘겨받는 생성자. _pData 는 Malloc 으로 해제 가능한 메모리여야 하고, 이후 Buffer 가 해제함.
     // 넘긴 포인터는 호출자가 다시 쓰거나 해제하면 안 됨. 초기화된 T 가 _size 개 있다고 가정.
     Buffer(
         T*           _pData,

@@ -61,7 +61,7 @@ void* MemoryArena::Alloc(
     std::byte* pAlignedCur = m_pCur ? AlignUp(m_pCur, _alignment) : nullptr;
     if (!m_pPoolList || pAlignedCur + _size > m_pEnd)
     {
-        Link* pHeader        = static_cast<Link*>(jug::Alloc(m_poolSize));
+        Link* pHeader        = static_cast<Link*>(jug::Malloc(m_poolSize));
         pHeader->pLinkOrNull = m_pPoolList;
         m_pPoolList          = pHeader;
         m_pCur               = reinterpret_cast<std::byte*>(pHeader) + sizeof(Link);

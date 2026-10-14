@@ -250,6 +250,9 @@
     <ClInclude Include="JugX\InvalidIndex.h">
       <Filter>Type</Filter>
     </ClInclude>
+    <ClInclude Include="JugX\MallocAllocator.h">
+      <Filter>Memroy\Alloc</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="JugX\StringEncoder.cpp">
@@ -500,6 +503,9 @@
     </ClCompile>
     <ClCompile Include="JugX\InvalidIndex.cpp">
       <Filter>Type</Filter>
+    </ClCompile>
+    <ClCompile Include="JugX\MallocAllocator.cpp">
+      <Filter>Memroy\Alloc</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
