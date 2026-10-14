@@ -61,7 +61,7 @@ public:
     }
 
     template<typename U, typename V>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
+        requires(std::is_convertible_v<U*, T*> && std::is_constructible_v<Delete, V>)
     /* implicit */ Scoped(
         Scoped<U, V>&& _other) noexcept
         : m_pObj(static_cast<T*>(_other.Release()))
@@ -81,7 +81,7 @@ public:
     }
 
     template<typename U, typename V>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
+        requires(std::is_convertible_v<U*, T*> && std::is_constructible_v<Delete, V>)
     Scoped& operator=(
         Scoped<U, V>&& _other) noexcept
     {
@@ -277,7 +277,7 @@ public:
     }
 
     template<typename U, typename V>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
+        requires(std::is_convertible_v<U (*)[], T (*)[]> && std::is_constructible_v<Delete, V>)
     /* implicit */ Scoped(
         Scoped<U[], V>&& _other) noexcept
         : m_pObj(static_cast<T*>(_other.Release()))
@@ -297,7 +297,7 @@ public:
     }
 
     template<typename U, typename V>
-        requires(std::is_constructible_v<U*, T*> && std::is_constructible_v<V, Delete>)
+        requires(std::is_convertible_v<U (*)[], T (*)[]> && std::is_constructible_v<Delete, V>)
     Scoped& operator=(
         Scoped<U[], V>&& _other) noexcept
     {
